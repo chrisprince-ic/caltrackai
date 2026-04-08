@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/chris/AppData/Local/Programs/Python/Python314//**)",
+      "Bash(/c/Users/chris/AppData/Local/Programs/Python/Python314/python.exe --version)",
+      "Bash(PYTHON=\"/c/Users/chris/AppData/Local/Programs/Python/Python314/python.exe\")",
+      "Bash(BASE=\"C:\\\\Users\\\\chris\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\6c6f056d-7bdb-4aae-8cd1-fa820a65b5f7\\\\68fb58bf-14c0-42b9-9d3d-5f67ee26d25d\\\\skills\\\\docx\")",
+      "Bash(__NEW_LINE_dfa0d7c067cb6325__ cd:*)",
+      "Bash(\"$PYTHON\" scripts/office/validate.py \"C:\\\\Users\\\\chris\\\\Desktop\\\\CalTrackAI_Privacy_Policy.docx\")",
+      "Bash(PYTHON=\"/c/Users/chris/AppData/Local/Programs/Python/Python314/python.exe\" \"$PYTHON\" -m pip install defusedxml lxml)",
+      "Bash(__NEW_LINE_5900f1b1cdb37d1e__ cd:*)",
+      "Bash(\"$PYTHON\" scripts/office/validate.py \"C:\\\\Users\\\\chris\\\\Desktop\\\\CalTrackAI_Terms_of_Service.docx\")",
+      "Read(//c/Users/chris/Desktop/caltrackai/.claude/worktrees/dazzling-banach/**)",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 \"$PYTHON\" scripts/office/validate.py \"C:\\\\Users\\\\chris\\\\Desktop\\\\CalTrackAI_Privacy_Policy.docx\")",
+      "Read(//c/Users/chris/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/6c6f056d-7bdb-4aae-8cd1-fa820a65b5f7/68fb58bf-14c0-42b9-9d3d-5f67ee26d25d/skills/docx/**)",
+      "Bash(node -e \":*)",
+      "Bash(node create_docs.js)",
+      "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 \"$PYTHON\" scripts/office/validate.py \"C:\\\\Users\\\\chris\\\\Desktop\\\\CalTrackAI_Terms_of_Service.docx\")",
+      "Bash(node -e \"const fs = require\\(''fs''\\); console.log\\(''Node ready''\\); fs.writeFileSync\\(''C:/Users/chris/Desktop/test_write.txt'', ''ok''\\); console.log\\(''Desktop writable''\\);\")",
+      "Bash(del \"C:\\\\Users\\\\chris\\\\Desktop\\\\test_write.txt\")"
+    ]
+  }
+}

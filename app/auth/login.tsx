@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { GoogleIdTokenSignIn } from '@/components/auth/GoogleIdTokenSignIn';
 import { useAuth } from '@/contexts/AuthContext';
 import { friendlyFirebaseAuthMessage } from '@/lib/firebase-auth-errors';
 import { Fonts } from '@/constants/theme';
@@ -22,18 +21,14 @@ import { Palette } from '@/constants/palette';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const {
-    user,
-    initializing,
-    firebaseReady,
-    signInWithEmailPassword,
-    signInWithGoogleIdToken,
-  } = useAuth();
+  const { user, initializing, firebaseReady, signInWithEmailPassword, sendPasswordReset } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     if (user && !initializing) {
@@ -41,27 +36,11 @@ export default function LoginScreen() {
     }
   }, [user, initializing, router]);
 
-  const onGoogleError = useCallback((message: string) => {
-    setError(message);
-  }, []);
-
-  const onGoogleIdToken = useCallback(
-    async (idToken: string) => {
-      setError(null);
-      setSubmitting(true);
-      try {
-        await signInWithGoogleIdToken(idToken);
-      } finally {
-        setSubmitting(false);
-      }
-    },
-    [signInWithGoogleIdToken]
-  );
-
   async function onEmailLogin() {
     setError(null);
+    setResetSent(false);
     if (!email.trim() || !password) {
-      setError('Enter email and password.');
+      setError('Please enter your email and password.');
       return;
     }
     setSubmitting(true);
@@ -74,19 +53,35 @@ export default function LoginScreen() {
     }
   }
 
+  async function onForgotPassword() {
+    setError(null);
+    setResetSent(false);
+    if (!email.trim()) {
+      setError('Enter your email address above first, then tap "Forgot password?" again.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await sendPasswordReset(email.trim());
+      setResetSent(true);
+    } catch (e) {
+      setError(friendlyFirebaseAuthMessage(e));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (!firebaseReady) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.missingWrap}>
           <Ionicons name="cloud-offline-outline" size={40} color={Palette.lavender} />
-          <Text style={styles.missingTitle}>Firebase not configured</Text>
+          <Text style={styles.missingTitle}>Service unavailable</Text>
           <Text style={styles.missingBody}>
-            Add EXPO_PUBLIC_API_KEY, EXPO_PUBLIC_AUTH_DOMAIN, EXPO_PUBLIC_DATABASE_URL, EXPO_PUBLIC_PROJECT_ID, and
-            EXPO_PUBLIC_APP_ID to <Text style={styles.mono}>.env</Text> (one <Text style={styles.mono}>KEY=value</Text>{' '}
-            per line), then restart Expo.
+            The app is not fully configured. Please contact support if this persists.
           </Text>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>Back</Text>
+          <Pressable style={styles.outlineBtn} onPress={() => router.back()}>
+            <Text style={styles.outlineBtnText}>Back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -113,6 +108,7 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}>
+
           <Pressable
             onPress={() => router.back()}
             hitSlop={12}
@@ -121,50 +117,83 @@ export default function LoginScreen() {
             <Text style={styles.backLink}>Back</Text>
           </Pressable>
 
-          <Text style={styles.eyebrow}>WELCOME BACK</Text>
-          <Text style={styles.title}>Sign in</Text>
-          <Text style={styles.subtitle}>Sync your diary across devices with Firebase.</Text>
-
-          <GoogleIdTokenSignIn
-            buttonLabel="Continue with Google"
-            disabled={submitting}
-            onPressClearError={() => setError(null)}
-            onError={onGoogleError}
-            onIdToken={onGoogleIdToken}
-          />
-
-          <View style={styles.dividerRow}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or email</Text>
-            <View style={styles.divider} />
+          {/* Branding */}
+          <View style={styles.brandWrap}>
+            <View style={styles.logoSquircle}>
+              <Ionicons name="flame" size={30} color="#FFFFFF" />
+            </View>
+            <Text style={styles.eyebrow}>WELCOME BACK</Text>
+            <Text style={styles.title}>Sign in</Text>
+            <Text style={styles.subtitle}>
+              Sign in to sync your diary and hit your goals every day.
+            </Text>
           </View>
 
-          <Text style={styles.label}>Email</Text>
+          {/* Email */}
+          <Text style={styles.label}>Email address</Text>
           <TextInput
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(t) => { setEmail(t); setError(null); setResetSent(false); }}
             placeholder="you@email.com"
             placeholderTextColor={Palette.dusk}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            returnKeyType="next"
             style={styles.input}
           />
 
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            placeholderTextColor={Palette.dusk}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            textContentType="password"
-            autoComplete="password"
-            style={styles.input}
-          />
+          {/* Password row with label + forgot link */}
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Password</Text>
+            <Pressable
+              onPress={() => void onForgotPassword()}
+              hitSlop={8}
+              disabled={submitting}>
+              <Text style={styles.forgotLink}>Forgot password?</Text>
+            </Pressable>
+          </View>
 
+          {/* Password input with show/hide */}
+          <View style={styles.inputWrap}>
+            <TextInput
+              value={password}
+              onChangeText={(t) => { setPassword(t); setError(null); }}
+              placeholder="••••••••"
+              placeholderTextColor={Palette.dusk}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="password"
+              autoComplete="password"
+              returnKeyType="done"
+              onSubmitEditing={() => void onEmailLogin()}
+              style={styles.inputInner}
+            />
+            <Pressable
+              onPress={() => setShowPassword((p) => !p)}
+              hitSlop={10}
+              style={styles.eyeBtn}
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color={Palette.dusk}
+              />
+            </Pressable>
+          </View>
+
+          {/* Reset password success banner */}
+          {resetSent ? (
+            <View style={styles.successBox}>
+              <Ionicons name="checkmark-circle" size={18} color="#2D7D3A" />
+              <Text style={styles.successText}>
+                Password reset email sent to {email}. Check your inbox.
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Error */}
           {error ? (
             <View style={styles.errorBox}>
               <Ionicons name="alert-circle" size={18} color="#9B1F52" />
@@ -172,9 +201,10 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
+          {/* Sign in button */}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Sign in with email"
+            accessibilityLabel="Sign in"
             disabled={submitting}
             onPress={() => void onEmailLogin()}
             style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed, submitting && { opacity: 0.75 }]}>
@@ -185,10 +215,25 @@ export default function LoginScreen() {
             )}
           </Pressable>
 
-          <Pressable onPress={() => router.push('/auth/sign-up' as Href)} style={styles.switchRow}>
+          {/* Switch to sign up */}
+          <View style={styles.switchRow}>
             <Text style={styles.switchMuted}>New here? </Text>
-            <Text style={styles.switchAccent}>Create an account</Text>
-          </Pressable>
+            <Pressable onPress={() => router.push('/auth/sign-up' as Href)}>
+              <Text style={styles.switchAccent}>Create an account</Text>
+            </Pressable>
+          </View>
+
+          {/* Legal footer */}
+          <View style={styles.legalFooter}>
+            <Pressable onPress={() => router.push('/legal/privacy-policy' as Href)} hitSlop={8}>
+              <Text style={styles.legalLink}>Privacy Policy</Text>
+            </Pressable>
+            <Text style={styles.legalSep}>·</Text>
+            <Pressable onPress={() => router.push('/legal/terms' as Href)} hitSlop={8}>
+              <Text style={styles.legalLink}>Terms of Service</Text>
+            </Pressable>
+          </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -200,7 +245,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: {
     paddingHorizontal: 28,
-    paddingBottom: 32,
+    paddingBottom: 40,
     maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
@@ -214,64 +259,78 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     alignSelf: 'center',
   },
-  missingTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 22,
-    color: Palette.obsidian,
-  },
+  missingTitle: { fontFamily: Fonts.bold, fontSize: 22, color: Palette.obsidian },
   missingBody: {
     fontFamily: Fonts.regular,
     fontSize: 15,
     lineHeight: 22,
     color: Palette.dusk,
   },
-  mono: { fontFamily: Fonts.semiBold, color: Palette.iris },
-  backBtn: {
-    marginTop: 8,
-    backgroundColor: Palette.haze,
-    paddingVertical: 14,
-    borderRadius: 999,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.12)',
-  },
-  backBtnText: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 20,
+    marginBottom: 24,
     alignSelf: 'flex-start',
+    marginTop: 4,
   },
   backLink: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
+  brandWrap: {
+    alignItems: 'center',
+    marginBottom: 36,
+  },
+  logoSquircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    backgroundColor: Palette.iris,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 8,
+  },
   eyebrow: {
     fontFamily: Fonts.semiBold,
     fontSize: 11,
-    letterSpacing: 2,
+    letterSpacing: 2.2,
     color: Palette.lavender,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   title: {
     fontFamily: Fonts.bold,
-    fontSize: 32,
+    fontSize: 30,
     color: Palette.obsidian,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontFamily: Fonts.regular,
     fontSize: 15,
     lineHeight: 22,
     color: Palette.dusk,
-    marginBottom: 28,
+    textAlign: 'center',
+    paddingHorizontal: 8,
   },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  divider: { flex: 1, height: 1, backgroundColor: 'rgba(139, 126, 170, 0.25)' },
-  dividerText: { fontFamily: Fonts.medium, fontSize: 12, color: Palette.dusk },
   label: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
     color: Palette.obsidian,
     marginBottom: 8,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  forgotLink: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    color: Palette.iris,
   },
   input: {
     fontFamily: Fonts.regular,
@@ -281,9 +340,48 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: 'rgba(75, 35, 200, 0.12)',
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(75, 35, 200, 0.12)',
+    marginBottom: 20,
+  },
+  inputInner: {
+    flex: 1,
+    fontFamily: Fonts.regular,
+    fontSize: 16,
+    color: Palette.obsidian,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  eyeBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  successBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#E6F9EC',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(45, 125, 58, 0.2)',
+  },
+  successText: {
+    flex: 1,
+    fontFamily: Fonts.medium,
+    fontSize: 14,
+    color: '#1A5C27',
+    lineHeight: 20,
   },
   errorBox: {
     flexDirection: 'row',
@@ -299,14 +397,53 @@ const styles = StyleSheet.create({
   errorText: { flex: 1, fontFamily: Fonts.medium, fontSize: 14, color: '#9B1F52', lineHeight: 20 },
   primaryBtn: {
     backgroundColor: Palette.iris,
-    paddingVertical: 16,
+    paddingVertical: 17,
     borderRadius: 999,
     alignItems: 'center',
     marginBottom: 20,
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 6,
   },
   primaryLabel: { fontFamily: Fonts.bold, fontSize: 16, color: '#FFFFFF' },
-  switchRow: { alignSelf: 'center', paddingVertical: 8 },
+  outlineBtn: {
+    marginTop: 8,
+    backgroundColor: Palette.haze,
+    paddingVertical: 14,
+    borderRadius: 999,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(75, 35, 200, 0.12)',
+  },
+  outlineBtnText: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 4,
+    marginBottom: 32,
+  },
   switchMuted: { fontFamily: Fonts.regular, fontSize: 15, color: Palette.dusk },
   switchAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Palette.iris },
+  legalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  legalLink: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    color: Palette.dusk,
+    textDecorationLine: 'underline',
+  },
+  legalSep: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    color: Palette.dusk,
+    opacity: 0.5,
+  },
   pressed: { opacity: 0.88 },
 });

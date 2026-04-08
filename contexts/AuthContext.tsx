@@ -1,14 +1,14 @@
 import {
   createUserWithEmailAndPassword,
-  GoogleAuthProvider,
+  deleteUser,
   onAuthStateChanged,
-  signInWithCredential,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { get, ref, set } from 'firebase/database';
+import { get, ref, remove, set } from 'firebase/database';
 import {
   createContext,
   useCallback,
@@ -33,7 +33,8 @@ type AuthCtx = {
     name: string;
     phone: string;
   }) => Promise<void>;
-  signInWithGoogleIdToken: (idToken: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   signOutUser: () => Promise<void>;
 };
 
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsub?.();
   }, [firebaseReady]);
 
-  /** Ensure Google-only accounts get a profile node */
+  /** Ensure accounts missing a profile node get one created */
   useEffect(() => {
     if (!user || !firebaseReady) return;
     (async () => {
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name: user.displayName || 'Member',
             phone: '',
             email: user.email,
-            provider: user.providerData[0]?.providerId?.includes('google') ? 'google' : 'unknown',
+            provider: 'password',
           });
         }
       } catch {
@@ -114,10 +115,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const signInWithGoogleIdToken = useCallback(async (idToken: string) => {
+  const sendPasswordReset = useCallback(async (email: string) => {
     const auth = getFirebaseAuth();
-    const credential = GoogleAuthProvider.credential(idToken);
-    await signInWithCredential(auth, credential);
+    await sendPasswordResetEmail(auth, email.trim());
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    const auth = getFirebaseAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('Not signed in.');
+    const uid = currentUser.uid;
+    // Delete the Firebase Auth account (may throw auth/requires-recent-login)
+    await deleteUser(currentUser);
+    // Best-effort: remove all user data from the database
+    try {
+      const db = getFirebaseDatabase();
+      await remove(ref(db, `users/${uid}`));
+    } catch {
+      /* data removal is best-effort */
+    }
+    clearMealPlanSession();
   }, []);
 
   const signOutUser = useCallback(async () => {
@@ -137,7 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firebaseReady,
       signInWithEmailPassword,
       signUpWithProfile,
-      signInWithGoogleIdToken,
+      sendPasswordReset,
+      deleteAccount,
       signOutUser,
     }),
     [
@@ -146,7 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firebaseReady,
       signInWithEmailPassword,
       signUpWithProfile,
-      signInWithGoogleIdToken,
+      sendPasswordReset,
+      deleteAccount,
       signOutUser,
     ]
   );

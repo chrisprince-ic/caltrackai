@@ -21,9 +21,10 @@ import { Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Palette } from '@/constants/palette';
+import { friendlyFirebaseAuthMessage } from '@/lib/firebase-auth-errors';
 
 const SHARE_MESSAGE =
-  'I’m using CalTrack AI to log meals and hit my macros — give it a try!';
+  'I'm using CalTrack AI to log meals and hit my macros — give it a try!';
 const INVITE_MESSAGE =
   'Join me on CalTrack AI — scan meals, get AI meal plans, and stay on track with your goals.';
 
@@ -56,7 +57,7 @@ function MenuRow({
       ]}
       accessibilityRole="button"
       accessibilityLabel={label}>
-      <View style={[styles.rowIcon, { backgroundColor: colors.haze }]}>
+      <View style={[styles.rowIcon, { backgroundColor: danger ? '#FFE8F2' : colors.haze }]}>
         <Ionicons name={icon} size={22} color={danger ? Palette.overText : ACCENT.iris} />
       </View>
       <View style={styles.rowBody}>
@@ -97,7 +98,7 @@ export function AppMenuSheet({ visible, onClose }: Props) {
   const { height } = useWindowDimensions();
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { user, signOutUser } = useAuth();
+  const { user, signOutUser, deleteAccount } = useAuth();
 
   const shareApp = useCallback(async () => {
     try {
@@ -121,13 +122,6 @@ export function AppMenuSheet({ visible, onClose }: Props) {
     }
   }, []);
 
-  const openHelp = useCallback(() => {
-    Alert.alert(
-      'Help',
-      'For meal logging, use Scan or pick from your gallery. Meal plans and groceries refresh daily. Add a Gemini API key in .env for AI features.'
-    );
-  }, []);
-
   const onSignOut = useCallback(async () => {
     onClose();
     try {
@@ -137,6 +131,29 @@ export function AppMenuSheet({ visible, onClose }: Props) {
     }
     router.replace('/welcome' as Href);
   }, [onClose, signOutUser, router]);
+
+  const onDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Delete account',
+      'This will permanently delete your account and all your nutrition data. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            onClose();
+            try {
+              await deleteAccount();
+              router.replace('/welcome' as Href);
+            } catch (e) {
+              Alert.alert('Could not delete account', friendlyFirebaseAuthMessage(e));
+            }
+          },
+        },
+      ]
+    );
+  }, [onClose, deleteAccount, router]);
 
   const go = useCallback(
     (href: Href) => {
@@ -160,76 +177,106 @@ export function AppMenuSheet({ visible, onClose }: Props) {
             },
           ]}
           accessibilityViewIsModal>
-        <View style={styles.grabberWrap}>
-          <View style={[styles.grabber, { backgroundColor: colors.borderStrong }]} />
-        </View>
-        <Text style={[styles.sheetTitle, { color: colors.text }]}>Menu</Text>
-
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View style={[styles.profileCard, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
-            <View style={[styles.avatar, { backgroundColor: colors.haze }]}>
-              <Ionicons name="person" size={28} color={ACCENT.iris} />
-            </View>
-            <View style={styles.profileText}>
-              <Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
-                {user?.displayName || user?.email?.split('@')[0] || 'Guest'}
-              </Text>
-              <Text style={[styles.profileEmail, { color: colors.textMuted }]} numberOfLines={1}>
-                {user?.email ?? 'Not signed in — data stays on this device'}
-              </Text>
-            </View>
+          <View style={styles.grabberWrap}>
+            <View style={[styles.grabber, { backgroundColor: colors.borderStrong }]} />
           </View>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>Menu</Text>
 
-          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>Appearance</Text>
-          <DarkModeToggleRow />
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={[styles.profileCard, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
+              <View style={[styles.avatar, { backgroundColor: colors.haze }]}>
+                <Ionicons name="person" size={28} color={ACCENT.iris} />
+              </View>
+              <View style={styles.profileText}>
+                <Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
+                  {user?.displayName || user?.email?.split('@')[0] || 'Guest'}
+                </Text>
+                <Text style={[styles.profileEmail, { color: colors.textMuted }]} numberOfLines={1}>
+                  {user?.email ?? 'Not signed in — data stays on this device'}
+                </Text>
+              </View>
+            </View>
 
-          <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Account & plan</Text>
-          <MenuRow
-            icon="nutrition-outline"
-            label="Nutrition targets"
-            sub="Calories, macros, AI note — update via onboarding"
-            onPress={() => go('/nutrition-targets' as Href)}
-          />
-          <MenuRow
-            icon="calendar-outline"
-            label="Meal plans"
-            sub="AI week & recipes"
-            onPress={() => go('/meal-plan/weekly' as Href)}
-          />
-          <MenuRow
-            icon="stats-chart-outline"
-            label="Insights"
-            sub="Trends & coaching"
-            onPress={() => go('/(tabs)/insights' as Href)}
-          />
-          <MenuRow
-            icon="sparkles"
-            label="CalTrack Pro"
-            sub="Subscription & trial"
-            onPress={() => go('/subscription' as Href)}
-          />
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>Appearance</Text>
+            <DarkModeToggleRow />
 
-          <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Share</Text>
-          <MenuRow icon="share-outline" label="Share app" sub="Tell a friend" onPress={() => void shareApp()} />
-          <MenuRow icon="mail-outline" label="Invite someone" sub="Send an invite message" onPress={() => void inviteFriends()} />
-
-          <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Support</Text>
-          <MenuRow icon="help-circle-outline" label="Help & FAQ" onPress={openHelp} />
-
-          {!user ? (
+            <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Account & plan</Text>
             <MenuRow
-              icon="log-in-outline"
-              label="Sign in"
-              sub="Sync across devices"
-              onPress={() => {
-                onClose();
-                router.push('/auth/login' as Href);
-              }}
+              icon="nutrition-outline"
+              label="Nutrition targets"
+              sub="Calories, macros, AI note"
+              onPress={() => go('/nutrition-targets' as Href)}
             />
-          ) : (
-            <MenuRow icon="log-out-outline" label="Log out" onPress={() => void onSignOut()} danger />
-          )}
-        </ScrollView>
+            <MenuRow
+              icon="calendar-outline"
+              label="Meal plans"
+              sub="AI week & recipes"
+              onPress={() => go('/meal-plan/weekly' as Href)}
+            />
+            <MenuRow
+              icon="stats-chart-outline"
+              label="Insights"
+              sub="Trends & coaching"
+              onPress={() => go('/(tabs)/insights' as Href)}
+            />
+            <MenuRow
+              icon="sparkles"
+              label="CalTrack Pro"
+              sub="Subscription & trial"
+              onPress={() => go('/subscription' as Href)}
+            />
+
+            <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Share</Text>
+            <MenuRow icon="share-outline" label="Share app" sub="Tell a friend" onPress={() => void shareApp()} />
+            <MenuRow icon="mail-outline" label="Invite someone" sub="Send an invite message" onPress={() => void inviteFriends()} />
+
+            <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Legal & support</Text>
+            <MenuRow
+              icon="shield-checkmark-outline"
+              label="Privacy Policy"
+              sub="How we handle your data"
+              onPress={() => go('/legal/privacy-policy' as Href)}
+            />
+            <MenuRow
+              icon="document-text-outline"
+              label="Terms of Service"
+              sub="Rules for using CalTrack AI"
+              onPress={() => go('/legal/terms' as Href)}
+            />
+            <MenuRow
+              icon="help-circle-outline"
+              label="Help & FAQ"
+              sub="support@aevontech.com"
+              onPress={() => Alert.alert(
+                'Help & Support',
+                'For help with meal logging, subscriptions, or account issues, email us at support@aevontech.com — we typically reply within 24 hours.\n\nTips:\n• Use Scan to log a meal by photo\n• Meal plans refresh daily\n• Restore purchases if your Pro subscription is missing'
+              )}
+            />
+
+            {!user ? (
+              <MenuRow
+                icon="log-in-outline"
+                label="Sign in"
+                sub="Sync across devices"
+                onPress={() => {
+                  onClose();
+                  router.push('/auth/login' as Href);
+                }}
+              />
+            ) : (
+              <>
+                <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Account actions</Text>
+                <MenuRow icon="log-out-outline" label="Sign out" onPress={() => void onSignOut()} />
+                <MenuRow
+                  icon="trash-outline"
+                  label="Delete account"
+                  sub="Permanently removes all your data"
+                  onPress={onDeleteAccount}
+                  danger
+                />
+              </>
+            )}
+          </ScrollView>
         </View>
       </View>
     </Modal>

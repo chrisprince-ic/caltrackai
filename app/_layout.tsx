@@ -43,6 +43,8 @@ function RootLayoutBody() {
                 <Stack.Screen name="meal-plan/[planId]" options={{ headerShown: true, title: 'Meal plan' }} />
                 <Stack.Screen name="meal-recipe" options={{ headerShown: true, title: 'Recipe' }} />
                 <Stack.Screen name="nutrition-targets" options={{ headerShown: true, title: 'Nutrition targets' }} />
+                <Stack.Screen name="legal/privacy-policy" options={{ headerShown: true, title: 'Privacy Policy' }} />
+                <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
                 <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
               </Stack>
               <StatusBar style={isDark ? 'light' : 'dark'} />

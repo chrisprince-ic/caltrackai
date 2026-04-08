@@ -8,25 +8,25 @@ import { Palette } from '@/constants/palette';
 
 const FEATURES = [
   {
-    key: 'lookup',
-    icon: 'checkmark-circle' as const,
+    key: 'scan',
+    icon: 'camera' as const,
     iconColor: Palette.iris,
     boxBg: Palette.haze,
-    text: 'Instant calorie lookup from 2M+ foods',
+    text: 'Scan meals with AI — instant calorie & macro breakdown',
   },
   {
     key: 'macros',
-    icon: 'bag-handle' as const,
+    icon: 'bar-chart' as const,
     iconColor: Palette.flamingo,
     boxBg: '#FFE8F0',
-    text: 'Macro breakdowns for protein, carbs & fat',
+    text: 'Track protein, carbs & fat against your personal targets',
   },
   {
-    key: 'trends',
-    icon: 'add' as const,
+    key: 'plans',
+    icon: 'restaurant' as const,
     iconColor: Palette.cyan,
     boxBg: '#E0F8FA',
-    text: 'Weekly trends and progress insights',
+    text: 'AI-generated meal plans and grocery lists every week',
   },
 ];
 
@@ -40,12 +40,13 @@ export default function WelcomeScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <View style={styles.inner}>
+
           <View style={styles.logoSquircle}>
-            <Ionicons name="person" size={36} color="#FFFFFF" />
+            <Ionicons name="flame" size={36} color="#FFFFFF" />
           </View>
 
           <Text style={styles.eyebrow}>TRACK SMARTER</Text>
-          <Text style={styles.headline}>Fuel your body, know your numbers</Text>
+          <Text style={styles.headline}>Fuel your body,{'\n'}know your numbers</Text>
           <Text style={styles.subhead}>
             Log meals in seconds. Understand your macros. Hit your goals every day.
           </Text>
@@ -64,13 +65,13 @@ export default function WelcomeScreen() {
           <View style={styles.actions}>
             <Pressable
               style={({ pressed }) => [styles.btnPrimary, pressed && styles.pressed]}
-              onPress={() => router.replace('/auth/login' as Href)}>
-              <Text style={styles.btnPrimaryLabel}>Sign in</Text>
+              onPress={() => router.replace('/auth/sign-up' as Href)}>
+              <Text style={styles.btnPrimaryLabel}>Get started — it's free</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.btnSecondary, pressed && styles.pressed]}
-              onPress={() => router.replace('/auth/sign-up' as Href)}>
-              <Text style={styles.btnSecondaryLabel}>Create account</Text>
+              onPress={() => router.replace('/auth/login' as Href)}>
+              <Text style={styles.btnSecondaryLabel}>Sign in</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.btnGhost, pressed && styles.pressed]}
@@ -79,10 +80,16 @@ export default function WelcomeScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.footer}>
-            <Text style={styles.footerMuted}>Free to use. </Text>
-            <Text style={styles.footerAccent}>No credit card needed.</Text>
-          </Text>
+          <View style={styles.legalFooter}>
+            <Pressable onPress={() => router.push('/legal/privacy-policy' as Href)} hitSlop={8}>
+              <Text style={styles.legalLink}>Privacy Policy</Text>
+            </Pressable>
+            <Text style={styles.legalSep}>·</Text>
+            <Pressable onPress={() => router.push('/legal/terms' as Href)} hitSlop={8}>
+              <Text style={styles.legalLink}>Terms of Service</Text>
+            </Pressable>
+          </View>
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -115,6 +122,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 28,
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 10,
   },
   eyebrow: {
     fontFamily: Fonts.semiBold,
@@ -124,7 +136,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   headline: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Fonts.bold,
     fontSize: 30,
     lineHeight: 38,
     textAlign: 'center',
@@ -143,7 +155,7 @@ const styles = StyleSheet.create({
   },
   featureList: {
     width: '100%',
-    gap: 18,
+    gap: 16,
     marginBottom: 40,
   },
   featureRow: {
@@ -152,9 +164,9 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   featureIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -168,27 +180,19 @@ const styles = StyleSheet.create({
   actions: {
     width: '100%',
     gap: 12,
-    marginBottom: 28,
-  },
-  btnGhost: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 999,
-    alignItems: 'center',
-  },
-  btnGhostLabel: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    color: Palette.dusk,
-    textDecorationLine: 'underline',
-    textDecorationColor: 'rgba(139, 126, 170, 0.5)',
+    marginBottom: 24,
   },
   btnPrimary: {
     width: '100%',
     backgroundColor: Palette.iris,
-    paddingVertical: 16,
+    paddingVertical: 17,
     borderRadius: 999,
     alignItems: 'center',
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 6,
   },
   btnPrimaryLabel: {
     fontFamily: Fonts.bold,
@@ -205,24 +209,43 @@ const styles = StyleSheet.create({
     borderColor: Palette.lavender,
   },
   btnSecondaryLabel: {
-    fontFamily: Fonts.medium,
+    fontFamily: Fonts.semiBold,
     fontSize: 16,
     color: Palette.iris,
+  },
+  btnGhost: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 999,
+    alignItems: 'center',
+  },
+  btnGhostLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    color: Palette.dusk,
+    textDecorationLine: 'underline',
+    textDecorationColor: 'rgba(139, 126, 170, 0.5)',
   },
   pressed: {
     opacity: 0.88,
   },
-  footer: {
-    textAlign: 'center',
-    fontFamily: Fonts.regular,
-    fontSize: 13,
-    lineHeight: 20,
+  legalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingBottom: 4,
   },
-  footerMuted: {
+  legalLink: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
     color: Palette.dusk,
-    opacity: 0.85,
+    textDecorationLine: 'underline',
   },
-  footerAccent: {
-    color: Palette.lavender,
+  legalSep: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    color: Palette.dusk,
+    opacity: 0.5,
   },
 });
