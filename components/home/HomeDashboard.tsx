@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { type Href, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -151,6 +151,28 @@ export function HomeDashboard() {
   const [weeklyPlanMeals, setWeeklyPlanMeals] = useState<AiMealBrief[] | null>(null);
   const [weeklyPlanLoading, setWeeklyPlanLoading] = useState(false);
 
+  /** One fetch per signed-in user per app session; avoids reload on every home focus. */
+  const mealPlanSessionCache = useRef<{
+    forUserId: string | null;
+    settled: boolean;
+    meals: AiMealBrief[] | null;
+  }>({ forUserId: null, settled: false, meals: null });
+
+  const mealPlanTargetsRef = useRef({
+    dailyCalories,
+    proteinG,
+    carbsG,
+    fatG,
+    dietarySummary,
+  });
+  mealPlanTargetsRef.current = {
+    dailyCalories,
+    proteinG,
+    carbsG,
+    fatG,
+    dietarySummary,
+  };
+
   useFocusEffect(
     useCallback(() => {
       if (user) {
@@ -188,31 +210,46 @@ export function HomeDashboard() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!user?.uid) {
+      const uid = user?.uid;
+      if (!uid) {
+        mealPlanSessionCache.current = { forUserId: null, settled: false, meals: null };
         setWeeklyPlanMeals(null);
         setWeeklyPlanLoading(false);
         return;
       }
+
+      const cache = mealPlanSessionCache.current;
+      if (cache.settled && cache.forUserId === uid) {
+        setWeeklyPlanMeals(cache.meals);
+        setWeeklyPlanLoading(false);
+        const meals = cache.meals;
+        if (meals && meals.length) {
+          setMealPlanSessionMeals(meals, getLogDateKey());
+        }
+        return;
+      }
+
       let cancelled = false;
       setWeeklyPlanLoading(true);
       (async () => {
+        const t = mealPlanTargetsRef.current;
         const dateKey = getLogDateKey();
         const targetFp = buildTargetsFingerprint({
-          dailyCalories,
-          proteinG,
-          carbsG,
-          fatG,
-          dietarySummary,
+          dailyCalories: t.dailyCalories,
+          proteinG: t.proteinG,
+          carbsG: t.carbsG,
+          fatG: t.fatG,
+          dietarySummary: t.dietarySummary,
         });
         try {
           let list = await loadCachedWeeklyPlan(dateKey, targetFp);
           if (!list?.length) {
             list = await suggestWeeklyMealPlan({
-              dailyCalories,
-              proteinG,
-              carbsG,
-              fatG,
-              dietaryNotes: dietarySummary,
+              dailyCalories: t.dailyCalories,
+              proteinG: t.proteinG,
+              carbsG: t.carbsG,
+              fatG: t.fatG,
+              dietaryNotes: t.dietarySummary,
             });
             if (list.length) {
               await saveCachedWeeklyPlan(dateKey, targetFp, list);
@@ -222,9 +259,21 @@ export function HomeDashboard() {
           if (list.length) {
             setMealPlanSessionMeals(list, dateKey);
           }
+          mealPlanSessionCache.current = {
+            forUserId: uid,
+            settled: true,
+            meals: list,
+          };
           setWeeklyPlanMeals(list);
         } catch {
-          if (!cancelled) setWeeklyPlanMeals([]);
+          if (!cancelled) {
+            mealPlanSessionCache.current = {
+              forUserId: uid,
+              settled: true,
+              meals: [],
+            };
+            setWeeklyPlanMeals([]);
+          }
         } finally {
           if (!cancelled) setWeeklyPlanLoading(false);
         }
@@ -232,7 +281,7 @@ export function HomeDashboard() {
       return () => {
         cancelled = true;
       };
-    }, [user?.uid, dailyCalories, proteinG, carbsG, fatG, dietarySummary])
+    }, [user?.uid])
   );
 
   const consumedCal = totals.calories;
@@ -347,12 +396,10 @@ export function HomeDashboard() {
 
         <Animated.View entering={FadeInDown.delay(40).duration(380).springify()} style={styles.streakCard}>
           <Text style={styles.streakEmoji}>🔥</Text>
-          <View style={styles.streakBody}>
-            <Text style={styles.streakValue}>{streak}-day streak</Text>
-            <Text style={styles.streakHint}>
-              Consecutive days hitting your calorie target (about 90–112% of goal).
-            </Text>
-          </View>
+          <Text style={styles.streakLine}>
+            <Text style={styles.streakNumber}>{streak}</Text>
+            <Text style={styles.streakSuffix}> day streak</Text>
+          </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(60).duration(420).springify()} style={styles.calCard}>
@@ -471,9 +518,11 @@ export function HomeDashboard() {
               <View style={styles.groceryIconWrap}>
                 <Ionicons name="cart-outline" size={20} color={Palette.iris} />
               </View>
-              <View>
+              <View style={styles.groceryTitleTextCol}>
                 <Text style={styles.groceryTitle}>Suggested groceries</Text>
-                <Text style={styles.grocerySubtitle}>Weekly list from your targets · one refresh per day</Text>
+                <Text style={styles.grocerySubtitle} numberOfLines={2}>
+                  Weekly list from your targets. Refreshes once per day.
+                </Text>
               </View>
             </View>
           </View>

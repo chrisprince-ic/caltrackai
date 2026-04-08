@@ -21,7 +21,7 @@ import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export const unstable_settings = {
-  /** Root `app/index.tsx` redirects to welcome so cold start never lands on tabs first. */
+  /** Root `app/index.tsx` is the splash gate before welcome or tabs. */
   anchor: 'index',
 };
 
@@ -41,7 +41,15 @@ function RootLayoutBody() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="subscription" options={{ headerShown: true, title: 'CalTrack Pro' }} />
                 <Stack.Screen name="meal-plan/[planId]" options={{ headerShown: true, title: 'Meal plan' }} />
-                <Stack.Screen name="meal-recipe" options={{ headerShown: true, title: 'Recipe' }} />
+                <Stack.Screen
+                  name="meal-recipe"
+                  options={{
+                    headerShown: true,
+                    title: 'Recipe',
+                    headerBackTitleVisible: false,
+                    headerBackTitle: '',
+                  }}
+                />
                 <Stack.Screen name="nutrition-targets" options={{ headerShown: true, title: 'Nutrition targets' }} />
                 <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
               </Stack>

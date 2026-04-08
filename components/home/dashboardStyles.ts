@@ -37,23 +37,28 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
     streakCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 14,
+      justifyContent: 'center',
+      gap: 12,
       backgroundColor: c.streakBg,
       borderRadius: 18,
-      padding: 16,
+      paddingVertical: 18,
+      paddingHorizontal: 20,
       marginBottom: 16,
       borderWidth: 1,
       borderColor: c.border,
     },
-    streakEmoji: { fontSize: 36 },
-    streakBody: { flex: 1 },
-    streakValue: { fontFamily: Fonts.bold, fontSize: 18, color: c.streakText },
-    streakHint: {
-      fontFamily: Fonts.regular,
-      fontSize: 13,
-      color: c.streakHint,
-      marginTop: 4,
-      lineHeight: 18,
+    streakEmoji: { fontSize: 40, lineHeight: 44 },
+    streakLine: { flexShrink: 1 },
+    streakNumber: {
+      fontFamily: Fonts.bold,
+      fontSize: 28,
+      color: c.streakText,
+      letterSpacing: -0.5,
+    },
+    streakSuffix: {
+      fontFamily: Fonts.semiBold,
+      fontSize: 17,
+      color: c.streakText,
     },
     headerActions: {
       flexDirection: 'row',
@@ -343,8 +348,12 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
     },
     groceryTitleRow: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: 12,
+    },
+    groceryTitleTextCol: {
+      flex: 1,
+      minWidth: 0,
     },
     groceryIconWrap: {
       width: 44,
@@ -362,8 +371,10 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
     grocerySubtitle: {
       fontFamily: Fonts.regular,
       fontSize: 13,
+      lineHeight: 18,
       color: c.textMuted,
-      marginTop: 2,
+      marginTop: 4,
+      flexShrink: 1,
     },
     addListBtn: {
       flexDirection: 'row',

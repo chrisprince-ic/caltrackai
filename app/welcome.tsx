@@ -1,75 +1,95 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MarketingBackdrop } from '@/components/auth/MarketingBackdrop';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
 
 const FEATURES = [
   {
     key: 'lookup',
-    icon: 'checkmark-circle' as const,
+    icon: 'flash' as const,
     iconColor: Palette.iris,
-    boxBg: Palette.haze,
-    text: 'Instant calorie lookup from 2M+ foods',
+    pillBg: 'rgba(75, 35, 200, 0.1)',
+    text: 'Instant calorie lookup from millions of foods',
   },
   {
     key: 'macros',
-    icon: 'bag-handle' as const,
+    icon: 'pie-chart' as const,
     iconColor: Palette.flamingo,
-    boxBg: '#FFE8F0',
-    text: 'Macro breakdowns for protein, carbs & fat',
+    pillBg: 'rgba(255, 107, 157, 0.12)',
+    text: 'Clear macro splits for protein, carbs, and fat',
   },
   {
     key: 'trends',
-    icon: 'add' as const,
+    icon: 'trending-up' as const,
     iconColor: Palette.cyan,
-    boxBg: '#E0F8FA',
-    text: 'Weekly trends and progress insights',
+    pillBg: 'rgba(0, 194, 209, 0.12)',
+    text: 'Trends and insights that keep you on track',
   },
-];
+] as const;
+
+function triggerLightHaptic() {
+  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+}
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <MarketingBackdrop />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <View style={styles.inner}>
-          <View style={styles.logoSquircle}>
-            <Ionicons name="person" size={36} color="#FFFFFF" />
-          </View>
+          <Animated.View entering={FadeIn.duration(500)} style={styles.hero}>
+            <View style={styles.logoMark}>
+              <Ionicons name="nutrition" size={30} color={Palette.white} />
+            </View>
+            <Text style={styles.eyebrow}>CALTRACK</Text>
+            <Text style={styles.headline}>Fuel smarter.{'\n'}Track with clarity.</Text>
+            <Text style={styles.subhead}>
+              Log meals in seconds, see your macros at a glance, and build habits that stick.
+            </Text>
+          </Animated.View>
 
-          <Text style={styles.eyebrow}>TRACK SMARTER</Text>
-          <Text style={styles.headline}>Fuel your body, know your numbers</Text>
-          <Text style={styles.subhead}>
-            Log meals in seconds. Understand your macros. Hit your goals every day.
-          </Text>
-
-          <View style={styles.featureList}>
-            {FEATURES.map((item) => (
-              <View key={item.key} style={styles.featureRow}>
-                <View style={[styles.featureIconBox, { backgroundColor: item.boxBg }]}>
-                  <Ionicons name={item.icon} size={22} color={item.iconColor} />
+          <View style={styles.cardsColumn}>
+            {FEATURES.map((item, index) => (
+              <Animated.View
+                key={item.key}
+                entering={FadeInDown.delay(120 + index * 70).duration(420).springify()}
+                style={styles.featureCard}>
+                <View style={[styles.iconPill, { backgroundColor: item.pillBg }]}>
+                  <Ionicons name={item.icon} size={20} color={item.iconColor} />
                 </View>
                 <Text style={styles.featureText}>{item.text}</Text>
-              </View>
+                <Ionicons name="chevron-forward" size={18} color={Palette.dusk} style={styles.chevron} />
+              </Animated.View>
             ))}
           </View>
 
-          <View style={styles.actions}>
+          <Animated.View entering={FadeInDown.delay(380).duration(450).springify()} style={styles.ctaCard}>
             <Pressable
               style={({ pressed }) => [styles.btnPrimary, pressed && styles.pressed]}
-              onPress={() => router.replace('/auth/login' as Href)}>
+              onPress={() => {
+                triggerLightHaptic();
+                router.replace('/auth/login' as Href);
+              }}>
               <Text style={styles.btnPrimaryLabel}>Sign in</Text>
+              <Ionicons name="arrow-forward" size={20} color={Palette.white} />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.btnSecondary, pressed && styles.pressed]}
-              onPress={() => router.replace('/auth/sign-up' as Href)}>
+              onPress={() => {
+                triggerLightHaptic();
+                router.replace('/auth/sign-up' as Href);
+              }}>
               <Text style={styles.btnSecondaryLabel}>Create account</Text>
             </Pressable>
             <Pressable
@@ -77,12 +97,12 @@ export default function WelcomeScreen() {
               onPress={() => router.replace('/onboarding' as Href)}>
               <Text style={styles.btnGhostLabel}>Continue as guest</Text>
             </Pressable>
-          </View>
+          </Animated.View>
 
-          <Text style={styles.footer}>
-            <Text style={styles.footerMuted}>Free to use. </Text>
-            <Text style={styles.footerAccent}>No credit card needed.</Text>
-          </Text>
+          <Animated.Text entering={FadeIn.delay(500)} style={styles.footer}>
+            <Text style={styles.footerMuted}>Free to start · </Text>
+            <Text style={styles.footerAccent}>No card required</Text>
+          </Animated.Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -96,41 +116,49 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 28,
-    paddingBottom: 24,
+    paddingHorizontal: 22,
+    paddingBottom: 28,
   },
   inner: {
     flex: 1,
-    maxWidth: 420,
+    maxWidth: 440,
     width: '100%',
     alignSelf: 'center',
-    alignItems: 'center',
-    paddingTop: 8,
+    paddingTop: 12,
   },
-  logoSquircle: {
-    width: 72,
-    height: 72,
+  hero: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  logoMark: {
+    width: 64,
+    height: 64,
     borderRadius: 20,
     backgroundColor: Palette.iris,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 28,
+    marginBottom: 20,
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 10,
   },
   eyebrow: {
     fontFamily: Fonts.semiBold,
-    fontSize: 11,
-    letterSpacing: 2.2,
+    fontSize: 10,
+    letterSpacing: 3.2,
     color: Palette.lavender,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   headline: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 30,
-    lineHeight: 38,
+    fontFamily: Fonts.bold,
+    fontSize: 32,
+    lineHeight: 40,
     textAlign: 'center',
     color: Palette.obsidian,
-    marginBottom: 16,
-    paddingHorizontal: 4,
+    marginBottom: 14,
+    letterSpacing: -0.6,
   },
   subhead: {
     fontFamily: Fonts.regular,
@@ -138,79 +166,100 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlign: 'center',
     color: Palette.dusk,
-    marginBottom: 36,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
+    maxWidth: 340,
   },
-  featureList: {
-    width: '100%',
-    gap: 18,
-    marginBottom: 40,
+  cardsColumn: {
+    gap: 12,
+    marginBottom: 24,
   },
-  featureRow: {
+  featureCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Palette.white,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(75, 35, 200, 0.07)',
+    shadowColor: '#1C1530',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 3,
     gap: 14,
   },
-  featureIconBox: {
+  iconPill: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   featureText: {
     flex: 1,
-    fontFamily: Fonts.regular,
+    fontFamily: Fonts.medium,
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 21,
     color: Palette.obsidian,
   },
-  actions: {
-    width: '100%',
+  chevron: { opacity: 0.45 },
+  ctaCard: {
+    backgroundColor: Palette.white,
+    borderRadius: 24,
+    padding: 20,
     gap: 12,
-    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(75, 35, 200, 0.08)',
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.09,
+    shadowRadius: 28,
+    elevation: 6,
+    marginBottom: 22,
+  },
+  btnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: Palette.iris,
+    paddingVertical: 16,
+    borderRadius: 16,
+  },
+  btnPrimaryLabel: {
+    fontFamily: Fonts.bold,
+    fontSize: 16,
+    color: Palette.white,
+  },
+  btnSecondary: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: Palette.haze,
+    borderWidth: 1.5,
+    borderColor: 'rgba(124, 92, 232, 0.35)',
+  },
+  btnSecondaryLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 16,
+    color: Palette.iris,
   },
   btnGhost: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 999,
     alignItems: 'center',
+    paddingVertical: 12,
   },
   btnGhostLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 15,
     color: Palette.dusk,
     textDecorationLine: 'underline',
-    textDecorationColor: 'rgba(139, 126, 170, 0.5)',
-  },
-  btnPrimary: {
-    width: '100%',
-    backgroundColor: Palette.iris,
-    paddingVertical: 16,
-    borderRadius: 999,
-    alignItems: 'center',
-  },
-  btnPrimaryLabel: {
-    fontFamily: Fonts.bold,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
-  btnSecondary: {
-    width: '100%',
-    backgroundColor: Palette.haze,
-    paddingVertical: 16,
-    borderRadius: 999,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Palette.lavender,
-  },
-  btnSecondaryLabel: {
-    fontFamily: Fonts.medium,
-    fontSize: 16,
-    color: Palette.iris,
+    textDecorationColor: 'rgba(139, 126, 170, 0.45)',
   },
   pressed: {
-    opacity: 0.88,
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   footer: {
     textAlign: 'center',
@@ -220,9 +269,9 @@ const styles = StyleSheet.create({
   },
   footerMuted: {
     color: Palette.dusk,
-    opacity: 0.85,
   },
   footerAccent: {
+    fontFamily: Fonts.semiBold,
     color: Palette.lavender,
   },
 });
