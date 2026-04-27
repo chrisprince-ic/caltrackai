@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useCallback } from 'react';
 import {
   Alert,
@@ -97,7 +98,7 @@ export function AppMenuSheet({ visible, onClose }: Props) {
   const { height } = useWindowDimensions();
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { user, signOutUser } = useAuth();
+  const { user, signOutUser, deleteAccount } = useAuth();
 
   const shareApp = useCallback(async () => {
     try {
@@ -123,8 +124,8 @@ export function AppMenuSheet({ visible, onClose }: Props) {
 
   const openHelp = useCallback(() => {
     Alert.alert(
-      'Help',
-      'For meal logging, use Scan or pick from your gallery. Meal plans and groceries use DeepSeek; scanning uses Google Vision + Gemini. Add keys in .env for AI features.'
+      'Help & FAQ',
+      'Log meals by scanning food with the camera or choosing a photo from your gallery. Meal plans, grocery suggestions, and insights are AI-powered and update based on your nutrition targets. Set your goals in Nutrition Targets to personalize your experience.'
     );
   }, []);
 
@@ -137,6 +138,40 @@ export function AppMenuSheet({ visible, onClose }: Props) {
     }
     router.replace('/welcome' as Href);
   }, [onClose, signOutUser, router]);
+
+  const onDeleteAccount = useCallback(() => {
+    const isEmailUser = user?.providerData?.[0]?.providerId === 'password';
+
+    const performDelete = async (password?: string) => {
+      try {
+        await deleteAccount(password);
+        onClose();
+        router.replace('/welcome' as Href);
+      } catch {
+        Alert.alert('Error', 'Could not delete account. Check your password and try again.');
+      }
+    };
+
+    if (isEmailUser && Platform.OS === 'ios') {
+      Alert.prompt(
+        'Delete account',
+        'Enter your password to permanently delete your account and all data. This cannot be undone.',
+        (password) => { if (password) void performDelete(password); },
+        'secure-text'
+      );
+    } else {
+      Alert.alert(
+        'Delete account',
+        isEmailUser
+          ? 'You will need to sign in again after deletion to confirm your identity. Permanently delete your account and all data?'
+          : 'Permanently delete your account and all data? This cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: () => void performDelete() },
+        ]
+      );
+    }
+  }, [user, deleteAccount, onClose, router]);
 
   const go = useCallback(
     (href: Href) => {
@@ -215,6 +250,11 @@ export function AppMenuSheet({ visible, onClose }: Props) {
 
           <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 20 }]}>Support</Text>
           <MenuRow icon="help-circle-outline" label="Help & FAQ" onPress={openHelp} />
+          <MenuRow
+            icon="document-text-outline"
+            label="Privacy Policy"
+            onPress={() => void Linking.openURL('https://aevontech.com/privacy')}
+          />
 
           {!user ? (
             <MenuRow
@@ -227,7 +267,16 @@ export function AppMenuSheet({ visible, onClose }: Props) {
               }}
             />
           ) : (
-            <MenuRow icon="log-out-outline" label="Log out" onPress={() => void onSignOut()} danger />
+            <>
+              <MenuRow icon="log-out-outline" label="Log out" onPress={() => void onSignOut()} danger />
+              <MenuRow
+                icon="trash-outline"
+                label="Delete account"
+                sub="Permanently remove all data"
+                onPress={onDeleteAccount}
+                danger
+              />
+            </>
           )}
         </ScrollView>
         </View>

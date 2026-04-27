@@ -72,7 +72,7 @@ export default function Index() {
           style={styles.logoSquircle}
           accessibilityRole="image"
           accessibilityLabel="CalTrack">
-          <Ionicons name="person" size={32} color={Palette.white} />
+          <Ionicons name="nutrition" size={32} color={Palette.white} />
         </Animated.View>
         <Animated.Text entering={FadeInDown.delay(200).duration(480).springify()} style={styles.brand}>
           CalTrack

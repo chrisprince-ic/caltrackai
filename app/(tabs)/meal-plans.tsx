@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,12 +8,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MEAL_PLAN_CARDS } from '@/constants/dashboard-mock';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
+import { useAppTheme } from '@/contexts/AppThemeContext';
 
 export default function MealPlansScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400)}>
           <Text style={styles.title}>Meal plans</Text>

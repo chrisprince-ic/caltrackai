@@ -28,9 +28,9 @@ import Animated, {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
-import { DASHBOARD_MACROS } from '@/constants/dashboard-mock';
 import { SCAN_STATUS_MESSAGES } from '@/constants/scan-mock';
 import { useNutritionLog } from '@/contexts/NutritionLogContext';
+import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import { analyzeFoodFromScanUri, isFoodScanConfigured } from '@/lib/food-image-analysis';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -191,6 +191,7 @@ function ScanCameraExperience() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { addEntry } = useNutritionLog();
+  const { proteinG, carbsG, fatG } = useNutritionTargets();
 
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -227,9 +228,7 @@ function ScanCameraExperience() {
   const processImageForAnalysis = useCallback(
     async (uri: string) => {
       if (!isFoodScanConfigured()) {
-        setErr(
-          'Add EXPO_PUBLIC_GOOGLE_VISION_API_KEY and EXPO_PUBLIC_GEMINI_API_KEY to .env (Vision + Gemini), then restart Expo.'
-        );
+        setErr('Meal scanning is not available right now. Please try again later.');
         return;
       }
       setPhotoUri(uri);
@@ -260,9 +259,7 @@ function ScanCameraExperience() {
   const pickFromGallery = useCallback(async () => {
     if (busy) return;
     if (!isFoodScanConfigured()) {
-      setErr(
-        'Add EXPO_PUBLIC_GOOGLE_VISION_API_KEY and EXPO_PUBLIC_GEMINI_API_KEY to .env (Vision + Gemini), then restart Expo.'
-      );
+      setErr('Meal scanning is not available right now. Please try again later.');
       return;
     }
     setErr(null);
@@ -529,7 +526,7 @@ function ScanCameraExperience() {
                   <ResultMacroRow
                     label="Protein"
                     grams={result.proteinGrams}
-                    dailyGoal={DASHBOARD_MACROS.protein.goal}
+                    dailyGoal={proteinG}
                     color={Palette.flamingo}
                     tint="#FFE8F0"
                     icon="fitness-outline"
@@ -537,7 +534,7 @@ function ScanCameraExperience() {
                   <ResultMacroRow
                     label="Carbs"
                     grams={result.carbsGrams}
-                    dailyGoal={DASHBOARD_MACROS.carbs.goal}
+                    dailyGoal={carbsG}
                     color={Palette.citrus}
                     tint="#FFF8EB"
                     icon="leaf-outline"
@@ -545,7 +542,7 @@ function ScanCameraExperience() {
                   <ResultMacroRow
                     label="Fats"
                     grams={result.fatGrams}
-                    dailyGoal={DASHBOARD_MACROS.fat.goal}
+                    dailyGoal={fatG}
                     color={Palette.cyan}
                     tint="#E0F8FA"
                     icon="water-outline"

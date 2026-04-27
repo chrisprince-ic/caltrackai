@@ -76,10 +76,9 @@ export default function SignUpScreen() {
         <View style={styles.missingWrap}>
           <View style={styles.missingCard}>
             <Ionicons name="cloud-offline-outline" size={40} color={Palette.lavender} />
-            <Text style={styles.missingTitle}>Firebase not configured</Text>
+            <Text style={styles.missingTitle}>Service unavailable</Text>
             <Text style={styles.missingBody}>
-              Add the required <Text style={styles.mono}>EXPO_PUBLIC_*</Text> Firebase keys to{' '}
-              <Text style={styles.mono}>.env</Text>, then restart Expo.
+              We could not connect to our servers right now. Please check your internet connection and try again.
             </Text>
             <Pressable style={({ pressed }) => [styles.missingBack, pressed && styles.pressed]} onPress={() => router.replace('/welcome' as Href)}>
               <Text style={styles.missingBackText}>Back to welcome</Text>
@@ -368,7 +367,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
     alignItems: 'center',
   },
-  switchRow: { paddingVertical: 10, paddingHorizontal: 12 },
+  switchRow: { paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   switchMuted: { fontFamily: Fonts.regular, fontSize: 15, color: Palette.dusk },
   switchAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Palette.iris },
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },

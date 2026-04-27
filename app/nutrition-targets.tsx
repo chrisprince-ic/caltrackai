@@ -138,7 +138,7 @@ export default function NutritionTargetsScreen() {
 
         {!aiCoachEnabled ? (
           <Text style={styles.muted}>
-            Add EXPO_PUBLIC_DEEPSEEK_API_KEY to your .env for AI-tuned targets and coaching during onboarding.
+            AI coaching is not available on this account. Re-run onboarding to update your targets.
           </Text>
         ) : null}
 

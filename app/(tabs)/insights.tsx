@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
+import { useAppTheme } from '@/contexts/AppThemeContext';
 import { insightsFromMacroHistory } from '@/lib/ai-coach';
 import { getDeepSeekConfig } from '@/lib/deepseek';
 import { fetchRecentDayTotals } from '@/lib/nutrition-history';
@@ -66,6 +67,7 @@ function countGoalHits(days: DayTotals[], goal: number) {
 export default function InsightsScreen() {
   const { user, firebaseReady } = useAuth();
   const { dailyCalories, proteinG, carbsG, fatG, coachNote, dietarySummary } = useNutritionTargets();
+  const { colors } = useAppTheme();
   const [period, setPeriod] = useState<Period>('week');
   const [days, setDays] = useState<DayTotals[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,7 +183,7 @@ export default function InsightsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400)}>
           <Text style={styles.title}>Insights</Text>

@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { type Href, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MarketingBackdrop } from '@/components/auth/MarketingBackdrop';
 import { useAuth } from '@/contexts/AuthContext';
+import { getFirebaseAuth } from '@/lib/firebase';
 import { friendlyFirebaseAuthMessage } from '@/lib/firebase-auth-errors';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -34,6 +37,10 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetEmail, setResetEmail] = useState('');
+  const [showReset, setShowReset] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   useEffect(() => {
     if (user && !initializing) {
@@ -58,6 +65,23 @@ export default function LoginScreen() {
     }
   }
 
+  async function onSendReset() {
+    if (!resetEmail.trim()) {
+      Alert.alert('Enter email', 'Please enter your email address to reset your password.');
+      return;
+    }
+    setResetSubmitting(true);
+    try {
+      const auth = getFirebaseAuth();
+      await sendPasswordResetEmail(auth, resetEmail.trim());
+      setResetSuccess(true);
+    } catch {
+      Alert.alert('Reset failed', 'Could not send a reset email. Check the address and try again.');
+    } finally {
+      setResetSubmitting(false);
+    }
+  }
+
   if (!firebaseReady) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -65,11 +89,9 @@ export default function LoginScreen() {
         <View style={styles.missingWrap}>
           <View style={styles.missingCard}>
             <Ionicons name="cloud-offline-outline" size={40} color={Palette.lavender} />
-            <Text style={styles.missingTitle}>Firebase not configured</Text>
+            <Text style={styles.missingTitle}>Service unavailable</Text>
             <Text style={styles.missingBody}>
-              Add EXPO_PUBLIC_API_KEY, EXPO_PUBLIC_AUTH_DOMAIN, EXPO_PUBLIC_DATABASE_URL, EXPO_PUBLIC_PROJECT_ID, and
-              EXPO_PUBLIC_APP_ID to <Text style={styles.mono}>.env</Text> (one <Text style={styles.mono}>KEY=value</Text>{' '}
-              per line), then restart Expo.
+              We could not connect to our servers right now. Please check your internet connection and try again.
             </Text>
             <Pressable style={({ pressed }) => [styles.missingBack, pressed && styles.pressed]} onPress={() => router.replace('/welcome' as Href)}>
               <Text style={styles.missingBackText}>Back to welcome</Text>
@@ -119,54 +141,116 @@ export default function LoginScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(80).duration(440).springify()} style={styles.formCard}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@email.com"
-              placeholderTextColor={Palette.dusk}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              style={styles.input}
-            />
+            {!showReset ? (
+              <>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@email.com"
+                  placeholderTextColor={Palette.dusk}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={styles.input}
+                />
 
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={Palette.dusk}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType="password"
-              autoComplete="password"
-              style={styles.input}
-            />
+                <View style={styles.passwordHeader}>
+                  <Text style={styles.label}>Password</Text>
+                  <Pressable
+                    onPress={() => {
+                      setResetEmail(email);
+                      setShowReset(true);
+                      setResetSuccess(false);
+                    }}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Forgot password">
+                    <Text style={styles.forgotLink}>Forgot?</Text>
+                  </Pressable>
+                </View>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor={Palette.dusk}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="password"
+                  autoComplete="password"
+                  style={styles.input}
+                />
 
-            {error ? (
-              <View style={styles.errorBox}>
-                <Ionicons name="alert-circle" size={18} color="#9B1F52" />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            ) : null}
+                {error ? (
+                  <View style={styles.errorBox}>
+                    <Ionicons name="alert-circle" size={18} color="#9B1F52" />
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                ) : null}
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Sign in with email"
-              disabled={submitting}
-              onPress={() => void onEmailLogin()}
-              style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed, submitting && { opacity: 0.75 }]}>
-              {submitting ? (
-                <ActivityIndicator color={Palette.white} />
-              ) : (
-                <>
-                  <Text style={styles.primaryLabel}>Sign in</Text>
-                  <Ionicons name="arrow-forward" size={20} color={Palette.white} />
-                </>
-              )}
-            </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign in with email"
+                  disabled={submitting}
+                  onPress={() => void onEmailLogin()}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed, submitting && { opacity: 0.75 }]}>
+                  {submitting ? (
+                    <ActivityIndicator color={Palette.white} />
+                  ) : (
+                    <>
+                      <Text style={styles.primaryLabel}>Sign in</Text>
+                      <Ionicons name="arrow-forward" size={20} color={Palette.white} />
+                    </>
+                  )}
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Pressable
+                  onPress={() => { setShowReset(false); setResetSuccess(false); }}
+                  style={styles.resetBackRow}
+                  hitSlop={8}>
+                  <Ionicons name="chevron-back" size={18} color={Palette.iris} />
+                  <Text style={styles.resetBackText}>Back to sign in</Text>
+                </Pressable>
+
+                <Text style={styles.label}>Reset password</Text>
+                {resetSuccess ? (
+                  <View style={styles.successBox}>
+                    <Ionicons name="checkmark-circle" size={18} color="#1A7A4A" />
+                    <Text style={styles.successText}>
+                      Check your inbox — we sent a password reset link to {resetEmail.trim()}.
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <TextInput
+                      value={resetEmail}
+                      onChangeText={setResetEmail}
+                      placeholder="your@email.com"
+                      placeholderTextColor={Palette.dusk}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      style={styles.input}
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Send password reset email"
+                      disabled={resetSubmitting}
+                      onPress={() => void onSendReset()}
+                      style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed, resetSubmitting && { opacity: 0.75 }]}>
+                      {resetSubmitting ? (
+                        <ActivityIndicator color={Palette.white} />
+                      ) : (
+                        <Text style={styles.primaryLabel}>Send reset email</Text>
+                      )}
+                    </Pressable>
+                  </>
+                )}
+              </>
+            )}
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.switchWrap}>
@@ -321,6 +405,37 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(155, 31, 82, 0.12)',
   },
   errorText: { flex: 1, fontFamily: Fonts.medium, fontSize: 14, color: '#9B1F52', lineHeight: 20 },
+  passwordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginTop: 2,
+  },
+  forgotLink: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    color: Palette.iris,
+  },
+  resetBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 16,
+  },
+  resetBackText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Palette.iris },
+  successBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#E8F5EC',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(26, 122, 74, 0.15)',
+    marginBottom: 4,
+  },
+  successText: { flex: 1, fontFamily: Fonts.medium, fontSize: 14, color: '#1A7A4A', lineHeight: 20 },
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,7 +451,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
     alignItems: 'center',
   },
-  switchRow: { paddingVertical: 10, paddingHorizontal: 12 },
+  switchRow: { paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   switchMuted: { fontFamily: Fonts.regular, fontSize: 15, color: Palette.dusk },
   switchAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Palette.iris },
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },

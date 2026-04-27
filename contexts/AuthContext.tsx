@@ -1,14 +1,17 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   GoogleAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   signInWithCredential,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { get, ref, set } from 'firebase/database';
+import { get, ref, remove, set } from 'firebase/database';
 import {
   createContext,
   useCallback,
@@ -35,6 +38,7 @@ type AuthCtx = {
   }) => Promise<void>;
   signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signOutUser: () => Promise<void>;
+  deleteAccount: (password?: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthCtx | null>(null);
@@ -130,6 +134,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const deleteAccount = useCallback(async (password?: string) => {
+    const auth = getFirebaseAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('Not signed in.');
+
+    if (password && currentUser.email) {
+      const credential = EmailAuthProvider.credential(currentUser.email, password);
+      await reauthenticateWithCredential(currentUser, credential);
+    }
+
+    try {
+      const db = getFirebaseDatabase();
+      await remove(ref(db, `users/${currentUser.uid}`));
+    } catch {
+      /* non-fatal — proceed with auth deletion */
+    }
+
+    clearMealPlanSession();
+    await deleteUser(currentUser);
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -139,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithProfile,
       signInWithGoogleIdToken,
       signOutUser,
+      deleteAccount,
     }),
     [
       user,
@@ -148,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithProfile,
       signInWithGoogleIdToken,
       signOutUser,
+      deleteAccount,
     ]
   );
 
