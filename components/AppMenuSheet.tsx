@@ -124,7 +124,7 @@ export function AppMenuSheet({ visible, onClose }: Props) {
   const openHelp = useCallback(() => {
     Alert.alert(
       'Help',
-      'For meal logging, use Scan or pick from your gallery. Meal plans and groceries refresh daily. Add a Gemini API key in .env for AI features.'
+      'For meal logging, use Scan or pick from your gallery. Meal plans and groceries use DeepSeek; scanning uses Google Vision + Gemini. Add keys in .env for AI features.'
     );
   }, []);
 

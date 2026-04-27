@@ -46,8 +46,9 @@ function RootLayoutBody() {
                   options={{
                     headerShown: true,
                     title: 'Recipe',
-                    headerBackTitleVisible: false,
                     headerBackTitle: '',
+                    // @ts-expect-error native-stack supports hiding back title; Expo Router stack types omit it
+                    headerBackTitleVisible: false,
                   }}
                 />
                 <Stack.Screen name="nutrition-targets" options={{ headerShown: true, title: 'Nutrition targets' }} />

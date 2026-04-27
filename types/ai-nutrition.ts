@@ -1,4 +1,4 @@
-/** Gemini meal suggestion (list / plan). */
+/** AI meal suggestion (list / plan), generated via DeepSeek. */
 export type AiMealBrief = {
   id: string;
   title: string;

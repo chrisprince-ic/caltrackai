@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
-import { getGeminiConfig } from '@/lib/gemini-food-analysis';
+import { getDeepSeekConfig } from '@/lib/deepseek';
 import { macroPercentsFromGrams } from '@/lib/nutrition-calculations';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -41,7 +41,7 @@ function MacroRow({
 export default function NutritionTargetsScreen() {
   const router = useRouter();
   const { plan, dailyCalories, proteinG, carbsG, fatG, coachNote, dietarySummary, loading } = useNutritionTargets();
-  const gemini = getGeminiConfig();
+  const aiCoachEnabled = getDeepSeekConfig();
 
   const macroPct = useMemo(
     () => macroPercentsFromGrams(proteinG, carbsG, fatG),
@@ -129,16 +129,16 @@ export default function NutritionTargetsScreen() {
               <Text style={styles.body}>{coachNote}</Text>
             </View>
           </View>
-        ) : hasSavedPlan && gemini ? (
+        ) : hasSavedPlan && aiCoachEnabled ? (
           <Text style={styles.muted}>
-            No AI coach note on file. After you re-run onboarding with Gemini available, a short personalized note can
+            No AI coach note on file. After you re-run onboarding with DeepSeek configured, a short personalized note can
             appear here.
           </Text>
         ) : null}
 
-        {!gemini ? (
+        {!aiCoachEnabled ? (
           <Text style={styles.muted}>
-            Add EXPO_PUBLIC_GEMINI_API_KEY to your .env for AI-tuned targets and coaching during onboarding.
+            Add EXPO_PUBLIC_DEEPSEEK_API_KEY to your .env for AI-tuned targets and coaching during onboarding.
           </Text>
         ) : null}
 

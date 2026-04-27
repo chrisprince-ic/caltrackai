@@ -1,30 +1,15 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
 import type { OnboardingAnswers } from '@/components/onboarding/OnboardingFlow';
+import { extractJsonObject } from '@/lib/ai-json-utils';
+import { deepSeekComplete, getDeepSeekConfig } from '@/lib/deepseek';
 import type { NutritionPlanSummary } from '@/lib/nutrition-calculations';
-import type { AiGroceryItem, AiMealBrief, AiMealRecipe } from '@/types/ai-nutrition';
 import type { DayTotals } from '@/lib/nutrition-sync';
-import { getGeminiConfig } from '@/lib/gemini-food-analysis';
-
-function extractJsonObject(text: string): string {
-  const trimmed = text.trim();
-  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fence?.[1]) return fence[1].trim();
-  const start = trimmed.indexOf('{');
-  const end = trimmed.lastIndexOf('}');
-  if (start >= 0 && end > start) return trimmed.slice(start, end + 1);
-  return trimmed;
-}
+import type { AiGroceryItem, AiMealBrief, AiMealRecipe } from '@/types/ai-nutrition';
 
 async function generateJson(prompt: string): Promise<string> {
-  const cfg = getGeminiConfig();
-  if (!cfg) {
-    throw new Error('Missing EXPO_PUBLIC_GEMINI_API_KEY');
+  if (!getDeepSeekConfig()) {
+    throw new Error('Missing EXPO_PUBLIC_DEEPSEEK_API_KEY');
   }
-  const genAI = new GoogleGenerativeAI(cfg.apiKey);
-  const model = genAI.getGenerativeModel({ model: cfg.model });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return deepSeekComplete(prompt);
 }
 
 function summarizeAnswers(a: OnboardingAnswers): string {
@@ -48,7 +33,7 @@ function summarizeAnswers(a: OnboardingAnswers): string {
 }
 
 /** Refine calorie + macro targets from computed plan + raw onboarding answers (becomes daily Home targets). */
-export async function refinePlanWithGemini(
+export async function refineNutritionPlanWithAi(
   answers: OnboardingAnswers,
   computed: NutritionPlanSummary
 ): Promise<{ dailyCalories: number; proteinG: number; carbsG: number; fatG: number; coachNote: string }> {

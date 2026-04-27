@@ -1,6 +1,6 @@
 # CalTrack AI
 
-Cross-platform nutrition tracking app built with **Expo** and **React Native**. Users log meals (including **AI photo scans** via Google Gemini), set targets from **onboarding**, sync data with **Firebase**, and can subscribe through **RevenueCat** (CalTrack Pro).
+Cross-platform nutrition tracking app built with **Expo** and **React Native**. Users log meals (including **AI photo scans** via **Google Cloud Vision** + **Google Gemini**), set targets from **onboarding**, sync data with **Firebase**, and can subscribe through **RevenueCat** (CalTrack Pro).
 
 ---
 
@@ -11,11 +11,11 @@ Cross-platform nutrition tracking app built with **Expo** and **React Native**. 
 | Framework | Expo SDK ~54, React 19, React Native 0.81 |
 | Navigation | Expo Router (file-based), stack + tabs |
 | Auth & cloud data | Firebase Auth + Firebase Realtime Database |
-| AI | Google Generative AI (`@google/generative-ai`) — meal scan vision + meal plans, groceries, insights |
+| AI | **Google Cloud Vision** + **Gemini** (meal scan: labels + image → nutrition JSON); **DeepSeek** (meal plans, groceries, coach, insights) |
 | Payments | RevenueCat + `react-native-purchases-ui` (paywalls) |
 | Social login | Google (expo-auth-session + Firebase credential) |
 | Fonts | Poppins (`@expo-google-fonts/poppins`) |
-| Native modules | `expo-camera`, `expo-dev-client` (recommended for full native feature set) |
+| Native modules | `expo-camera`, `expo-image-manipulator` (resize/compress before Vision), `expo-dev-client` (recommended for full native feature set) |
 
 ---
 
@@ -24,7 +24,7 @@ Cross-platform nutrition tracking app built with **Expo** and **React Native**. 
 - **Node.js** (LTS recommended, e.g. 20+)
 - **npm** (or pnpm/yarn if you adapt commands)
 - **Expo account** (for EAS builds, optional for local dev)
-- Accounts / keys for: **Firebase**, **Google Cloud / Gemini**, **RevenueCat** (if using subscriptions), **Google OAuth** (if using Google sign-in)
+- Accounts / keys for: **Firebase**, **Google Cloud** (Vision API + API key), **Google AI Studio / Gemini API**, **DeepSeek**, **RevenueCat** (if using subscriptions), **Google OAuth** (if using Google sign-in)
 
 ---
 
@@ -63,12 +63,28 @@ Use the `development` profile from `eas.json` (`developmentClient: true`).
 
 Define variables in **`.env`** at the project root. Expo exposes only names prefixed with **`EXPO_PUBLIC_`** to the client bundle. **Never put server-only secrets** in these variables; anything `EXPO_PUBLIC_*` ships to the app binary.
 
-### Google Gemini (AI meal scan + coach features)
+### DeepSeek (meal plans, groceries, insights, onboarding coach)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `EXPO_PUBLIC_GEMINI_API_KEY` | Yes (for AI) | API key from Google AI Studio / Cloud |
-| `EXPO_PUBLIC_GEMINI_MODEL` | No | Defaults to `gemini-2.0-flash` if unset |
+| `EXPO_PUBLIC_DEEPSEEK_API_KEY` | Yes (for AI text features) | API key from [DeepSeek](https://api.deepseek.com) |
+| `EXPO_PUBLIC_DEEPSEEK_MODEL` | No | Defaults to `deepseek-chat` |
+| `EXPO_PUBLIC_DEEPSEEK_BASE_URL` | No | Defaults to `https://api.deepseek.com` |
+
+### Google Gemini (meal photo scan — multimodal nutrition JSON)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `EXPO_PUBLIC_GEMINI_API_KEY` | Yes (for scan tab) | API key from [Google AI Studio](https://aistudio.google.com/apikey) |
+| `EXPO_PUBLIC_GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` |
+
+### Google Cloud Vision (meal photo scanning — label detection)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `EXPO_PUBLIC_GOOGLE_VISION_API_KEY` | Yes (for scan tab) | API key with **Cloud Vision API** enabled |
+
+Scanning requires **Vision** and **Gemini** keys (labels from Vision → Gemini sees the image + label context and returns calorie/macro JSON).
 
 ### Firebase (Auth + Realtime Database)
 
@@ -176,7 +192,7 @@ app/
   subscription.tsx
 components/          # Home dashboard, onboarding, auth, tab bar, UI
 contexts/            # Auth, nutrition log, targets, RevenueCat, onboarding plan
-lib/                 # Firebase, Gemini, sync, caches, purchases helpers
+lib/                 # Firebase, DeepSeek, Gemini scan, Vision, sync, caches, purchases helpers
 constants/           # Palette, theme, RevenueCat, subscription copy
 database.rules.json  # Example RTDB security rules (deploy in Firebase)
 app.config.js        # Dynamic config (Google URL schemes)
@@ -186,7 +202,7 @@ app.config.js        # Dynamic config (Google URL schemes)
 
 ## Feature notes
 
-- **Meal scan** — Uses `expo-camera` + Gemini vision. On **web**, scan is replaced with a placeholder (camera not used the same way).
+- **Meal scan** — `expo-camera` or gallery → **`expo-image-manipulator`** (max width 1024px, JPEG ~0.82) → **Google Vision** (labels + objects, food filter, ≥70% confidence) → **Gemini** (multimodal: image + Vision summary → nutrition JSON). On **web**, scan is replaced with a placeholder.
 - **AI meal plan & groceries** — Responses are cached **once per calendar day** (local timezone) in AsyncStorage when targets match, to reduce API usage.
 - **Nutrition log** — Stored under `users/{uid}/days/{YYYY-MM-DD}/entries` in Realtime Database; totals power home macros and insights.
 
@@ -196,7 +212,7 @@ app.config.js        # Dynamic config (Google URL schemes)
 
 - Keep **`.env` out of git** (already in `.gitignore`).
 - Deploy **`database.rules.json`** (or equivalent) so user data is not world-readable.
-- Gemini and Firebase **client** keys are still extractable from the app; use **API key restrictions**, **Firebase App Check**, and **RevenueCat** dashboard controls for production hardening.
+- DeepSeek, Gemini, Vision, and Firebase **client** keys are still extractable from the app; use **API key restrictions** (GCP / Google AI / DeepSeek), **Firebase App Check**, and **RevenueCat** dashboard controls for production hardening.
 
 ---
 
@@ -205,7 +221,7 @@ app.config.js        # Dynamic config (Google URL schemes)
 | Issue | Things to check |
 |-------|------------------|
 | “Firebase not configured” | All required `EXPO_PUBLIC_*` Firebase vars set; restart Expo |
-| Gemini errors / empty scan | `EXPO_PUBLIC_GEMINI_API_KEY`, billing, model name |
+| AI / empty scan | `EXPO_PUBLIC_GEMINI_API_KEY`; scan also needs `EXPO_PUBLIC_GOOGLE_VISION_API_KEY` + Vision API enabled |
 | RevenueCat / paywall errors | Correct platform key (`appl_` vs `goog_`), bundle ID / package match |
 | Google Sign-In redirect | iOS/Android client IDs in `.env`; **rebuild** native app after changing `app.config.js` |
 | AI features in Expo Go | Some flows may need a **development build** |

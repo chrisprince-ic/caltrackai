@@ -9,8 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import { useOnboardingPlan } from '@/contexts/OnboardingPlanContext';
-import { getGeminiConfig } from '@/lib/gemini-food-analysis';
-import { refinePlanWithGemini } from '@/lib/gemini-coach';
+import { refineNutritionPlanWithAi } from '@/lib/ai-coach';
+import { getDeepSeekConfig } from '@/lib/deepseek';
 import { saveUserNutritionPlan } from '@/lib/nutrition-plan-sync';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -85,11 +85,11 @@ export function PlanSummaryScreen() {
     fatG: number;
     coachNote: string;
   } | null>(null);
-  /** With Gemini key: starts loading until AI returns; without key: ready immediately. */
+  /** With DeepSeek key: starts loading until AI returns; without key: ready immediately. */
   const [aiPhase, setAiPhase] = useState<'loading' | 'ready'>(() =>
-    getGeminiConfig() ? 'loading' : 'ready'
+    getDeepSeekConfig() ? 'loading' : 'ready'
   );
-  const [geminiRetryKey, setGeminiRetryKey] = useState(0);
+  const [aiCoachRetryKey, setAiCoachRetryKey] = useState(0);
 
   useEffect(() => {
     if (!answers) {
@@ -102,7 +102,7 @@ export function PlanSummaryScreen() {
   useEffect(() => {
     if (!answers || !plan) return;
     let cancelled = false;
-    if (!getGeminiConfig()) {
+    if (!getDeepSeekConfig()) {
       setAiTargets(null);
       setAiPhase('ready');
       return;
@@ -111,7 +111,7 @@ export function PlanSummaryScreen() {
     setAiTargets(null);
     (async () => {
       try {
-        const refined = await refinePlanWithGemini(answers, plan);
+        const refined = await refineNutritionPlanWithAi(answers, plan);
         if (!cancelled) {
           setAiTargets(refined);
         }
@@ -128,7 +128,7 @@ export function PlanSummaryScreen() {
     return () => {
       cancelled = true;
     };
-  }, [answers, plan, geminiRetryKey]);
+  }, [answers, plan, aiCoachRetryKey]);
 
   const unit = answers?.weightUnit ?? 'metric';
 
@@ -153,7 +153,7 @@ export function PlanSummaryScreen() {
 
   const aiPersonalized = Boolean(aiTargets);
   const canContinue = plan != null && aiPhase === 'ready';
-  const geminiConfigured = getGeminiConfig();
+  const aiCoachConfigured = getDeepSeekConfig();
 
   const onContinue = async () => {
     if (!answers || !plan || !canContinue) return;
@@ -223,14 +223,14 @@ export function PlanSummaryScreen() {
           </Text>
         </Animated.View>
 
-        {aiPhase === 'ready' && !geminiConfigured ? (
+        {aiPhase === 'ready' && !aiCoachConfigured ? (
           <Text style={[styles.aiHint, styles.aiHintSpacing]}>
-            Add EXPO_PUBLIC_GEMINI_API_KEY to your project .env to enable AI-tuned targets. Showing calculated values for
-            now.
+            Add EXPO_PUBLIC_DEEPSEEK_API_KEY to your project .env to enable AI-tuned targets. Showing calculated values
+            for now.
           </Text>
         ) : null}
 
-        {aiPhase === 'ready' && geminiConfigured && !aiPersonalized ? (
+        {aiPhase === 'ready' && aiCoachConfigured && !aiPersonalized ? (
           <View style={styles.aiRetryWrap}>
             <Text style={styles.aiHint}>
               We could not reach the AI service. Your daily targets use our calculated plan. Tap Retry to try again, or
@@ -238,7 +238,7 @@ export function PlanSummaryScreen() {
             </Text>
             <Pressable
               style={styles.retryBtn}
-              onPress={() => setGeminiRetryKey((k) => k + 1)}
+              onPress={() => setAiCoachRetryKey((k) => k + 1)}
               accessibilityRole="button"
               accessibilityLabel="Retry AI personalization">
               <Ionicons name="refresh" size={18} color={Palette.iris} />

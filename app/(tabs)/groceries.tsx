@@ -13,7 +13,7 @@ import {
   loadCachedWeeklyGroceries,
   saveCachedWeeklyGroceries,
 } from '@/lib/ai-meal-daily-cache';
-import { suggestWeeklyGroceries } from '@/lib/gemini-coach';
+import { suggestWeeklyGroceries } from '@/lib/ai-coach';
 import type { AiGroceryItem } from '@/types/ai-nutrition';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -114,7 +114,7 @@ export default function GroceriesScreen() {
         ) : null}
 
         {!loading && !error && items.length === 0 && user ? (
-          <Text style={styles.muted}>No items yet. Check your Gemini API key in .env.</Text>
+          <Text style={styles.muted}>No items yet. Check EXPO_PUBLIC_DEEPSEEK_API_KEY in .env.</Text>
         ) : null}
 
         {!user ? <Text style={styles.muted}>Sign in to get personalized grocery ideas.</Text> : null}

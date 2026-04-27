@@ -11,7 +11,7 @@ import {
   loadCachedWeeklyPlan,
   saveCachedWeeklyPlan,
 } from '@/lib/ai-meal-daily-cache';
-import { suggestWeeklyMealPlan } from '@/lib/gemini-coach';
+import { suggestWeeklyMealPlan } from '@/lib/ai-coach';
 import { setMealPlanSessionMeals } from '@/lib/meal-plan-session';
 import type { AiMealBrief } from '@/types/ai-nutrition';
 import { Fonts } from '@/constants/theme';
@@ -105,7 +105,7 @@ export default function MealPlanListScreen() {
             );
           })}
         {!loading && meals?.length === 0 && !error ? (
-          <Text style={styles.err}>No meals returned. Check Gemini API key and try again.</Text>
+          <Text style={styles.err}>No meals returned. Check EXPO_PUBLIC_DEEPSEEK_API_KEY and try again.</Text>
         ) : null}
       </ScrollView>
     </SafeAreaView>

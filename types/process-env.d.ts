@@ -1,5 +1,12 @@
 declare namespace NodeJS {
   interface ProcessEnv {
+    /** DeepSeek (OpenAI-compatible) — meal plans, coach, insights (scan uses Gemini, not DeepSeek) */
+    EXPO_PUBLIC_DEEPSEEK_API_KEY?: string;
+    EXPO_PUBLIC_DEEPSEEK_MODEL?: string;
+    EXPO_PUBLIC_DEEPSEEK_BASE_URL?: string;
+    /** Google Cloud Vision — label detection for meal photos (scan tab) */
+    EXPO_PUBLIC_GOOGLE_VISION_API_KEY?: string;
+    /** Google Gemini — multimodal meal analysis on scan (with Vision cues) */
     EXPO_PUBLIC_GEMINI_API_KEY?: string;
     EXPO_PUBLIC_GEMINI_MODEL?: string;
     /** Firebase Web SDK config */

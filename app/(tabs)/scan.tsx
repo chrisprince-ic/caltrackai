@@ -31,7 +31,7 @@ import { StatusBar } from 'expo-status-bar';
 import { DASHBOARD_MACROS } from '@/constants/dashboard-mock';
 import { SCAN_STATUS_MESSAGES } from '@/constants/scan-mock';
 import { useNutritionLog } from '@/contexts/NutritionLogContext';
-import { analyzeFoodFromBase64, getGeminiConfig } from '@/lib/gemini-food-analysis';
+import { analyzeFoodFromScanUri, isFoodScanConfigured } from '@/lib/food-image-analysis';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
 import type { FoodAnalysisResult } from '@/types/food-analysis';
@@ -43,6 +43,20 @@ const STROKE = 3;
 
 function clampPct(n: number) {
   return Math.min(100, Math.max(0, n));
+}
+
+const MAX_LOG_FOOD_NAME = 200;
+
+/** Compact title + ingredients for diary (respects sanitize max length). */
+function buildFoodNameForLog(r: FoodAnalysisResult): string {
+  const title = r.foodName.trim() || 'Meal';
+  if (!r.ingredients?.length) return title.slice(0, MAX_LOG_FOOD_NAME);
+  const ingPart = r.ingredients.join(' · ');
+  const combined = `${title} — ${ingPart}`;
+  if (combined.length <= MAX_LOG_FOOD_NAME) return combined;
+  const budget = Math.max(0, MAX_LOG_FOOD_NAME - title.length - 3);
+  if (budget < 24) return title.slice(0, MAX_LOG_FOOD_NAME);
+  return `${title} — ${ingPart.slice(0, budget)}…`;
 }
 
 function Viewfinder() {
@@ -156,7 +170,7 @@ function WebPlaceholder() {
         </View>
         <Text style={styles.webTitle}>Camera on your phone</Text>
         <Text style={styles.webSub}>
-          Meal scanning uses the device camera and Gemini. Open this app on iOS or Android with your API key in{' '}
+          Meal scanning uses the camera, Google Vision, and Gemini. Open on iOS or Android with API keys in{' '}
           <Text style={{ fontFamily: Fonts.semiBold }}>.env</Text>.
         </Text>
       </View>
@@ -211,9 +225,11 @@ function ScanCameraExperience() {
   }, [clearProcessInterval]);
 
   const processImageForAnalysis = useCallback(
-    async (base64: string, mimeType: string, uri: string) => {
-      if (!getGeminiConfig()) {
-        setErr('Add EXPO_PUBLIC_GEMINI_API_KEY (and optional EXPO_PUBLIC_GEMINI_MODEL) to .env, then restart Expo.');
+    async (uri: string) => {
+      if (!isFoodScanConfigured()) {
+        setErr(
+          'Add EXPO_PUBLIC_GOOGLE_VISION_API_KEY and EXPO_PUBLIC_GEMINI_API_KEY to .env (Vision + Gemini), then restart Expo.'
+        );
         return;
       }
       setPhotoUri(uri);
@@ -223,7 +239,7 @@ function ScanCameraExperience() {
         setProcessIndex((i) => (i + 1) % SCAN_STATUS_MESSAGES.length);
       }, 820);
       try {
-        const analysis = await analyzeFoodFromBase64(base64, mimeType);
+        const analysis = await analyzeFoodFromScanUri(uri);
         clearProcessInterval();
         setResult(analysis);
         setPhase('result');
@@ -243,8 +259,10 @@ function ScanCameraExperience() {
 
   const pickFromGallery = useCallback(async () => {
     if (busy) return;
-    if (!getGeminiConfig()) {
-      setErr('Add EXPO_PUBLIC_GEMINI_API_KEY (and optional EXPO_PUBLIC_GEMINI_MODEL) to .env, then restart Expo.');
+    if (!isFoodScanConfigured()) {
+      setErr(
+        'Add EXPO_PUBLIC_GOOGLE_VISION_API_KEY and EXPO_PUBLIC_GEMINI_API_KEY to .env (Vision + Gemini), then restart Expo.'
+      );
       return;
     }
     setErr(null);
@@ -258,25 +276,21 @@ function ScanCameraExperience() {
       const picked = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
-        quality: 0.65,
-        base64: true,
+        quality: 1,
+        base64: false,
       });
       if (picked.canceled || !picked.assets?.[0]) {
         return;
       }
       const asset = picked.assets[0];
-      const b64 = asset.base64;
-      if (!b64) {
+      if (!asset.uri) {
         setErr("Couldn't read that image. Try another photo or take a new picture.");
         return;
       }
-      const mimeType =
-        asset.mimeType ??
-        (asset.uri?.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
       if (Platform.OS !== 'web') {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       }
-      await processImageForAnalysis(b64, mimeType, asset.uri);
+      await processImageForAnalysis(asset.uri);
     } catch {
       setErr('Could not open your photo library. Try again.');
     } finally {
@@ -295,18 +309,17 @@ function ScanCameraExperience() {
 
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        base64: true,
-        quality: 0.65,
+        base64: false,
+        quality: 1,
         skipProcessing: Platform.OS === 'android',
       });
 
-      if (!photo?.uri || !photo.base64) {
-        setErr("Couldn't capture image — enable base64 or try again.");
+      if (!photo?.uri) {
+        setErr("Couldn't capture image — try again.");
         return;
       }
 
-      const mimeType = photo.format === 'png' ? 'image/png' : 'image/jpeg';
-      await processImageForAnalysis(photo.base64, mimeType, photo.uri);
+      await processImageForAnalysis(photo.uri);
     } catch {
       clearProcessInterval();
       setErr('Camera error. Please try again.');
@@ -321,8 +334,9 @@ function ScanCameraExperience() {
     if (!result || logSubmittingRef.current) return;
     logSubmittingRef.current = true;
     try {
+      const logName = buildFoodNameForLog(result);
       await addEntry({
-        foodName: result.foodName,
+        foodName: logName,
         calories: result.calories,
         proteinGrams: result.proteinGrams,
         carbsGrams: result.carbsGrams,
@@ -358,8 +372,7 @@ function ScanCameraExperience() {
           </View>
           <Text style={styles.permTitle}>Camera access</Text>
           <Text style={styles.permBody}>
-            Allow the camera to frame meals live, or pick an existing photo from your gallery — both are analyzed with
-            Google Gemini.
+            Allow the camera to frame meals live, or pick an existing photo from your gallery —             both are analyzed with Google Vision and Gemini.
           </Text>
           <Pressable onPress={() => requestPermission()} style={({ pressed }) => [styles.permBtn, pressed && { opacity: 0.9 }]}>
             <Text style={styles.permBtnText}>Allow camera</Text>
@@ -425,7 +438,7 @@ function ScanCameraExperience() {
           <>
             <View style={styles.hintWrap}>
               <Text style={styles.hintTitle}>Frame your meal</Text>
-              <Text style={styles.hintSub}>Capture or tap Gallery — Gemini estimates calories & macros</Text>
+              <Text style={styles.hintSub}>Capture or tap Gallery — Vision + Gemini estimates calories & macros</Text>
             </View>
             <Viewfinder />
           </>
@@ -442,7 +455,7 @@ function ScanCameraExperience() {
                   <View style={styles.sheetHeader}>
                     <View style={styles.sheetBadge}>
                       <ActivityIndicator size="small" color={Palette.iris} />
-                      <Text style={styles.sheetBadgeText}>Gemini</Text>
+                      <Text style={styles.sheetBadgeText}>Scanning</Text>
                     </View>
                   </View>
                   <Text style={styles.statusMain}>{SCAN_STATUS_MESSAGES[processIndex]}</Text>
@@ -471,9 +484,25 @@ function ScanCameraExperience() {
                     </View>
                   )}
 
-                  <Text style={styles.foodName} numberOfLines={3}>
+                  <Text style={styles.foodName} numberOfLines={4}>
                     {result.foodName}
                   </Text>
+
+                  {result.sceneDescription ? (
+                    <Text style={styles.sceneDescription}>{result.sceneDescription}</Text>
+                  ) : null}
+
+                  {result.ingredients && result.ingredients.length > 0 ? (
+                    <View style={styles.ingredientsCard}>
+                      <Text style={styles.ingredientsTitle}>Ingredients & portions</Text>
+                      {result.ingredients.map((line, i) => (
+                        <View key={`ing-${i}`} style={styles.ingredientRow}>
+                          <View style={styles.ingredientDot} />
+                          <Text style={styles.ingredientText}>{line}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
 
                   <View style={styles.calResultCard}>
                     <View style={styles.calResultGlow} />
@@ -489,7 +518,7 @@ function ScanCameraExperience() {
                       </View>
                       <View style={styles.calChip}>
                         <Ionicons name="shield-checkmark-outline" size={14} color={Palette.lavender} />
-                        <Text style={styles.calChipText}>Gemini vision</Text>
+                        <Text style={styles.calChipText}>Vision + Gemini</Text>
                       </View>
                     </View>
                   </View>
@@ -976,7 +1005,53 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     color: Palette.obsidian,
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  sceneDescription: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: Palette.dusk,
+    textAlign: 'center',
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  ingredientsCard: {
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(75, 35, 200, 0.08)',
+  },
+  ingredientsTitle: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    color: Palette.obsidian,
+    marginBottom: 8,
+    letterSpacing: 0.3,
+  },
+  ingredientRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 6,
+  },
+  ingredientDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: Palette.iris,
+    marginTop: 6,
+  },
+  ingredientText: {
+    flex: 1,
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: Palette.obsidian,
   },
   calResultCard: {
     backgroundColor: '#FFFFFF',

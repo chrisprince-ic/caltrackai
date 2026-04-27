@@ -13,7 +13,7 @@ import {
   loadCachedWeeklyPlan,
   saveCachedRecipe,
 } from '@/lib/ai-meal-daily-cache';
-import { expandMealToRecipe } from '@/lib/gemini-coach';
+import { expandMealToRecipe } from '@/lib/ai-coach';
 import {
   getMealPlanSessionAt,
   getMealPlanSessionPlanDateKey,

@@ -24,7 +24,7 @@ import {
   saveCachedWeeklyPlan,
 } from '@/lib/ai-meal-daily-cache';
 import { computeCalorieStreak } from '@/lib/calorie-streak';
-import { suggestWeeklyMealPlan } from '@/lib/gemini-coach';
+import { suggestWeeklyMealPlan } from '@/lib/ai-coach';
 import { setMealPlanSessionMeals } from '@/lib/meal-plan-session';
 import { fetchRecentDayTotals } from '@/lib/nutrition-history';
 import type { AiMealBrief } from '@/types/ai-nutrition';

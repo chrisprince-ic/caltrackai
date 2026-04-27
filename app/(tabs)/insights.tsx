@@ -7,8 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
-import { getGeminiConfig } from '@/lib/gemini-food-analysis';
-import { insightsFromMacroHistory } from '@/lib/gemini-coach';
+import { insightsFromMacroHistory } from '@/lib/ai-coach';
+import { getDeepSeekConfig } from '@/lib/deepseek';
 import { fetchRecentDayTotals } from '@/lib/nutrition-history';
 import type { DayTotals } from '@/lib/nutrition-sync';
 import { Fonts } from '@/constants/theme';
@@ -136,12 +136,12 @@ export default function InsightsScreen() {
           }
         } catch {
           if (!cancelled) {
-            const hasKey = Boolean(getGeminiConfig());
+            const hasKey = Boolean(getDeepSeekConfig());
             setShowAiRetry(hasKey);
             setAiSummary(
               hasKey
                 ? 'We could not reach the AI service. Check your connection and tap Retry, or try again later.'
-                : 'Add EXPO_PUBLIC_GEMINI_API_KEY in your project .env to enable AI coaching on this screen.'
+                : 'Add EXPO_PUBLIC_DEEPSEEK_API_KEY in your project .env to enable AI coaching on this screen.'
             );
             setMacroPct({ p: 100, c: 100, f: 100 });
           }
@@ -265,7 +265,7 @@ export default function InsightsScreen() {
           <View style={styles.tipBody}>
             <Text style={styles.tipText}>
               {aiSummary ||
-                'Sign in and log meals to see Gemini-powered suggestions based on your macro history.'}
+                'Sign in and log meals to see AI-powered suggestions based on your macro history.'}
             </Text>
             {showAiRetry && !aiLoading ? (
               <Pressable
