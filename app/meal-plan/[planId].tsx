@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.08)',
+    borderColor: 'rgba(34, 197, 94, 0.08)',
     gap: 14,
   },
   thumb: {

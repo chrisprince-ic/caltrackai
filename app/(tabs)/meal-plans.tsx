@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
-import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,46 +17,46 @@ export default function MealPlansScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400)}>
-          <Text style={styles.title}>Meal plans</Text>
-          <Text style={styles.subtitle}>AI-built plans from your calorie and macro targets.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Meal plans</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>AI-built plans from your calorie and macro targets.</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(50).duration(400)}>
           <Pressable
-            style={styles.heroCard}
+            style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => router.push('/meal-plan/weekly' as Href)}
-            android_ripple={{ color: 'rgba(75,35,200,0.12)' }}>
-            <View style={styles.heroIcon}>
+            android_ripple={{ color: 'rgba(34,197,94,0.1)' }}>
+            <View style={[styles.heroIcon, { backgroundColor: colors.iconWell }]}>
               <Ionicons name="sparkles" size={28} color={Palette.iris} />
             </View>
             <View style={styles.heroBody}>
-              <Text style={styles.heroTitle}>Your AI week</Text>
-              <Text style={styles.heroMeta}>7 meals · recipes on tap · matches your plan</Text>
+              <Text style={[styles.heroTitle, { color: colors.text }]}>Your AI week</Text>
+              <Text style={[styles.heroMeta, { color: colors.textMuted }]}>7 meals · recipes on tap · matches your plan</Text>
             </View>
-            <Ionicons name="chevron-forward" size={22} color={Palette.dusk} style={{ opacity: 0.45 }} />
+            <Ionicons name="chevron-forward" size={22} color={colors.textMuted} style={{ opacity: 0.45 }} />
           </Pressable>
         </Animated.View>
 
-        <Text style={styles.sectionLabel}>Ideas</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>Ideas</Text>
         {MEAL_PLAN_CARDS.map((item, i) => (
           <Animated.View
             key={item.id}
             entering={FadeInDown.delay(80 + i * 40).duration(380).springify()}
-            style={styles.rowCard}>
+            style={[styles.rowCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Pressable
               style={styles.rowInner}
               onPress={() => router.push('/meal-plan/weekly' as Href)}
-              android_ripple={{ color: 'rgba(75,35,200,0.08)' }}>
+              android_ripple={{ color: 'rgba(34,197,94,0.08)' }}>
               <View style={[styles.thumb, { backgroundColor: item.tint }]}>
                 <Ionicons name="restaurant" size={24} color={item.accent} />
               </View>
               <View style={styles.rowBody}>
-                <Text style={styles.rowTitle}>{item.title}</Text>
-                <Text style={styles.rowMeta}>
+                <Text style={[styles.rowTitle, { color: colors.text }]}>{item.title}</Text>
+                <Text style={[styles.rowMeta, { color: colors.textMuted }]}>
                   {item.kcal} kcal · {item.prepMin} min · {item.tag}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={Palette.dusk} style={{ opacity: 0.4 }} />
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} style={{ opacity: 0.4 }} />
             </Pressable>
           </Animated.View>
         ))}
@@ -67,62 +66,26 @@ export default function MealPlansScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Palette.ghost },
+  safe: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 120 },
-  title: { fontFamily: Fonts.bold, fontSize: 28, color: Palette.obsidian },
-  subtitle: { fontFamily: Fonts.regular, fontSize: 15, color: Palette.dusk, marginTop: 6, marginBottom: 20 },
+  title: { fontFamily: Fonts.bold, fontSize: 28 },
+  subtitle: { fontFamily: Fonts.regular, fontSize: 15, marginTop: 6, marginBottom: 20 },
   heroCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 22,
-    gap: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.12)',
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 20, padding: 16, marginBottom: 22, gap: 14, borderWidth: 1,
   },
-  heroIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: Palette.haze,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  heroIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   heroBody: { flex: 1, minWidth: 0 },
-  heroTitle: { fontFamily: Fonts.bold, fontSize: 18, color: Palette.obsidian },
-  heroMeta: { fontFamily: Fonts.regular, fontSize: 13, color: Palette.dusk, marginTop: 4 },
+  heroTitle: { fontFamily: Fonts.bold, fontSize: 18 },
+  heroMeta: { fontFamily: Fonts.regular, fontSize: 13, marginTop: 4 },
   sectionLabel: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    color: Palette.dusk,
-    marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    fontFamily: Fonts.semiBold, fontSize: 13,
+    marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.6,
   },
-  rowCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.08)',
-    overflow: 'hidden',
-  },
-  rowInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 14,
-  },
-  thumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  rowCard: { borderRadius: 18, marginBottom: 10, borderWidth: 1, overflow: 'hidden' },
+  rowInner: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14 },
+  thumb: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   rowBody: { flex: 1, minWidth: 0 },
-  rowTitle: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.obsidian },
-  rowMeta: { fontFamily: Fonts.regular, fontSize: 13, color: Palette.dusk, marginTop: 4 },
+  rowTitle: { fontFamily: Fonts.semiBold, fontSize: 16 },
+  rowMeta: { fontFamily: Fonts.regular, fontSize: 13, marginTop: 4 },
 });

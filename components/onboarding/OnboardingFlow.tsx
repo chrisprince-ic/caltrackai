@@ -244,7 +244,7 @@ function SelectCard({
       }}
       style={({ pressed }) => [
         styles.selectCard,
-        { borderColor: selected ? accent : 'rgba(75, 35, 200, 0.12)', backgroundColor: selected ? Palette.haze : '#FFFFFF' },
+        { borderColor: selected ? accent : 'rgba(34, 197, 94, 0.12)', backgroundColor: selected ? Palette.haze : '#FFFFFF' },
         pressed && styles.pressedCard,
       ]}>
       {children}
@@ -848,7 +848,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: 'rgba(75, 35, 200, 0.12)',
+    borderColor: 'rgba(34, 197, 94, 0.12)',
     paddingHorizontal: 20,
     paddingVertical: 18,
   },
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(75, 35, 200, 0.08)',
+    borderTopColor: 'rgba(34, 197, 94, 0.08)',
     backgroundColor: Palette.ghost,
   },
   cta: {

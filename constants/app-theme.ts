@@ -1,6 +1,6 @@
 import { Palette } from '@/constants/palette';
 
-/** Semantic UI colors derived from design.md — light (Ghost) vs dark (Obsidian/Void). */
+/** Semantic UI colors — light (Ghost) vs dark (Void/Obsidian). */
 export type AppThemeColors = {
   bg: string;
   surface: string;
@@ -17,7 +17,6 @@ export type AppThemeColors = {
   streakHint: string;
   calDivider: string;
   shadow: string;
-  /** Pro / icon button wells */
   iconWell: string;
   iconWellBorder: string;
 };
@@ -29,37 +28,37 @@ const LIGHT: AppThemeColors = {
   text: Palette.obsidian,
   textMuted: Palette.dusk,
   textSecondary: Palette.dusk,
-  border: 'rgba(75, 35, 200, 0.1)',
-  borderStrong: 'rgba(75, 35, 200, 0.12)',
+  border: 'rgba(34, 197, 94, 0.12)',
+  borderStrong: 'rgba(34, 197, 94, 0.18)',
   haze: Palette.haze,
   chipOnLight: Palette.haze,
   streakBg: Palette.watchBg,
   streakText: Palette.watchText,
   streakHint: Palette.dusk,
-  calDivider: 'rgba(75, 35, 200, 0.12)',
+  calDivider: 'rgba(34, 197, 94, 0.14)',
   shadow: Palette.obsidian,
   iconWell: Palette.haze,
-  iconWellBorder: 'rgba(75, 35, 200, 0.12)',
+  iconWellBorder: 'rgba(34, 197, 94, 0.18)',
 };
 
 const DARK: AppThemeColors = {
   bg: Palette.obsidian,
   surface: Palette.void,
-  surfaceMuted: '#252140',
-  text: Palette.ghost,
-  textMuted: '#A89CC4',
-  textSecondary: '#C4B2FA',
-  border: 'rgba(196, 178, 250, 0.14)',
-  borderStrong: 'rgba(196, 178, 250, 0.22)',
-  haze: 'rgba(75, 35, 200, 0.28)',
-  chipOnLight: 'rgba(75, 35, 200, 0.35)',
-  streakBg: 'rgba(245, 166, 35, 0.18)',
-  streakText: '#FFD699',
-  streakHint: '#A89CC4',
-  calDivider: 'rgba(196, 178, 250, 0.2)',
+  surfaceMuted: '#253040',
+  text: '#F9FAFB',
+  textMuted: '#9CA3AF',
+  textSecondary: Palette.mist,
+  border: 'rgba(167, 243, 208, 0.14)',
+  borderStrong: 'rgba(167, 243, 208, 0.22)',
+  haze: 'rgba(34, 197, 94, 0.22)',
+  chipOnLight: 'rgba(34, 197, 94, 0.28)',
+  streakBg: 'rgba(249, 115, 22, 0.15)',
+  streakText: '#FED7AA',
+  streakHint: '#9CA3AF',
+  calDivider: 'rgba(167, 243, 208, 0.18)',
   shadow: '#000000',
-  iconWell: 'rgba(75, 35, 200, 0.35)',
-  iconWellBorder: 'rgba(196, 178, 250, 0.2)',
+  iconWell: 'rgba(34, 197, 94, 0.28)',
+  iconWellBorder: 'rgba(167, 243, 208, 0.2)',
 };
 
 export function getAppThemeColors(isDark: boolean): AppThemeColors {

@@ -435,8 +435,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusPillPro: {
-    backgroundColor: 'rgba(75, 35, 200, 0.35)',
-    borderColor: 'rgba(196, 178, 250, 0.35)',
+    backgroundColor: 'rgba(34, 197, 94, 0.35)',
+    borderColor: 'rgba(167, 243, 208, 0.35)',
   },
   statusPillFree: {
     backgroundColor: 'rgba(255,255,255,0.06)',

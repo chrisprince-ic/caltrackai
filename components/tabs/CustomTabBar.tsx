@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   outer: {
     backgroundColor: Palette.ghost,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(75, 35, 200, 0.1)',
+    borderTopColor: 'rgba(34, 197, 94, 0.1)',
   },
   surface: {
     backgroundColor: '#FFFFFF',

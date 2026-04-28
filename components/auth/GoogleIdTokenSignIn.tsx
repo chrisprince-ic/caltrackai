@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 22,
     borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.08)',
+    borderColor: 'rgba(34, 197, 94, 0.08)',
   },
   loadingHint: {
     flexDirection: 'row',
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 999,
     borderWidth: 1.5,
-    borderColor: 'rgba(75, 35, 200, 0.15)',
+    borderColor: 'rgba(34, 197, 94, 0.15)',
     marginBottom: 22,
   },
   googleLabel: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.obsidian },

@@ -16,7 +16,6 @@ import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
 
 type Period = 'week' | 'month' | 'year';
-
 const DAY_FETCH: Record<Period, number> = { week: 7, month: 30, year: 84 };
 
 function chronological(days: DayTotals[]) {
@@ -25,9 +24,7 @@ function chronological(days: DayTotals[]) {
 
 function chartBars(period: Period, days: DayTotals[], goal: number) {
   const chrono = chronological(days);
-  if (goal <= 0) {
-    return chrono.map((d) => ({ label: '', pct: 0 }));
-  }
+  if (goal <= 0) return chrono.map(() => ({ label: '', pct: 0 }));
   if (period === 'year') {
     const bars: { label: string; pct: number }[] = [];
     const n = chrono.length;
@@ -41,17 +38,12 @@ function chartBars(period: Period, days: DayTotals[], goal: number) {
     return bars.reverse();
   }
   if (period === 'week') {
-    const slice = chrono.slice(-7);
-    return slice.map((d) => {
-      const dt = new Date(`${d.dateKey}T12:00:00`);
-      return {
-        label: dt.toLocaleDateString(undefined, { weekday: 'narrow' }),
-        pct: Math.min(100, (d.calories / goal) * 100),
-      };
-    });
+    return chrono.slice(-7).map((d) => ({
+      label: new Date(`${d.dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: 'narrow' }),
+      pct: Math.min(100, (d.calories / goal) * 100),
+    }));
   }
-  const slice = chrono.slice(-30);
-  return slice.map((d, i) => ({
+  return chrono.slice(-30).map((d, i) => ({
     label: i % 5 === 0 ? d.dateKey.slice(8) : '',
     pct: Math.min(100, (d.calories / goal) * 100),
   }));
@@ -79,11 +71,7 @@ export default function InsightsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!user?.uid || !firebaseReady) {
-        setDays([]);
-        setLoading(false);
-        return;
-      }
+      if (!user?.uid || !firebaseReady) { setDays([]); setLoading(false); return; }
       let cancelled = false;
       (async () => {
         setLoading(true);
@@ -96,9 +84,7 @@ export default function InsightsScreen() {
           if (!cancelled) setLoading(false);
         }
       })();
-      return () => {
-        cancelled = true;
-      };
+      return () => { cancelled = true; };
     }, [user?.uid, firebaseReady, period])
   );
 
@@ -106,23 +92,17 @@ export default function InsightsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!user?.uid) {
-        setAiSummary(null);
-        setShowAiRetry(false);
-        return;
-      }
+      if (!user?.uid) { setAiSummary(null); setShowAiRetry(false); return; }
       let cancelled = false;
       setAiLoading(true);
       (async () => {
         void aiRetryKey;
         try {
-          const label =
-            period === 'week' ? 'Past week' : period === 'month' ? 'Past month' : 'Past ~12 weeks';
+          const label = period === 'week' ? 'Past week' : period === 'month' ? 'Past month' : 'Past ~12 weeks';
           const insight = await insightsFromMacroHistory({
             periodLabel: label,
             targets: { calories: dailyCalories, proteinG, carbsG, fatG },
-            days,
-            coachNote,
+            days, coachNote,
             dietarySummary: dietarySummary || undefined,
             adherenceHits: adherence.hits,
             adherenceTotal: adherence.total,
@@ -130,11 +110,7 @@ export default function InsightsScreen() {
           if (!cancelled) {
             setAiSummary(insight.summary);
             setShowAiRetry(false);
-            setMacroPct({
-              p: insight.proteinPctVsTarget,
-              c: insight.carbsPctVsTarget,
-              f: insight.fatPctVsTarget,
-            });
+            setMacroPct({ p: insight.proteinPctVsTarget, c: insight.carbsPctVsTarget, f: insight.fatPctVsTarget });
           }
         } catch {
           if (!cancelled) {
@@ -151,49 +127,41 @@ export default function InsightsScreen() {
           if (!cancelled) setAiLoading(false);
         }
       })();
-      return () => {
-        cancelled = true;
-      };
-    }, [
-      user?.uid,
-      days,
-      period,
-      dailyCalories,
-      proteinG,
-      carbsG,
-      fatG,
-      coachNote,
-      dietarySummary,
-      adherence.hits,
-      adherence.total,
-      aiRetryKey,
-    ])
+      return () => { cancelled = true; };
+    }, [user?.uid, days, period, dailyCalories, proteinG, carbsG, fatG, coachNote, dietarySummary, adherence.hits, adherence.total, aiRetryKey])
   );
 
   const bars = useMemo(() => chartBars(period, days, dailyCalories), [period, days, dailyCalories]);
   const { hits, total } = useMemo(() => countGoalHits(days, dailyCalories), [days, dailyCalories]);
 
-  const periodBtn = (p: Period, label: string) => (
-    <Pressable
-      key={p}
-      onPress={() => setPeriod(p)}
-      style={[styles.segBtn, period === p && styles.segBtnOn]}>
-      <Text style={[styles.segBtnText, period === p && styles.segBtnTextOn]}>{label}</Text>
-    </Pressable>
-  );
-
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400)}>
-          <Text style={styles.title}>Insights</Text>
-          <Text style={styles.subtitle}>Macros vs targets and AI coaching from your logs.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Insights</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Macros vs targets and AI coaching from your logs.</Text>
         </Animated.View>
 
+        {/* Period selector */}
         <View style={styles.segRow}>
-          {periodBtn('week', 'Week')}
-          {periodBtn('month', 'Month')}
-          {periodBtn('year', 'Year')}
+          {(['week', 'month', 'year'] as Period[]).map((p) => (
+            <Pressable
+              key={p}
+              onPress={() => setPeriod(p)}
+              style={[
+                styles.segBtn,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                period === p && { backgroundColor: Palette.iris, borderColor: Palette.iris },
+              ]}>
+              <Text style={[
+                styles.segBtnText,
+                { color: colors.textMuted },
+                period === p && { color: Palette.white },
+              ]}>
+                {p.charAt(0).toUpperCase() + p.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
         </View>
 
         {loading ? (
@@ -202,81 +170,80 @@ export default function InsightsScreen() {
           </View>
         ) : null}
 
-        <Animated.View entering={FadeInDown.delay(70).duration(420).springify()} style={styles.card}>
+        {/* Calorie adherence chart */}
+        <Animated.View
+          entering={FadeInDown.delay(70).duration(420).springify()}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>Calorie adherence</Text>
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>
-                {total ? `${hits}/${total} days on target` : 'No data'}
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Calorie adherence</Text>
+            <View style={[styles.pill, { backgroundColor: colors.haze }]}>
+              <Text style={[styles.pillText, { color: Palette.iris }]}>
+                {total ? `${hits}/${total} days` : 'No data'}
               </Text>
             </View>
           </View>
-          <Text style={styles.cardSub}>Bar height ≈ % of daily calorie goal logged</Text>
+          <Text style={[styles.cardSub, { color: colors.textMuted }]}>Bar height ≈ % of daily calorie goal logged</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chartScroll}>
             <View style={styles.chartRow}>
               {bars.map((d, i) => (
                 <View key={`${d.label}-${i}`} style={styles.barCol}>
-                  <View style={styles.barTrack}>
+                  <View style={[styles.barTrack, { backgroundColor: colors.haze }]}>
                     <View
                       style={[
                         styles.barFill,
-                        {
-                          height: Math.max(6, (d.pct / 100) * 100),
-                          backgroundColor: d.pct >= 90 && d.pct <= 112 ? Palette.iris : Palette.citrus,
-                        },
+                        { height: Math.max(6, (d.pct / 100) * 100), backgroundColor: d.pct >= 90 && d.pct <= 112 ? Palette.iris : Palette.citrus },
                       ]}
                     />
                   </View>
-                  <Text style={styles.barLabel} numberOfLines={1}>
-                    {d.label || '·'}
-                  </Text>
+                  <Text style={[styles.barLabel, { color: colors.textMuted }]} numberOfLines={1}>{d.label || '·'}</Text>
                 </View>
               ))}
             </View>
           </ScrollView>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(120).duration(420).springify()} style={styles.card}>
-          <Text style={styles.cardTitle}>Macro balance</Text>
-          <Text style={styles.cardSub}>AI estimate vs your targets (average for period)</Text>
+        {/* Macro balance */}
+        <Animated.View
+          entering={FadeInDown.delay(120).duration(420).springify()}
+          style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Macro balance</Text>
+          <Text style={[styles.cardSub, { color: colors.textMuted }]}>AI estimate vs your targets (average for period)</Text>
           {aiLoading ? (
             <ActivityIndicator style={{ marginVertical: 16 }} color={Palette.iris} />
           ) : (
             <View style={styles.legend}>
-              <View style={styles.legendRow}>
-                <View style={[styles.dot, { backgroundColor: Palette.flamingo }]} />
-                <Text style={styles.legendText}>Protein vs target</Text>
-                <Text style={styles.legendVal}>{macroPct.p}%</Text>
-              </View>
-              <View style={styles.legendRow}>
-                <View style={[styles.dot, { backgroundColor: Palette.citrus }]} />
-                <Text style={styles.legendText}>Carbs vs target</Text>
-                <Text style={styles.legendVal}>{macroPct.c}%</Text>
-              </View>
-              <View style={styles.legendRow}>
-                <View style={[styles.dot, { backgroundColor: Palette.cyan }]} />
-                <Text style={styles.legendText}>Fats vs target</Text>
-                <Text style={styles.legendVal}>{macroPct.f}%</Text>
-              </View>
+              {([
+                { color: Palette.flamingo, label: 'Protein vs target', val: macroPct.p },
+                { color: Palette.citrus, label: 'Carbs vs target', val: macroPct.c },
+                { color: Palette.cyan, label: 'Fats vs target', val: macroPct.f },
+              ] as const).map(({ color, label, val }) => (
+                <View key={label} style={styles.legendRow}>
+                  <View style={[styles.dot, { backgroundColor: color }]} />
+                  <Text style={[styles.legendText, { color: colors.text }]}>{label}</Text>
+                  <Text style={[styles.legendVal, { color: Palette.iris }]}>{val}%</Text>
+                </View>
+              ))}
             </View>
           )}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(170).duration(420).springify()} style={styles.tipCard}>
+        {/* AI coaching tip */}
+        <Animated.View
+          entering={FadeInDown.delay(170).duration(420).springify()}
+          style={[styles.tipCard, { backgroundColor: colors.haze, borderColor: colors.border }]}>
           <Ionicons name="sparkles" size={22} color={Palette.iris} />
           <View style={styles.tipBody}>
-            <Text style={styles.tipText}>
-              {aiSummary ||
-                'Sign in and log meals to see AI-powered suggestions based on your macro history.'}
+            <Text style={[styles.tipText, { color: colors.text }]}>
+              {aiSummary || 'Sign in and log meals to see AI-powered suggestions based on your macro history.'}
             </Text>
             {showAiRetry && !aiLoading ? (
               <Pressable
-                style={styles.retryBtn}
+                style={[styles.retryBtn, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}
                 onPress={() => setAiRetryKey((k) => k + 1)}
                 accessibilityRole="button"
                 accessibilityLabel="Retry AI insights">
                 <Ionicons name="refresh" size={18} color={Palette.iris} />
-                <Text style={styles.retryBtnText}>Retry</Text>
+                <Text style={[styles.retryBtnText, { color: Palette.iris }]}>Retry</Text>
               </Pressable>
             ) : null}
           </View>
@@ -287,122 +254,46 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Palette.ghost },
+  safe: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 120 },
-  title: { fontFamily: Fonts.bold, fontSize: 28, color: Palette.obsidian },
-  subtitle: { fontFamily: Fonts.regular, fontSize: 15, color: Palette.dusk, marginTop: 6, marginBottom: 16 },
-  segRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
+  title: { fontFamily: Fonts.bold, fontSize: 28 },
+  subtitle: { fontFamily: Fonts.regular, fontSize: 15, marginTop: 6, marginBottom: 16 },
+  segRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   segBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.12)',
+    paddingVertical: 10, paddingHorizontal: 16,
+    borderRadius: 999, borderWidth: 1,
   },
-  segBtnOn: {
-    backgroundColor: Palette.iris,
-    borderColor: Palette.iris,
-  },
-  segBtnText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Palette.dusk },
-  segBtnTextOn: { color: '#FFFFFF' },
+  segBtnText: { fontFamily: Fonts.semiBold, fontSize: 14 },
   loader: { paddingVertical: 24, alignItems: 'center' },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.08)',
+    borderRadius: 22, padding: 20, marginBottom: 14, borderWidth: 1,
   },
-  cardHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  cardTitle: { fontFamily: Fonts.bold, fontSize: 18, color: Palette.obsidian },
-  cardSub: { fontFamily: Fonts.regular, fontSize: 13, color: Palette.dusk, marginBottom: 16 },
-  pill: {
-    backgroundColor: Palette.haze,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  pillText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Palette.iris },
+  cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  cardTitle: { fontFamily: Fonts.bold, fontSize: 18 },
+  cardSub: { fontFamily: Fonts.regular, fontSize: 13, marginBottom: 16 },
+  pill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  pillText: { fontFamily: Fonts.semiBold, fontSize: 12 },
   chartScroll: { paddingBottom: 4 },
-  chartRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 6,
-    minWidth: '100%',
-  },
+  chartRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, minWidth: '100%' },
   barCol: { width: 28, alignItems: 'center' },
-  barTrack: {
-    height: 100,
-    width: 28,
-    backgroundColor: Palette.haze,
-    borderRadius: 10,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  barFill: {
-    width: '100%',
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-  },
-  barLabel: {
-    marginTop: 8,
-    fontFamily: Fonts.medium,
-    fontSize: 10,
-    color: Palette.dusk,
-    maxWidth: 32,
-    textAlign: 'center',
-  },
+  barTrack: { height: 100, width: 28, borderRadius: 10, justifyContent: 'flex-end', overflow: 'hidden' },
+  barFill: { width: '100%', borderBottomLeftRadius: 10, borderBottomRightRadius: 10, borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  barLabel: { marginTop: 8, fontFamily: Fonts.medium, fontSize: 10, maxWidth: 32, textAlign: 'center' },
   legend: { gap: 14 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  legendText: { flex: 1, fontFamily: Fonts.regular, fontSize: 15, color: Palette.obsidian },
-  legendVal: { fontFamily: Fonts.semiBold, fontSize: 15, color: Palette.iris },
+  legendText: { flex: 1, fontFamily: Fonts.regular, fontSize: 15 },
+  legendVal: { fontFamily: Fonts.semiBold, fontSize: 15 },
   tipCard: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-start',
-    backgroundColor: Palette.haze,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.12)',
-    marginTop: 6,
+    flexDirection: 'row', gap: 12, alignItems: 'flex-start',
+    borderRadius: 18, padding: 16, borderWidth: 1, marginTop: 6,
   },
   tipBody: { flex: 1, gap: 12 },
-  tipText: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 21,
-    color: Palette.obsidian,
-  },
+  tipText: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 21 },
   retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.2)',
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+    gap: 8, paddingVertical: 10, paddingHorizontal: 14,
+    borderRadius: 12, borderWidth: 1,
   },
-  retryBtnText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    color: Palette.iris,
-  },
+  retryBtnText: { fontFamily: Fonts.semiBold, fontSize: 15 },
 });

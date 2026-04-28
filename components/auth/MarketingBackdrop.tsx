@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     left: -80,
     opacity: 0.9,
     borderWidth: 1,
-    borderColor: 'rgba(75, 35, 200, 0.06)',
+    borderColor: 'rgba(34, 197, 94, 0.06)',
   },
   orb3: {
     width: 320,
@@ -55,6 +55,6 @@ const styles = StyleSheet.create({
     right: 0,
     top: '46%',
     height: 1,
-    backgroundColor: 'rgba(75, 35, 200, 0.04)',
+    backgroundColor: 'rgba(34, 197, 94, 0.04)',
   },
 });

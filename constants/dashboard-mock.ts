@@ -26,8 +26,8 @@ export const MEAL_PLAN_CARDS: MealPlanCard[] = [
     kcal: 520,
     tag: 'High protein',
     prepMin: 15,
-    accent: '#4B23C8',
-    tint: '#F0ECFF',
+    accent: '#22C55E',
+    tint: '#DCFCE7',
   },
   {
     id: '2',

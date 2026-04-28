@@ -29,98 +29,19 @@ import { setMealPlanSessionMeals } from '@/lib/meal-plan-session';
 import { fetchRecentDayTotals } from '@/lib/nutrition-history';
 import type { AiMealBrief } from '@/types/ai-nutrition';
 import { AppMenuSheet } from '@/components/AppMenuSheet';
-import { createHomeDashboardStyles } from '@/components/home/dashboardStyles';
+import { CalorieCard } from '@/components/ui/CalorieCard';
+import { MacroBar } from '@/components/ui/MacroBar';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Palette } from '@/constants/palette';
+import { Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/AppThemeContext';
-
-function clampPct(n: number) {
-  return Math.min(100, Math.max(0, n));
-}
-
-type DashboardStyles = ReturnType<typeof createHomeDashboardStyles>;
-
-function MacroRingRow({
-  label,
-  current,
-  goal,
-  color,
-  tint,
-  icon,
-  delay,
-  ds,
-}: {
-  label: string;
-  current: number;
-  goal: number;
-  color: string;
-  tint: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  delay: number;
-  ds: DashboardStyles;
-}) {
-  const pct = clampPct((current / goal) * 100);
-  const remain = Math.max(0, goal - current);
-  return (
-    <Animated.View entering={FadeInDown.delay(delay).duration(380).springify()} style={ds.macroCard}>
-      <View style={[ds.macroIconBlob, { backgroundColor: tint }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <View style={ds.macroCardBody}>
-        <View style={ds.macroCardTop}>
-          <Text style={ds.macroName}>{label}</Text>
-          <Text style={ds.macroNums}>
-            <Text style={ds.macroCurrent}>{current}</Text>
-            <Text style={ds.macroSlash}>/{goal}g</Text>
-          </Text>
-        </View>
-        <View style={[ds.macroTrack, { backgroundColor: tint }]}>
-          <View style={[ds.macroFill, { width: `${pct}%`, backgroundColor: color }]} />
-        </View>
-        <Text style={ds.macroRemain}>{remain}g left today</Text>
-      </View>
-    </Animated.View>
-  );
-}
-
-function MealPlanCard({
-  item,
-  width,
-  onPress,
-  ds,
-}: {
-  item: (typeof MEAL_PLAN_CARDS)[0];
-  width: number;
-  onPress?: () => void;
-  ds: DashboardStyles;
-}) {
-  return (
-    <Pressable onPress={onPress} style={[ds.mealCard, { width }]}>
-      <View style={[ds.mealAccent, { backgroundColor: item.tint }]}>
-        <Ionicons name="restaurant" size={26} color={item.accent} />
-      </View>
-      <Text style={ds.mealTag}>{item.tag}</Text>
-      <Text style={ds.mealTitle} numberOfLines={2}>
-        {item.title}
-      </Text>
-      <View style={ds.mealMeta}>
-        <View style={ds.mealMetaChip}>
-          <Ionicons name="flame-outline" size={14} color={Palette.citrus} />
-          <Text style={ds.mealMetaText}>{item.kcal} kcal</Text>
-        </View>
-        <View style={ds.mealMetaChip}>
-          <Ionicons name="time-outline" size={14} color={Palette.dusk} />
-          <Text style={ds.mealMetaText}>{item.prepMin} min</Text>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
+import { StyleSheet } from 'react-native';
 
 const AI_CARD_ACCENTS = [
-  { accent: '#4B23C8', tint: '#F0ECFF' },
-  { accent: '#FF6B9D', tint: '#FFE8F0' },
-  { accent: '#00C2D1', tint: '#E0F8FA' },
-  { accent: '#F5A623', tint: '#FFF8EB' },
+  { accent: Palette.iris, tint: Palette.haze },
+  { accent: Palette.flamingo, tint: '#FFE8F0' },
+  { accent: Palette.cyan, tint: '#EEF2FF' },
+  { accent: Palette.citrus, tint: '#FFF7ED' },
 ] as const;
 
 function aiBriefToCardItem(m: AiMealBrief, i: number): (typeof MEAL_PLAN_CARDS)[0] {
@@ -136,11 +57,49 @@ function aiBriefToCardItem(m: AiMealBrief, i: number): (typeof MEAL_PLAN_CARDS)[
   };
 }
 
+function MealCard({
+  item,
+  width,
+  onPress,
+}: {
+  item: (typeof MEAL_PLAN_CARDS)[0];
+  width: number;
+  onPress?: () => void;
+}) {
+  const { colors } = useAppTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.mealCard,
+        { width, backgroundColor: colors.surface, borderColor: colors.border },
+        pressed && { opacity: 0.9 },
+      ]}>
+      <View style={[styles.mealAccent, { backgroundColor: item.tint }]}>
+        <Ionicons name="restaurant" size={26} color={item.accent} />
+      </View>
+      <Text style={[styles.mealTag, { color: Palette.iris }]}>{item.tag}</Text>
+      <Text style={[styles.mealTitle, { color: colors.text }]} numberOfLines={2}>
+        {item.title}
+      </Text>
+      <View style={styles.mealMeta}>
+        <View style={[styles.metaChip, { backgroundColor: colors.chipOnLight }]}>
+          <Ionicons name="flame-outline" size={13} color={Palette.citrus} />
+          <Text style={[styles.metaText, { color: colors.text }]}>{item.kcal} kcal</Text>
+        </View>
+        <View style={[styles.metaChip, { backgroundColor: colors.chipOnLight }]}>
+          <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+          <Text style={[styles.metaText, { color: colors.text }]}>{item.prepMin} min</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 export function HomeDashboard() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { colors, isDark } = useAppTheme();
-  const styles = useMemo(() => createHomeDashboardStyles(colors), [colors]);
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, firebaseReady } = useAuth();
   const { totals, refreshTodayLog, logSyncing } = useNutritionLog();
@@ -151,27 +110,14 @@ export function HomeDashboard() {
   const [weeklyPlanMeals, setWeeklyPlanMeals] = useState<AiMealBrief[] | null>(null);
   const [weeklyPlanLoading, setWeeklyPlanLoading] = useState(false);
 
-  /** One fetch per signed-in user per app session; avoids reload on every home focus. */
   const mealPlanSessionCache = useRef<{
     forUserId: string | null;
     settled: boolean;
     meals: AiMealBrief[] | null;
   }>({ forUserId: null, settled: false, meals: null });
 
-  const mealPlanTargetsRef = useRef({
-    dailyCalories,
-    proteinG,
-    carbsG,
-    fatG,
-    dietarySummary,
-  });
-  mealPlanTargetsRef.current = {
-    dailyCalories,
-    proteinG,
-    carbsG,
-    fatG,
-    dietarySummary,
-  };
+  const mealPlanTargetsRef = useRef({ dailyCalories, proteinG, carbsG, fatG, dietarySummary });
+  mealPlanTargetsRef.current = { dailyCalories, proteinG, carbsG, fatG, dietarySummary };
 
   useFocusEffect(
     useCallback(() => {
@@ -184,27 +130,21 @@ export function HomeDashboard() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!user?.uid || !firebaseReady) {
-        setStreak(0);
-        return;
-      }
+      if (!user?.uid || !firebaseReady) { setStreak(0); return; }
       let cancelled = false;
       (async () => {
         try {
           const days = await fetchRecentDayTotals(user.uid, 120);
           if (cancelled) return;
-          const s = computeCalorieStreak(
+          setStreak(computeCalorieStreak(
             dailyCalories,
             days.map((d) => ({ dateKey: d.dateKey, calories: d.calories }))
-          );
-          setStreak(s);
+          ));
         } catch {
           if (!cancelled) setStreak(0);
         }
       })();
-      return () => {
-        cancelled = true;
-      };
+      return () => { cancelled = true; };
     }, [user?.uid, firebaseReady, dailyCalories])
   );
 
@@ -217,76 +157,44 @@ export function HomeDashboard() {
         setWeeklyPlanLoading(false);
         return;
       }
-
       const cache = mealPlanSessionCache.current;
       if (cache.settled && cache.forUserId === uid) {
         setWeeklyPlanMeals(cache.meals);
         setWeeklyPlanLoading(false);
-        const meals = cache.meals;
-        if (meals && meals.length) {
-          setMealPlanSessionMeals(meals, getLogDateKey());
-        }
+        if (cache.meals?.length) setMealPlanSessionMeals(cache.meals, getLogDateKey());
         return;
       }
-
       let cancelled = false;
       setWeeklyPlanLoading(true);
       (async () => {
         const t = mealPlanTargetsRef.current;
         const dateKey = getLogDateKey();
-        const targetFp = buildTargetsFingerprint({
-          dailyCalories: t.dailyCalories,
-          proteinG: t.proteinG,
-          carbsG: t.carbsG,
-          fatG: t.fatG,
-          dietarySummary: t.dietarySummary,
-        });
+        const targetFp = buildTargetsFingerprint(t);
         try {
           let list = await loadCachedWeeklyPlan(dateKey, targetFp);
           if (!list?.length) {
             list = await suggestWeeklyMealPlan({
-              dailyCalories: t.dailyCalories,
-              proteinG: t.proteinG,
-              carbsG: t.carbsG,
-              fatG: t.fatG,
-              dietaryNotes: t.dietarySummary,
+              dailyCalories: t.dailyCalories, proteinG: t.proteinG,
+              carbsG: t.carbsG, fatG: t.fatG, dietaryNotes: t.dietarySummary,
             });
-            if (list.length) {
-              await saveCachedWeeklyPlan(dateKey, targetFp, list);
-            }
+            if (list.length) await saveCachedWeeklyPlan(dateKey, targetFp, list);
           }
           if (cancelled) return;
-          if (list.length) {
-            setMealPlanSessionMeals(list, dateKey);
-          }
-          mealPlanSessionCache.current = {
-            forUserId: uid,
-            settled: true,
-            meals: list,
-          };
+          if (list.length) setMealPlanSessionMeals(list, dateKey);
+          mealPlanSessionCache.current = { forUserId: uid, settled: true, meals: list };
           setWeeklyPlanMeals(list);
         } catch {
           if (!cancelled) {
-            mealPlanSessionCache.current = {
-              forUserId: uid,
-              settled: true,
-              meals: [],
-            };
+            mealPlanSessionCache.current = { forUserId: uid, settled: true, meals: [] };
             setWeeklyPlanMeals([]);
           }
         } finally {
           if (!cancelled) setWeeklyPlanLoading(false);
         }
       })();
-      return () => {
-        cancelled = true;
-      };
+      return () => { cancelled = true; };
     }, [user?.uid])
   );
-
-  const consumedCal = totals.calories;
-  const calPct = clampPct((consumedCal / dailyCalories) * 100);
-  const remaining = Math.max(0, dailyCalories - consumedCal);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -295,96 +203,40 @@ export function HomeDashboard() {
     return 'Good evening';
   }, []);
 
-  const dateLabel = useMemo(() => {
-    return new Date().toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-    });
-  }, []);
-
-  const calState = calPct < 85 ? 'onTrack' : calPct < 100 ? 'watch' : 'over';
-
-  const showMealPlanLoading = Boolean(
-    user?.uid && (weeklyPlanMeals === null || weeklyPlanLoading)
+  const dateLabel = useMemo(
+    () => new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
+    []
   );
 
-  const suggestedSlice =
-    weeklyPlanMeals && weeklyPlanMeals.length > 0 ? weeklyPlanMeals.slice(0, 4) : [];
-  const displayMealsWithRecipeIdx: {
-    item: ReturnType<typeof aiBriefToCardItem>;
-    recipeIdx: number | null;
-  }[] =
+  const showMealPlanLoading = Boolean(user?.uid && (weeklyPlanMeals === null || weeklyPlanLoading));
+  const suggestedSlice = weeklyPlanMeals?.length ? weeklyPlanMeals.slice(0, 4) : [];
+  const displayMeals =
     suggestedSlice.length > 0
-      ? suggestedSlice.map((m, i) => ({
-          item: aiBriefToCardItem(m, i),
-          recipeIdx: i,
-        }))
+      ? suggestedSlice.map((m, i) => ({ item: aiBriefToCardItem(m, i), recipeIdx: i }))
       : MEAL_PLAN_CARDS.map((item) => ({ item, recipeIdx: null }));
 
-  const calBarColors = useMemo(
-    () =>
-      ({
-        onTrack: {
-          fill: Palette.iris,
-          track: isDark ? 'rgba(75, 35, 200, 0.35)' : Palette.haze,
-        },
-        watch: {
-          fill: Palette.citrus,
-          track: isDark ? 'rgba(245, 166, 35, 0.22)' : '#FFF8EB',
-        },
-        over: {
-          fill: '#E85D8E',
-          track: isDark ? 'rgba(232, 93, 142, 0.22)' : '#FFE8F2',
-        },
-      }) as const,
-    [isDark]
-  );
-  const bar = calBarColors[calState];
-
-  const statusChipTheme = useMemo(
-    () =>
-      ({
-        onTrack: {
-          bg: isDark ? 'rgba(232, 224, 255, 0.18)' : Palette.haze,
-          text: isDark ? '#D4C8FA' : Palette.iris,
-        },
-        watch: {
-          bg: isDark ? 'rgba(245, 166, 35, 0.2)' : '#FFF8EB',
-          text: isDark ? '#FFD699' : '#7A4B00',
-        },
-        over: {
-          bg: isDark ? 'rgba(255, 232, 242, 0.14)' : '#FFE8F2',
-          text: Palette.overText,
-        },
-      }) as const,
-    [isDark]
-  );
-  const chipT = statusChipTheme[calState];
-
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
       <AppMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        bounces>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces>
+
+        {/* Header */}
         <Animated.View entering={FadeInDown.duration(400)}>
           <View style={styles.headerRow}>
             <View>
-              <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.dateLine}>{dateLabel}</Text>
+              <Text style={[styles.greeting, { color: colors.text }]}>{greeting}</Text>
+              <Text style={[styles.dateLine, { color: colors.textMuted }]}>{dateLabel}</Text>
             </View>
             <View style={styles.headerActions}>
               <Pressable
-                style={styles.proBtn}
+                style={[styles.iconBtn, { backgroundColor: colors.iconWell, borderColor: colors.iconWellBorder }]}
                 onPress={() => router.push('/subscription')}
                 accessibilityRole="button"
-                accessibilityLabel="CalTrack Pro subscription">
+                accessibilityLabel="CalTrack Pro">
                 <Ionicons name="sparkles" size={20} color={Palette.iris} />
               </Pressable>
               <Pressable
-                style={styles.menuBtn}
+                style={[styles.iconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setMenuOpen(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Open app menu">
@@ -394,57 +246,35 @@ export function HomeDashboard() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(40).duration(380).springify()} style={styles.streakCard}>
-          <Text style={styles.streakEmoji}>🔥</Text>
-          <Text style={styles.streakLine}>
-            <Text style={styles.streakNumber}>{streak}</Text>
-            <Text style={styles.streakSuffix}> day streak</Text>
-          </Text>
+        {/* Streak banner */}
+        {streak > 0 ? (
+          <Animated.View
+            entering={FadeInDown.delay(30).duration(380).springify()}
+            style={[styles.streakCard, { backgroundColor: colors.streakBg, borderColor: colors.border }]}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+            <Text style={[styles.streakNum, { color: colors.streakText }]}>{streak}</Text>
+            <Text style={[styles.streakSuffix, { color: colors.streakText }]}> day streak</Text>
+          </Animated.View>
+        ) : null}
+
+        {/* Calorie card */}
+        <Animated.View entering={FadeInDown.delay(60).duration(420).springify()}>
+          <CalorieCard
+            consumed={totals.calories}
+            goal={dailyCalories}
+            syncing={Boolean(user && logSyncing)}
+            isDark={isDark}
+          />
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(60).duration(420).springify()} style={styles.calCard}>
-          <View style={styles.calGlow} />
-          <View style={styles.calHeader}>
-            <View style={styles.calBadge}>
-              <Ionicons name="nutrition" size={14} color={Palette.iris} />
-              <Text style={styles.calBadgeText}>Today</Text>
-              {user && logSyncing ? (
-                <ActivityIndicator size="small" color={Palette.iris} style={styles.calSyncSpinner} />
-              ) : null}
-            </View>
-            <View style={[styles.statusChip, { backgroundColor: chipT.bg }]}>
-              <Text style={[styles.statusChipText, { color: chipT.text }]}>
-                {calState === 'onTrack' ? 'On track' : calState === 'watch' ? 'Nearing goal' : 'Over goal'}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.calHero}>
-            <View>
-              <Text style={styles.calConsumed}>{consumedCal.toLocaleString()}</Text>
-              <Text style={styles.calLabel}>calories eaten</Text>
-            </View>
-            <View style={styles.calDivider} />
-            <View>
-              <Text style={styles.calGoal}>{dailyCalories.toLocaleString()}</Text>
-              <Text style={styles.calLabel}>daily goal</Text>
-            </View>
-          </View>
-          <View style={[styles.calProgressTrack, { backgroundColor: bar.track }]}>
-            <View style={[styles.calProgressFill, { width: `${calPct}%`, backgroundColor: bar.fill }]} />
-          </View>
-          <Text style={styles.calFoot}>
-            <Text style={styles.calFootStrong}>{remaining.toLocaleString()} kcal</Text> remaining today
-          </Text>
-        </Animated.View>
-
+        {/* Macros */}
         <Animated.View entering={FadeInDown.delay(100).duration(400).springify()}>
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>Macros</Text>
-            <Pressable onPress={() => router.push('/nutrition-targets' as Href)} accessibilityRole="button">
-              <Text style={styles.sectionLink}>Edit targets</Text>
-            </Pressable>
-          </View>
-          <MacroRingRow
+          <SectionHeader
+            title="Macros"
+            actionLabel="Edit targets"
+            onAction={() => router.push('/nutrition-targets' as Href)}
+          />
+          <MacroBar
             label="Protein"
             current={Math.round(totals.proteinGrams)}
             goal={proteinG}
@@ -452,41 +282,38 @@ export function HomeDashboard() {
             tint="#FFE8F0"
             icon="fitness-outline"
             delay={120}
-            ds={styles}
           />
-          <MacroRingRow
+          <MacroBar
             label="Carbs"
             current={Math.round(totals.carbsGrams)}
             goal={carbsG}
             color={Palette.citrus}
-            tint="#FFF8EB"
+            tint="#FFF7ED"
             icon="leaf-outline"
             delay={150}
-            ds={styles}
           />
-          <MacroRingRow
+          <MacroBar
             label="Fats"
             current={Math.round(totals.fatGrams)}
             goal={fatG}
             color={Palette.cyan}
-            tint="#E0F8FA"
+            tint="#EEF2FF"
             icon="water-outline"
             delay={180}
-            ds={styles}
           />
         </Animated.View>
 
+        {/* Suggested meals */}
         <Animated.View entering={FadeInDown.delay(140).duration(400).springify()}>
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>Suggested meals</Text>
-            <Pressable onPress={() => router.push('/meal-plan/weekly' as Href)}>
-              <Text style={styles.sectionLink}>Full week plan</Text>
-            </Pressable>
-          </View>
+          <SectionHeader
+            title="Suggested meals"
+            actionLabel="Full week plan"
+            onAction={() => router.push('/meal-plan/weekly' as Href)}
+          />
           {showMealPlanLoading ? (
-            <View style={styles.mealPlanLoading}>
+            <View style={styles.mealLoader}>
               <ActivityIndicator size="small" color={Palette.iris} />
-              <Text style={styles.mealPlanLoadingText}>Loading your plan…</Text>
+              <Text style={[styles.mealLoaderText, { color: colors.textMuted }]}>Loading your plan…</Text>
             </View>
           ) : (
             <ScrollView
@@ -495,12 +322,11 @@ export function HomeDashboard() {
               contentContainerStyle={styles.mealScroll}
               decelerationRate="fast"
               snapToInterval={cardW + 12}>
-              {displayMealsWithRecipeIdx.map(({ item, recipeIdx }) => (
-                <MealPlanCard
+              {displayMeals.map(({ item, recipeIdx }) => (
+                <MealCard
                   key={item.id}
                   item={item}
                   width={cardW}
-                  ds={styles}
                   onPress={() =>
                     recipeIdx !== null
                       ? router.push(`/meal-recipe?idx=${recipeIdx}` as Href)
@@ -512,23 +338,27 @@ export function HomeDashboard() {
           )}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(180).duration(400).springify()} style={styles.groceryCard}>
-          <View style={styles.groceryHeader}>
-            <View style={styles.groceryTitleRow}>
-              <View style={styles.groceryIconWrap}>
-                <Ionicons name="cart-outline" size={20} color={Palette.iris} />
-              </View>
-              <View style={styles.groceryTitleTextCol}>
-                <Text style={styles.groceryTitle}>Suggested groceries</Text>
-                <Text style={styles.grocerySubtitle} numberOfLines={2}>
-                  Weekly list from your targets. Refreshes once per day.
-                </Text>
-              </View>
+        {/* Groceries teaser */}
+        <Animated.View
+          entering={FadeInDown.delay(180).duration(400).springify()}
+          style={[styles.groceryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.groceryRow}>
+            <View style={[styles.groceryIcon, { backgroundColor: colors.iconWell }]}>
+              <Ionicons name="cart-outline" size={20} color={Palette.iris} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[styles.groceryTitle, { color: colors.text }]}>Suggested groceries</Text>
+              <Text style={[styles.grocerySub, { color: colors.textMuted }]} numberOfLines={2}>
+                Weekly list from your targets. Refreshes once per day.
+              </Text>
             </View>
           </View>
-          <Pressable style={styles.addListBtn} onPress={() => router.push('/(tabs)/groceries')}>
-            <Ionicons name="basket-outline" size={20} color={Palette.iris} />
-            <Text style={styles.addListText}>Open AI grocery suggestions</Text>
+          <Pressable
+            style={[styles.groceryBtn, { backgroundColor: colors.chipOnLight, borderColor: colors.borderStrong }]}
+            onPress={() => router.push('/(tabs)/groceries' as Href)}
+            accessibilityRole="button">
+            <Ionicons name="basket-outline" size={18} color={Palette.iris} />
+            <Text style={[styles.groceryBtnText, { color: Palette.iris }]}>Open AI grocery suggestions</Text>
           </Pressable>
         </Animated.View>
 
@@ -537,3 +367,88 @@ export function HomeDashboard() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 100 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  greeting: { fontFamily: Fonts.bold, fontSize: 28, lineHeight: 34 },
+  dateLine: { fontFamily: Fonts.regular, fontSize: 15, marginTop: 4 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconBtn: {
+    width: 44, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+  },
+  streakCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  streakEmoji: { fontSize: 26 },
+  streakNum: { fontFamily: Fonts.bold, fontSize: 24, letterSpacing: -0.5 },
+  streakSuffix: { fontFamily: Fonts.semiBold, fontSize: 16 },
+  mealLoader: {
+    flexDirection: 'row', alignItems: 'center',
+    gap: 10, paddingVertical: 24, paddingHorizontal: 4,
+  },
+  mealLoaderText: { fontFamily: Fonts.regular, fontSize: 14 },
+  mealScroll: { paddingRight: 20, gap: 12, paddingBottom: 8 },
+  mealCard: {
+    borderRadius: 20, padding: 16, marginRight: 12,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  mealAccent: {
+    width: 52, height: 52, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+  },
+  mealTag: {
+    fontFamily: Fonts.semiBold, fontSize: 11,
+    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+  },
+  mealTitle: {
+    fontFamily: Fonts.bold, fontSize: 17, lineHeight: 22,
+    marginBottom: 12, minHeight: 44,
+  },
+  mealMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  metaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+  },
+  metaText: { fontFamily: Fonts.medium, fontSize: 12 },
+  groceryCard: {
+    borderRadius: 24, padding: 18, marginTop: 20, borderWidth: 1,
+  },
+  groceryRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: 12, marginBottom: 14,
+  },
+  groceryIcon: {
+    width: 44, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  groceryTitle: { fontFamily: Fonts.bold, fontSize: 17 },
+  grocerySub: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  groceryBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 12, borderRadius: 14,
+    borderWidth: 1,
+  },
+  groceryBtnText: { fontFamily: Fonts.semiBold, fontSize: 14 },
+});
