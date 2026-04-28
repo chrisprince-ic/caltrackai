@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -21,29 +22,29 @@ type Props = {
 
 const STATE_COLORS: Record<CalState, { fill: string; track: string; trackDark: string; label: string }> = {
   onTrack: {
-    fill: Palette.iris,
-    track: Palette.haze,
-    trackDark: 'rgba(34, 197, 94, 0.25)',
+    fill: Palette.white,
+    track: 'rgba(255,255,255,0.25)',
+    trackDark: 'rgba(255,255,255,0.15)',
     label: 'On track',
   },
   watch: {
-    fill: Palette.citrus,
-    track: '#FFF7ED',
-    trackDark: 'rgba(249, 115, 22, 0.22)',
+    fill: '#FED7AA',
+    track: 'rgba(254,215,170,0.35)',
+    trackDark: 'rgba(254,215,170,0.2)',
     label: 'Nearing goal',
   },
   over: {
-    fill: Palette.overText,
-    track: Palette.overBg,
-    trackDark: 'rgba(190, 18, 60, 0.22)',
+    fill: '#FECDD3',
+    track: 'rgba(254,205,211,0.35)',
+    trackDark: 'rgba(254,205,211,0.2)',
     label: 'Over goal',
   },
 };
 
-const CHIP_COLORS: Record<CalState, { bg: string; bgDark: string; text: string; textDark: string }> = {
-  onTrack: { bg: Palette.haze, bgDark: 'rgba(34, 197, 94, 0.22)', text: Palette.lavender, textDark: Palette.mist },
-  watch: { bg: '#FFF7ED', bgDark: 'rgba(249, 115, 22, 0.2)', text: '#9A3412', textDark: '#FED7AA' },
-  over: { bg: Palette.overBg, bgDark: 'rgba(190, 18, 60, 0.2)', text: Palette.overText, textDark: '#FDA4AF' },
+const GRADIENTS: Record<CalState, [string, string, string]> = {
+  onTrack: ['#16A34A', '#22C55E', '#4ADE80'],
+  watch: ['#EA580C', '#F97316', '#FB923C'],
+  over: ['#BE123C', '#E11D48', '#F43F5E'],
 };
 
 export function CalorieCard({ consumed, goal, syncing, isDark = false }: Props) {
@@ -53,7 +54,7 @@ export function CalorieCard({ consumed, goal, syncing, isDark = false }: Props) 
 
   const calState: CalState = pct < 0.85 ? 'onTrack' : pct < 1 ? 'watch' : 'over';
   const sc = STATE_COLORS[calState];
-  const cc = CHIP_COLORS[calState];
+  const grad = GRADIENTS[calState];
 
   const fillWidth = useSharedValue(0);
   useEffect(() => {
@@ -65,37 +66,43 @@ export function CalorieCard({ consumed, goal, syncing, isDark = false }: Props) 
   }));
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      {/* Decorative glow blob */}
-      <View style={[styles.glow, { backgroundColor: isDark ? 'rgba(34,197,94,0.12)' : Palette.haze }]} />
+    <LinearGradient
+      colors={grad}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.card}>
+      {/* Decorative blobs */}
+      <View style={styles.blob1} />
+      <View style={styles.blob2} />
+      <View style={styles.blob3} />
 
       {/* Header row */}
       <View style={styles.headerRow}>
-        <View style={[styles.badge, { backgroundColor: isDark ? colors.haze : Palette.haze }]}>
-          <View style={[styles.dot, { backgroundColor: Palette.iris }]} />
-          <Text style={[styles.badgeText, { color: Palette.iris }]}>Today</Text>
-          {syncing ? <ActivityIndicator size="small" color={Palette.iris} style={styles.spinner} /> : null}
+        <View style={styles.badge}>
+          <View style={styles.dot} />
+          <Text style={styles.badgeText}>Today</Text>
+          {syncing ? <ActivityIndicator size="small" color={Palette.white} style={styles.spinner} /> : null}
         </View>
-        <View style={[styles.chip, { backgroundColor: isDark ? cc.bgDark : cc.bg }]}>
-          <Text style={[styles.chipText, { color: isDark ? cc.textDark : cc.text }]}>{sc.label}</Text>
+        <View style={styles.chip}>
+          <Text style={styles.chipText}>{sc.label}</Text>
         </View>
       </View>
 
       {/* Calorie hero numbers */}
       <View style={styles.heroRow}>
         <View style={styles.heroBlock}>
-          <Text style={[styles.bigNum, { color: Palette.iris }]}>{consumed.toLocaleString()}</Text>
-          <Text style={[styles.heroLabel, { color: colors.textMuted }]}>eaten</Text>
+          <Text style={styles.bigNum}>{consumed.toLocaleString()}</Text>
+          <Text style={styles.heroLabel}>eaten</Text>
         </View>
-        <View style={[styles.divider, { backgroundColor: colors.calDivider }]} />
+        <View style={styles.divider} />
         <View style={styles.heroBlock}>
-          <Text style={[styles.goalNum, { color: colors.text }]}>{goal.toLocaleString()}</Text>
-          <Text style={[styles.heroLabel, { color: colors.textMuted }]}>goal</Text>
+          <Text style={styles.goalNum}>{goal.toLocaleString()}</Text>
+          <Text style={styles.heroLabel}>goal</Text>
         </View>
-        <View style={[styles.divider, { backgroundColor: colors.calDivider }]} />
+        <View style={styles.divider} />
         <View style={styles.heroBlock}>
-          <Text style={[styles.goalNum, { color: colors.text }]}>{remaining.toLocaleString()}</Text>
-          <Text style={[styles.heroLabel, { color: colors.textMuted }]}>left</Text>
+          <Text style={styles.goalNum}>{remaining.toLocaleString()}</Text>
+          <Text style={styles.heroLabel}>left</Text>
         </View>
       </View>
 
@@ -104,29 +111,51 @@ export function CalorieCard({ consumed, goal, syncing, isDark = false }: Props) 
         <Animated.View style={[styles.fill, { backgroundColor: sc.fill }, fillStyle]} />
       </View>
 
-      <Text style={[styles.foot, { color: colors.textMuted }]}>
+      <Text style={styles.foot}>
         {Math.round(pct * 100)}% of daily goal
       </Text>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 22,
     marginBottom: 22,
-    borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  glow: {
+  blob1: {
     position: 'absolute',
-    top: -60,
-    right: -40,
     width: 180,
     height: 180,
     borderRadius: 90,
-    opacity: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    top: -60,
+    right: -50,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    bottom: -40,
+    left: -30,
+  },
+  blob3: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    top: 20,
+    left: '40%',
   },
   headerRow: {
     flexDirection: 'row',
@@ -138,24 +167,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
   },
-  dot: { width: 7, height: 7, borderRadius: 4 },
-  badgeText: { fontFamily: Fonts.semiBold, fontSize: 13, letterSpacing: 0.3 },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Palette.white },
+  badgeText: { fontFamily: Fonts.semiBold, fontSize: 13, color: Palette.white, letterSpacing: 0.3 },
   spinner: { marginLeft: 2, transform: [{ scale: 0.75 }] },
   chip: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
   },
-  chipText: { fontFamily: Fonts.semiBold, fontSize: 12 },
+  chipText: { fontFamily: Fonts.semiBold, fontSize: 12, color: Palette.white },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    gap: 0,
   },
   heroBlock: { flex: 1, alignItems: 'center' },
   bigNum: {
@@ -163,30 +193,39 @@ const styles = StyleSheet.create({
     fontSize: 38,
     lineHeight: 44,
     letterSpacing: -1,
+    color: Palette.white,
   },
   goalNum: {
     fontFamily: Fonts.bold,
     fontSize: 28,
     lineHeight: 34,
     letterSpacing: -0.5,
+    color: Palette.white,
   },
   heroLabel: {
     fontFamily: Fonts.regular,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 3,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    color: 'rgba(255,255,255,0.75)',
   },
-  divider: { width: 1, height: 52, marginHorizontal: 4 },
+  divider: { width: 1, height: 52, backgroundColor: 'rgba(255,255,255,0.25)', marginHorizontal: 4 },
   track: {
-    height: 14,
+    height: 10,
     borderRadius: 999,
     overflow: 'hidden',
     marginBottom: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   fill: {
     height: '100%',
     borderRadius: 999,
+    backgroundColor: Palette.white,
   },
-  foot: { fontFamily: Fonts.regular, fontSize: 13 },
+  foot: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+  },
 });

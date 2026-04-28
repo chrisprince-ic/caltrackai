@@ -32,6 +32,7 @@ import { AppMenuSheet } from '@/components/AppMenuSheet';
 import { CalorieCard } from '@/components/ui/CalorieCard';
 import { MacroBar } from '@/components/ui/MacroBar';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { ScreenBackground } from '@/components/ui/ScreenBackground';
 import { Palette } from '@/constants/palette';
 import { Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/AppThemeContext';
@@ -216,7 +217,8 @@ export function HomeDashboard() {
       : MEAL_PLAN_CARDS.map((item) => ({ item, recipeIdx: null }));
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenBackground>
       <AppMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces>
 
@@ -279,6 +281,7 @@ export function HomeDashboard() {
             current={Math.round(totals.proteinGrams)}
             goal={proteinG}
             color={Palette.flamingo}
+            colorEnd="#F472B6"
             tint="#FFE8F0"
             icon="fitness-outline"
             delay={120}
@@ -288,6 +291,7 @@ export function HomeDashboard() {
             current={Math.round(totals.carbsGrams)}
             goal={carbsG}
             color={Palette.citrus}
+            colorEnd="#FBBF24"
             tint="#FFF7ED"
             icon="leaf-outline"
             delay={150}
@@ -297,6 +301,7 @@ export function HomeDashboard() {
             current={Math.round(totals.fatGrams)}
             goal={fatG}
             color={Palette.cyan}
+            colorEnd="#818CF8"
             tint="#EEF2FF"
             icon="water-outline"
             delay={180}
@@ -364,12 +369,13 @@ export function HomeDashboard() {
 
         <View style={{ height: 24 }} />
       </ScrollView>
+      </ScreenBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: '#F0FDF4' },
   scroll: { paddingHorizontal: 20, paddingBottom: 100 },
   headerRow: {
     flexDirection: 'row',
@@ -409,10 +415,10 @@ const styles = StyleSheet.create({
     borderRadius: 20, padding: 16, marginRight: 12,
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   mealAccent: {
     width: 52, height: 52, borderRadius: 16,

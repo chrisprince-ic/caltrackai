@@ -1,6 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useEffect } from 'react';
 
 import { Fonts } from '@/constants/theme';
@@ -11,25 +17,27 @@ type Props = {
   current: number;
   goal: number;
   color: string;
+  colorEnd?: string;
   tint: string;
   icon: keyof typeof Ionicons.glyphMap;
   delay?: number;
 };
 
-export function MacroBar({ label, current, goal, color, tint, icon, delay = 0 }: Props) {
+export function MacroBar({ label, current, goal, color, colorEnd, tint, icon, delay = 0 }: Props) {
   const { colors } = useAppTheme();
   const rawPct = goal > 0 ? Math.min(1, current / goal) : 0;
-  const width = useSharedValue(0);
+  const widthVal = useSharedValue(0);
 
   useEffect(() => {
-    width.value = withSpring(rawPct, { damping: 18, stiffness: 90 });
-  }, [rawPct, width]);
+    widthVal.value = withSpring(rawPct, { damping: 18, stiffness: 90 });
+  }, [rawPct, widthVal]);
 
-  const fillStyle = useAnimatedStyle(() => ({
-    width: `${width.value * 100}%` as `${number}%`,
+  const trackAnimStyle = useAnimatedStyle(() => ({
+    width: `${widthVal.value * 100}%` as `${number}%`,
   }));
 
   const remain = Math.max(0, goal - current);
+  const gradColors: [string, string] = [color, colorEnd ?? color];
 
   return (
     <Animated.View
@@ -42,12 +50,19 @@ export function MacroBar({ label, current, goal, color, tint, icon, delay = 0 }:
         <View style={styles.top}>
           <Text style={[styles.name, { color: colors.text }]}>{label}</Text>
           <Text style={styles.nums}>
-            <Text style={{ color: colors.text }}>{current}</Text>
-            <Text style={{ color: colors.textMuted }}>/{goal}g</Text>
+            <Text style={{ color: colors.text, fontFamily: Fonts.semiBold }}>{current}</Text>
+            <Text style={{ color: colors.textMuted, fontFamily: Fonts.regular }}>/{goal}g</Text>
           </Text>
         </View>
         <View style={[styles.track, { backgroundColor: tint }]}>
-          <Animated.View style={[styles.fill, { backgroundColor: color }, fillStyle]} />
+          <Animated.View style={[styles.fillWrap, trackAnimStyle]}>
+            <LinearGradient
+              colors={gradColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.fill}
+            />
+          </Animated.View>
         </View>
         <Text style={[styles.remain, { color: colors.textMuted }]}>{remain}g left today</Text>
       </View>
@@ -64,6 +79,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 14,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   iconBlob: {
     width: 48,
@@ -80,15 +100,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   name: { fontFamily: Fonts.semiBold, fontSize: 16 },
-  nums: { fontFamily: Fonts.semiBold, fontSize: 15 },
+  nums: { fontSize: 15 },
   track: {
     height: 8,
     borderRadius: 999,
     overflow: 'hidden',
     marginBottom: 6,
   },
-  fill: {
+  fillWrap: {
     height: '100%',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  fill: {
+    flex: 1,
     borderRadius: 999,
   },
   remain: { fontFamily: Fonts.regular, fontSize: 12 },

@@ -60,9 +60,16 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
     setLogSyncing(true);
     try {
       const list = await fetchTodayNutritionEntries(user.uid);
-      setEntries(list);
+      // Merge: keep any locally-added entries whose Firebase write hasn't
+      // propagated yet, identified by IDs not present in the remote result.
+      setEntries((prev) => {
+        const remoteIds = new Set(list.map((e) => e.id));
+        const pending = prev.filter((e) => !remoteIds.has(e.id));
+        if (pending.length === 0) return list;
+        return [...list, ...pending].sort((a, b) => b.loggedAt - a.loggedAt);
+      });
     } catch {
-      setEntries([]);
+      // On error, keep whatever is already in local state rather than wiping it.
     } finally {
       setLogSyncing(false);
     }
@@ -70,9 +77,7 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user || !firebaseReady) {
-      if (!user) {
-        setEntries([]);
-      }
+      if (!user) setEntries([]);
       setLogSyncing(false);
       return;
     }
@@ -81,16 +86,21 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
       setLogSyncing(true);
       try {
         const list = await fetchTodayNutritionEntries(user.uid);
-        if (!cancelled) setEntries(list);
+        if (!cancelled) {
+          setEntries((prev) => {
+            const remoteIds = new Set(list.map((e) => e.id));
+            const pending = prev.filter((e) => !remoteIds.has(e.id));
+            if (pending.length === 0) return list;
+            return [...list, ...pending].sort((a, b) => b.loggedAt - a.loggedAt);
+          });
+        }
       } catch {
-        if (!cancelled) setEntries([]);
+        // Keep local state on error
       } finally {
         if (!cancelled) setLogSyncing(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [user?.uid, firebaseReady]);
 
   useEffect(() => {

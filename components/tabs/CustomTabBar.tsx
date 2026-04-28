@@ -69,8 +69,8 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: colors.bg }]}>
-      <View style={[styles.surface, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+      <View style={[styles.surface, { backgroundColor: isDark ? colors.surface : 'rgba(255,255,255,0.95)', borderColor: colors.border }]}>
         <View style={styles.fabWrap}>
           <Pressable
             onPress={() => go('scan')}
@@ -110,23 +110,25 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
 const styles = StyleSheet.create({
   outer: {
-    backgroundColor: Palette.ghost,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: 'transparent',
   },
   surface: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     marginHorizontal: 12,
     marginTop: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingTop: 10,
     paddingBottom: 4,
-    shadowColor: Palette.obsidian,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 12,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.1)',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 16,
   },
   row: {
     flexDirection: 'row',

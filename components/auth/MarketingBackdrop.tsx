@@ -1,16 +1,24 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
-import { Palette } from '@/constants/palette';
-
-/** Soft gradient-like orbs for marketing / auth screens. */
+/** Gradient background + decorative blobs for auth / marketing screens. */
 export function MarketingBackdrop() {
   return (
-    <View style={styles.wrap} pointerEvents="none">
-      <View style={[styles.orb, styles.orb1]} />
-      <View style={[styles.orb, styles.orb2]} />
-      <View style={[styles.orb, styles.orb3]} />
-      <View style={styles.gridLine} />
-    </View>
+    <>
+      <LinearGradient
+        colors={['#F0FDF4', '#F9FAFB', '#EFF6FF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <View style={styles.wrap} pointerEvents="none">
+        <View style={styles.blob1} />
+        <View style={styles.blob2} />
+        <View style={styles.blob3} />
+        <View style={styles.blob4} />
+      </View>
+    </>
   );
 }
 
@@ -19,42 +27,40 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
-  orb: {
+  blob1: {
     position: 'absolute',
-    borderRadius: 9999,
-    opacity: 0.38,
-  },
-  orb1: {
-    width: 280,
-    height: 280,
-    backgroundColor: Palette.mist,
-    top: -90,
-    right: -100,
-  },
-  orb2: {
-    width: 200,
-    height: 200,
-    backgroundColor: Palette.haze,
-    top: '32%',
-    left: -80,
-    opacity: 0.9,
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.06)',
-  },
-  orb3: {
     width: 320,
     height: 320,
-    backgroundColor: Palette.lavender,
-    bottom: -140,
-    right: -80,
-    opacity: 0.12,
+    borderRadius: 160,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    top: -120,
+    right: -100,
   },
-  gridLine: {
+  blob2: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '46%',
-    height: 1,
-    backgroundColor: 'rgba(34, 197, 94, 0.04)',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(99, 102, 241, 0.07)',
+    top: '35%',
+    left: -90,
+  },
+  blob3: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(249, 115, 22, 0.06)',
+    bottom: -120,
+    right: -80,
+  },
+  blob4: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(236, 72, 153, 0.07)',
+    top: '58%',
+    right: '20%',
   },
 });

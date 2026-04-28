@@ -14,6 +14,7 @@ import { fetchRecentDayTotals } from '@/lib/nutrition-history';
 import type { DayTotals } from '@/lib/nutrition-sync';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
+import { ScreenBackground } from '@/components/ui/ScreenBackground';
 
 type Period = 'week' | 'month' | 'year';
 const DAY_FETCH: Record<Period, number> = { week: 7, month: 30, year: 84 };
@@ -135,7 +136,8 @@ export default function InsightsScreen() {
   const { hits, total } = useMemo(() => countGoalHits(days, dailyCalories), [days, dailyCalories]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+    <ScreenBackground>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400)}>
           <Text style={[styles.title, { color: colors.text }]}>Insights</Text>
@@ -249,12 +251,13 @@ export default function InsightsScreen() {
           </View>
         </Animated.View>
       </ScrollView>
+    </ScreenBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: '#F0FDF4' },
   scroll: { padding: 20, paddingBottom: 120 },
   title: { fontFamily: Fonts.bold, fontSize: 28 },
   subtitle: { fontFamily: Fonts.regular, fontSize: 15, marginTop: 6, marginBottom: 16 },

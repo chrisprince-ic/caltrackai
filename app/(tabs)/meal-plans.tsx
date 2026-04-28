@@ -8,13 +8,15 @@ import { MEAL_PLAN_CARDS } from '@/constants/dashboard-mock';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
 import { useAppTheme } from '@/contexts/AppThemeContext';
+import { ScreenBackground } from '@/components/ui/ScreenBackground';
 
 export default function MealPlansScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+    <ScreenBackground>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400)}>
           <Text style={[styles.title, { color: colors.text }]}>Meal plans</Text>
@@ -61,12 +63,13 @@ export default function MealPlansScreen() {
           </Animated.View>
         ))}
       </ScrollView>
+    </ScreenBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: '#F0FDF4' },
   scroll: { padding: 20, paddingBottom: 120 },
   title: { fontFamily: Fonts.bold, fontSize: 28 },
   subtitle: { fontFamily: Fonts.regular, fontSize: 15, marginTop: 6, marginBottom: 20 },

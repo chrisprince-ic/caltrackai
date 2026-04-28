@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import { useAppTheme } from '@/contexts/AppThemeContext';
+import { ScreenBackground } from '@/components/ui/ScreenBackground';
 import {
   buildTargetsFingerprint,
   getLogDateKey,
@@ -72,7 +73,8 @@ export default function GroceriesScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+    <ScreenBackground>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400)}>
           <Text style={[styles.title, { color: colors.text }]}>Groceries</Text>
@@ -149,12 +151,13 @@ export default function GroceriesScreen() {
 
         {!user ? <Text style={[styles.muted, { color: colors.textMuted }]}>Sign in to get personalized grocery ideas.</Text> : null}
       </ScrollView>
+    </ScreenBackground>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: { flex: 1, backgroundColor: '#F0FDF4' },
   scroll: { padding: 20, paddingBottom: 120 },
   title: { fontFamily: Fonts.bold, fontSize: 28 },
   subtitle: { fontFamily: Fonts.regular, fontSize: 15, marginTop: 6, marginBottom: 20, lineHeight: 22 },
