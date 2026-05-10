@@ -1,28 +1,28 @@
-/** Design tokens — green health system */
+import { MacroviaLight } from '@/constants/macrovia';
+
+/** Brand + macro accents — Macrovia-aligned (emerald protein, amber carbs, violet fat). */
 export const Palette = {
-  // Brand greens
-  iris: '#22C55E',        // Primary brand (used everywhere via Palette.iris)
-  lavender: '#16A34A',    // Darker green — active / pressed
-  mist: '#A7F3D0',        // Light green tint
-  haze: '#DCFCE7',        // Very light green — chips, wells
+  iris: MacroviaLight.accent,
+  lavender: MacroviaLight.accentDeep,
+  mist: MacroviaLight.accentSoft,
+  haze: MacroviaLight.accentSoft,
 
-  // Macro accents
-  flamingo: '#EC4899',    // Protein — pink
-  citrus: '#F97316',      // Calories / energy — orange
-  cyan: '#6366F1',        // Fats — indigo
+  flamingo: MacroviaLight.accentDeep,
+  citrus: MacroviaLight.warm,
+  cyan: MacroviaLight.violet,
 
-  // Neutrals
-  obsidian: '#111827',    // Primary text
-  void: '#1F2937',        // Dark surface
-  ghost: '#F9FAFB',       // App background
-  dusk: '#6B7280',        // Muted text / subtext
+  obsidian: MacroviaLight.ink,
+  void: '#1E2321',
+  ghost: MacroviaLight.bg,
+  dusk: MacroviaLight.ink3,
   white: '#FFFFFF',
 
-  // Semantic status
-  onTrackBg: '#DCFCE7',
-  onTrackText: '#16A34A',
-  watchBg: '#FFF7ED',
-  watchText: '#9A3412',
-  overBg: '#FFF1F2',
-  overText: '#BE123C',
+  onTrackBg: MacroviaLight.accentSoft,
+  onTrackText: MacroviaLight.accentDeep,
+  watchBg: MacroviaLight.warmSoft,
+  watchText: '#8B5C1A',
+  overBg: 'rgba(217,92,114,0.12)',
+  overText: MacroviaLight.rose,
+
+  visionMint: MacroviaLight.visionMint,
 } as const;

@@ -1,14 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { BRAND_GREEN_SOFT_GRADIENT_2 } from '@/constants/hero';
-import { Palette } from '@/constants/palette';
 import { Fonts } from '@/constants/theme';
-
+import { useAppTheme } from '@/contexts/AppThemeContext';
 type Props = {
   label: string;
   value: number;
@@ -37,6 +35,11 @@ export function StatTile({
   valueColorOverride,
   valueText,
 }: Props) {
+  const { colors } = useAppTheme();
+  const brandGradientColors = useMemo(
+    (): [string, string] => [colors.accentSoft, colors.chipOnLight],
+    [colors.accentSoft, colors.chipOnLight]
+  );
   const scale = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const target = Math.round(Math.max(0, value));
@@ -74,12 +77,16 @@ export function StatTile({
     };
   }, [target, countDelay, reducedMotion, valueText]);
 
-  const ink = valueColorOverride ?? (variant === 'brand' ? Palette.iris : '#1A2B26');
+  const ink =
+    valueColorOverride ?? (variant === 'brand' ? colors.accentDeep : colors.text);
+  const labelColor = variant === 'brand' ? colors.accentDeep : colors.textMuted;
 
   const inner = (
     <>
       <Ionicons name={icon} size={14} color={accentColor} style={styles.icon} />
-      <Text style={[styles.label, { color: variant === 'brand' ? 'rgba(22, 163, 74, 0.72)' : '#888888' }]}>{label}</Text>
+      <Text style={[styles.label, { color: labelColor, opacity: variant === 'brand' ? 0.85 : 1 }]}>
+        {label}
+      </Text>
       <Text
         style={[
           styles.num,
@@ -95,14 +102,18 @@ export function StatTile({
   const tileInner =
     variant === 'brand' ? (
       <LinearGradient
-        colors={[...BRAND_GREEN_SOFT_GRADIENT_2]}
+        colors={brandGradientColors}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
-        style={[styles.tile, styles.tileBrandExtras]}>
+        style={[
+          styles.tile,
+          styles.tileBrandExtras,
+          { borderColor: colors.glassStroke, shadowColor: colors.accent },
+        ]}>
         {inner}
       </LinearGradient>
     ) : (
-      <View style={[styles.tile, styles.tileSide]}>{inner}</View>
+      <View style={[styles.tile, styles.tileSide, { backgroundColor: colors.surfaceMuted }]}>{inner}</View>
     );
 
   return (
@@ -134,13 +145,9 @@ const styles = StyleSheet.create({
     minHeight: 96,
     justifyContent: 'flex-start',
   },
-  tileSide: {
-    backgroundColor: '#FAFDFB',
-  },
+  tileSide: {},
   tileBrandExtras: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(34,197,94,0.14)',
-    shadowColor: Palette.iris,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,

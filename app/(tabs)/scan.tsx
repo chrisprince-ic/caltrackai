@@ -63,7 +63,7 @@ function buildFoodNameForLog(r: FoodAnalysisResult): string {
 }
 
 function Viewfinder() {
-  const c = Palette.mist;
+  const c = Palette.visionMint;
   const common = { position: 'absolute' as const, borderColor: c };
   return (
     <View style={styles.viewfinder} pointerEvents="none">

@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppLinearGradient } from '@/components/ui/AppLinearGradient';
 import { Fonts } from '@/constants/theme';
-import { Palette } from '@/constants/palette';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 
 type TabDef = {
@@ -15,14 +16,20 @@ type TabDef = {
   iconActive: keyof typeof Ionicons.glyphMap;
 };
 
+/** Macrovia layout: Today · Meals · FAB scan · Groceries · Progress */
 const SIDE_TABS: [TabDef, TabDef][] = [
   [
-    { name: 'index', label: 'Home', icon: 'home-outline', iconActive: 'home' },
-    { name: 'meal-plans', label: 'Plans', icon: 'calendar-outline', iconActive: 'calendar' },
+    { name: 'index', label: 'Today', icon: 'home-outline', iconActive: 'home' },
+    { name: 'meal-plans', label: 'Meals', icon: 'restaurant-outline', iconActive: 'restaurant' },
   ],
   [
     { name: 'groceries', label: 'Groceries', icon: 'basket-outline', iconActive: 'basket' },
-    { name: 'insights', label: 'Charts', icon: 'stats-chart-outline', iconActive: 'stats-chart' },
+    {
+      name: 'insights',
+      label: 'Progress',
+      icon: 'trending-up-outline',
+      iconActive: 'trending-up',
+    },
   ],
 ];
 
@@ -36,15 +43,9 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
   const active = state.routes[state.index]?.name;
-  const scanFocused = active === 'scan';
   const muted = colors.textMuted;
-  const activeColor = Palette.iris;
 
-  // Camera screen owns the full viewport (no floating FAB / no tab bar peeking
-  // through). Hiding here is simpler than fighting Tabs' tabBarStyle.
-  if (scanFocused) {
-    return null;
-  }
+  if (active === 'scan') return null;
 
   const go = (name: string) => {
     haptic();
@@ -60,13 +61,24 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityRole="button"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={`${tab.label} tab`}>
-        <Ionicons
-          name={focused ? tab.iconActive : tab.icon}
-          size={22}
-          color={focused ? activeColor : muted}
-        />
+        <View
+          style={[
+            styles.iconBubble,
+            focused && { backgroundColor: `${colors.accent}22` },
+          ]}>
+          <Ionicons
+            name={focused ? tab.iconActive : tab.icon}
+            size={21}
+            color={focused ? colors.accentDeep : muted}
+          />
+        </View>
         <Text
-          style={[styles.tabLabel, { color: muted }, focused && { color: activeColor }]}
+          style={[
+            styles.tabLabel,
+            { color: muted },
+            focused && { color: colors.accentDeep },
+            focused && { fontFamily: Fonts.semiBold },
+          ]}
           numberOfLines={1}>
           {tab.label}
         </Text>
@@ -74,73 +86,111 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     );
   };
 
-  return (
-    <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <View style={[styles.surface, { backgroundColor: isDark ? colors.surface : 'rgba(255,255,255,0.95)', borderColor: colors.border }]}>
-        <View style={styles.fabWrap}>
-          <Pressable
-            onPress={() => go('scan')}
-            style={({ pressed }) => [
-              styles.fab,
-              { borderColor: isDark ? Palette.obsidian : Palette.ghost },
-              scanFocused && styles.fabFocused,
-              pressed && styles.fabPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Scan food for calories">
-            <Ionicons name="camera" size={28} color={Palette.white} />
-          </Pressable>
-          <Text
-            style={[styles.fabCaption, { color: muted }, scanFocused && { color: activeColor }]}>
-            Scan
-          </Text>
+  const tabRow = (
+    <View style={styles.surfaceInner}>
+      <View style={styles.rowInner}>
+        <View style={styles.side}>
+          {SIDE_TABS[0].map((tab) => (
+            <TabItem key={tab.name} tab={tab} />
+          ))}
         </View>
-
-        <View style={styles.row}>
-          <View style={styles.side}>
-            {SIDE_TABS[0].map((tab) => (
-              <TabItem key={tab.name} tab={tab} />
-            ))}
-          </View>
-          <View style={styles.fabSpacer} />
-          <View style={styles.side}>
-            {SIDE_TABS[1].map((tab) => (
-              <TabItem key={tab.name} tab={tab} />
-            ))}
-          </View>
+        <View style={styles.fabSpacer} />
+        <View style={styles.side}>
+          {SIDE_TABS[1].map((tab) => (
+            <TabItem key={tab.name} tab={tab} />
+          ))}
         </View>
       </View>
+      <Pressable
+        onPress={() => go('scan')}
+        style={({ pressed }) => [
+          styles.fabPress,
+          styles.fabWrap,
+          pressed && { transform: [{ scale: 0.97 }] },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Scan food">
+        <AppLinearGradient
+          colors={[colors.accent, colors.accentDeep]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fab}>
+          <Ionicons name="scan-outline" size={26} color="#fff" />
+        </AppLinearGradient>
+      </Pressable>
+    </View>
+  );
+
+  const bottomInset = Math.max(insets.bottom, 10);
+
+  return (
+    <View style={[styles.outer, { paddingBottom: bottomInset }]}>
+      {Platform.OS === 'ios' ? (
+        <BlurView
+          intensity={38}
+          tint={isDark ? 'dark' : 'light'}
+          style={[
+            styles.surface,
+            {
+              borderColor: colors.glassStroke,
+              backgroundColor: isDark ? 'rgba(28,34,31,0.65)' : 'rgba(255,255,255,0.76)',
+            },
+          ]}>
+          {tabRow}
+        </BlurView>
+      ) : (
+        <View
+          style={[
+            styles.surface,
+            {
+              borderColor: colors.glassStroke,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.92)',
+            },
+          ]}>
+          {tabRow}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   outer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'transparent',
+    paddingHorizontal: 14,
+    overflow: 'visible',
   },
   surface: {
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    marginHorizontal: 12,
-    marginTop: 0,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 10,
-    paddingBottom: 4,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
-    shadowColor: Palette.lavender,
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 16,
+    borderRadius: 28,
+    overflow: 'visible',
+    paddingTop: 8,
+    paddingBottom: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.16,
+        shadowRadius: 36,
+      },
+      default: { elevation: 18 },
+    }),
   },
-  row: {
+  surfaceInner: {
+    overflow: 'visible',
+    paddingTop: 22,
+    position: 'relative',
+  },
+  rowInner: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
+    minHeight: 52,
+    position: 'relative',
   },
   side: {
     flex: 1,
@@ -148,57 +198,53 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   fabSpacer: {
-    width: 76,
+    width: 72,
   },
   fabWrap: {
     position: 'absolute',
-    alignSelf: 'center',
-    top: -36,
+    left: '50%',
+    marginLeft: -29,
+    top: -34,
     zIndex: 20,
-    alignItems: 'center',
+    elevation: 24,
   },
-  fab: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Palette.iris,
+  fabPress: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    shadowColor: Palette.iris,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 16,
   },
-  fabPressed: {
-    transform: [{ scale: 0.96 }],
-    opacity: 0.95,
-  },
-  fabFocused: {
-    borderColor: Palette.lavender,
-    shadowOpacity: 0.45,
-  },
-  fabCaption: {
-    marginTop: 4,
-    fontFamily: Fonts.semiBold,
-    fontSize: 11,
-    color: Palette.dusk,
-  },
-  fabCaptionActive: {
-    color: Palette.iris,
+  fab: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.22,
+        shadowRadius: 16,
+      },
+      default: { elevation: 10 },
+    }),
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    gap: 4,
+    gap: 2,
+    paddingVertical: 4,
     minWidth: 0,
-    minHeight: 48,
-    justifyContent: 'center',
+  },
+  iconBubble: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
   tabLabel: {
     fontFamily: Fonts.medium,
-    fontSize: 10,
+    fontSize: 9.5,
+    letterSpacing: 0.2,
   },
 });

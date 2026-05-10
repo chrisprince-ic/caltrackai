@@ -1,4 +1,5 @@
 import { Palette } from '@/constants/palette';
+import { MacroviaLight } from '@/constants/macrovia';
 
 /** Brand green gradient — legacy stops for non-flat variants / dark hero fallback. */
 const BRAND = Palette.iris;
@@ -66,11 +67,15 @@ export const HERO_BACKGROUNDS: Record<HeroBackgroundVariant, HeroTheme> = {
     pageBg: '#F4FBF7',
   },
   sage: {
-    gradient: ['#F1F5EE', '#E8EDD8', '#D8E0C2'],
+    gradient: [
+      MacroviaLight.bg,
+      MacroviaLight.bgSoft,
+      MacroviaLight.accentSoft,
+    ] as readonly [string, string, string],
     statusBarStyle: 'dark',
-    titleColor: '#0F1F08',
-    subtitleColor: 'rgba(15, 31, 8, 0.55)',
-    pageBg: '#F1F5EE',
+    titleColor: MacroviaLight.ink,
+    subtitleColor: 'rgba(74, 89, 82, 0.72)',
+    pageBg: MacroviaLight.bg,
   },
   dark: {
     gradient: ['#1A2E10', '#0F1F08', '#070D04'],

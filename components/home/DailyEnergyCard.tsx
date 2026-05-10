@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Modal,
   Platform,
   Pressable,
@@ -12,11 +13,12 @@ import {
 } from 'react-native';
 
 import { HealthConnectTile } from '@/components/home/HealthConnectTile';
-import { SmartStatusPill } from '@/components/home/SmartStatusPill';
-import { StatTile } from '@/components/home/energy/StatTile';
+import {
+  SemiTripleEnergyGauge,
+  type SemiTripleGaugeColors,
+} from '@/components/home/energy/SemiTripleEnergyGauge';
 import { SegmentedPill } from '@/components/ui/SegmentedPill';
 import { Fonts } from '@/constants/theme';
-import { Palette } from '@/constants/palette';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 import { useNutritionLog } from '@/contexts/NutritionLogContext';
@@ -31,17 +33,13 @@ import {
 import { saveUserNutritionPlan } from '@/lib/nutrition-plan-sync';
 import type { WeightGoalDirection } from '@/types/nutrition-plan-persisted';
 
-const BRAND = Palette.iris;
-const BRAND_DARK = Palette.lavender;
-const BRAND_SOFT = Palette.haze;
-const ORANGE = '#F97316';
-const INK = '#1A2B26';
-
 const WEIGHT_GOAL_SEGMENTS = [
   { id: 'lose' as const, label: 'Lose' },
   { id: 'maintain' as const, label: 'Maintain' },
   { id: 'gain' as const, label: 'Gain' },
 ];
+
+type BadgeKind = 'ok' | 'warn' | 'over' | 'mute';
 
 function formatRelativeUpdated(atMs: number): string {
   const s = Math.floor((Date.now() - atMs) / 1000);
@@ -58,6 +56,51 @@ function healthAdjustsDailyTarget(hk: ReturnType<typeof useCalories>): boolean {
   const s = hk.healthKitStatus;
   if (s === 'unavailable' || s === 'denied') return false;
   return true;
+}
+
+function clamp01(n: number) {
+  return Math.min(1, Math.max(0, n));
+}
+
+function tripleGaugeVisualHeight(width: number) {
+  const baseLineY = Math.round(width * 0.362);
+  return Math.ceil(baseLineY + width * 0.084);
+}
+
+function bendMacroTowardHit(g: number, t: number) {
+  if (t <= 0) return 1;
+  const r = g / t;
+  return clamp01(r > 1 ? Math.max(0, 2 - r) : r);
+}
+
+function energySubtitle(opts: {
+  adjustedTarget: number;
+  overPortion: boolean;
+  pctLogged: number;
+  midFrac: number;
+  innerFrac: number;
+}) {
+  const { adjustedTarget, overPortion, pctLogged, midFrac, innerFrac } = opts;
+  if (adjustedTarget <= 0) return `Set calorie & macro targets to personalize this ribbon.`;
+  if (overPortion) return `A little elevated — hydrate and lighten the next picks.`;
+  if (pctLogged >= 86 && pctLogged <= 114 && midFrac >= 0.72 && innerFrac >= 0.72)
+    return `Sitting in the sweet spot.`;
+  if (pctLogged < 76) return `Room ahead of you — steady fuel builds momentum.`;
+  if (pctLogged > 112) return `Running fuller today — lean toward protein-leading plates.`;
+  return `Balanced glide — macros are pacing well.`;
+}
+
+function energyBadge(opts: {
+  adjustedTarget: number;
+  overPortion: boolean;
+  pctLogged: number;
+}): { label: string; tone: BadgeKind } {
+  const { adjustedTarget, overPortion, pctLogged } = opts;
+  if (adjustedTarget <= 0) return { label: 'Configure', tone: 'mute' };
+  if (overPortion) return { label: 'Over', tone: 'over' };
+  if (pctLogged < 78) return { label: 'Fuel up', tone: 'warn' };
+  if (pctLogged > 108) return { label: 'Ease back', tone: 'warn' };
+  return { label: 'On track', tone: 'ok' };
 }
 
 export function DailyEnergyCard() {
@@ -95,11 +138,15 @@ export function DailyEnergyCard() {
     (hk.refreshing || (hk.loading && !hk.fetchedOnce));
 
   const remaining = adjustedTarget - eaten;
+  const pctLogged =
+    adjustedTarget > 0 ? Math.min(100, Math.round((eaten / Math.max(1, adjustedTarget)) * 100)) : 0;
+
   const overPortion = eaten > adjustedTarget && adjustedTarget > 0;
 
   const goalWord = goalDirectionLabel(weightGoal);
 
-  const muted = isDark ? colors.textMuted : '#6B7280';
+  const muted = colors.textMuted;
+
   const divider = isDark ? 'rgba(255,255,255,0.08)' : '#F1F1F0';
 
   const healthDrivesTarget = healthAdjustsDailyTarget(hk);
@@ -111,14 +158,14 @@ export function DailyEnergyCard() {
     hk.healthKitStatus === 'denied' || hk.healthKitStatus === 'unavailable';
 
   const [insightOpen, setInsightOpen] = useState(false);
-  const [statTip, setStatTip] = useState<'eaten' | 'remaining' | 'burned' | null>(null);
+  const [statTip, setStatTip] = useState<'burned' | 'deficit' | 'score' | null>(null);
 
-  const ink = isDark ? colors.text : INK;
+  const ink = colors.text;
 
   const syncFooter =
     hk.healthKitStatus === 'connected' && hk.platformSupported && !hk.needsAuthCTA ? (
       <Text style={[styles.syncLine, { color: muted }]} numberOfLines={3}>
-        <Text style={styles.syncBullet}>● </Text>
+        <Text style={[styles.syncBullet, { color: colors.accent }]}>● </Text>
         <Text>
           Synced · Active {active.toLocaleString()} · Resting {resting.toLocaleString()}
           {hk.lastSyncedAt ? ` · Updated ${formatRelativeUpdated(hk.lastSyncedAt)}` : ''}
@@ -163,82 +210,226 @@ export function DailyEnergyCard() {
 
   const hkConnected =
     hk.healthKitStatus === 'connected' && hk.platformSupported && !hk.needsAuthCTA;
-  const showStatusPill = eaten > 0 && adjustedTarget > 0;
+
+  const screenW = Dimensions.get('window').width;
+  const gaugeW = Math.min(332, Math.max(268, screenW - 72));
+  const gaugeH = tripleGaugeVisualHeight(gaugeW);
+  const digitsBandMaxW = Math.round(gaugeW * 0.56);
+  const digitsMaxFontSize = Math.round(gaugeW * 0.102);
+  const calorieRatio = adjustedTarget > 0 ? eaten / adjustedTarget : 0;
+  const outerGreenArc = calorieRatio >= 1 ? 0.997 : Math.min(calorieRatio, 0.997);
+  const orangeOverArc = calorieRatio > 1 ? Math.min(calorieRatio - 1, 0.65) : 0;
+  const midFrac = proteinG > 0 ? clamp01(Math.min(totals.proteinGrams / proteinG, 1.06)) : 0;
+  const innerFrac = carbsG > 0 ? clamp01(Math.min(totals.carbsGrams / carbsG, 1.06)) : 0;
+
+  const gaugePalette: SemiTripleGaugeColors = {
+    track: isDark ? 'rgba(255,255,255,0.13)' : colors.hairline,
+    outer: colors.accentDeep,
+    outerOverflow: colors.warm,
+    middle: colors.accent,
+    inner: colors.warm,
+  };
+
+  const subtitle = energySubtitle({
+    adjustedTarget,
+    overPortion,
+    pctLogged,
+    midFrac,
+    innerFrac,
+  });
+  const { label: badgeLabel, tone: badgeTone } = energyBadge({
+    adjustedTarget,
+    overPortion,
+    pctLogged,
+  });
+
+  const calorieBalanceHarmony =
+    adjustedTarget <= 0
+      ? 0.4
+      : clamp01(1 - Math.min(1.1, Math.abs(eaten - adjustedTarget) / Math.max(adjustedTarget, 1)));
+  const harmony =
+    (bendMacroTowardHit(totals.proteinGrams, proteinG) +
+      bendMacroTowardHit(totals.carbsGrams, carbsG) +
+      bendMacroTowardHit(totals.fatGrams, fatG)) /
+    3;
+  let wellnessScore = Math.round(calorieBalanceHarmony * 56 + harmony * 38 + (hkConnected ? 5 : 0));
+  if (eaten <= 0) wellnessScore -= 14;
+  wellnessScore = Math.min(96, Math.max(52, wellnessScore));
+
+  const burnedPrimary = burnLoading
+    ? '…'
+    : hkConnected
+      ? `${Math.round(active + resting).toLocaleString()} kcal`
+      : '—';
+
+  const deficitPrimary =
+    adjustedTarget <= 0 ? '—' : overPortion ? `${Math.abs(remaining)} kcal` : `${Math.max(0, remaining)} kcal`;
+  const deficitSub =
+    adjustedTarget <= 0 ? '' : overPortion ? 'beyond budget' : 'under target';
+
+  let badgeDot = badgeTone === 'ok' ? '#FFFFFF' : colors.warm;
+  let badgeFg = badgeTone === 'ok' ? '#FFFFFF' : colors.accentDeep;
+  let badgeBg = colors.accent;
+  let badgeBorder: string | undefined;
+  const padH = badgeTone === 'ok' ? 12 : 10;
+  switch (badgeTone) {
+    case 'over':
+      badgeBg = `${colors.warm}24`;
+      badgeFg = colors.warm;
+      badgeDot = colors.warm;
+      break;
+    case 'warn':
+      badgeBg = colors.warmSoft;
+      badgeFg = colors.accentDeep;
+      badgeDot = colors.warm;
+      badgeBorder = colors.glassStroke;
+      break;
+    case 'mute':
+      badgeBg = colors.surfaceMuted;
+      badgeFg = colors.textMuted;
+      badgeDot = colors.textMuted;
+      badgeBorder = colors.glassStroke;
+      break;
+    default:
+      break;
+  }
+
+  const accessibilityEnergy = `Today's energy ${eaten} of ${adjustedTarget} kilocalories. Triple arcs: calories, protein, carbs.`;
 
   const cardBg = isDark ? colors.surface : '#FFFFFF';
-  const cardBorder = isDark ? colors.border : 'rgba(34, 197, 94, 0.1)';
+  const cardBorder = isDark ? colors.border : colors.glassStroke;
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.cardOuter, { shadowColor: isDark ? '#000' : BRAND }]}>
+      <View style={[styles.cardOuter, { shadowColor: isDark ? '#000' : `${colors.shadow}` }]}>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
           <View style={styles.cardPad}>
-            <View style={styles.loggedStrip}>
-              <View style={styles.loggedStripInner}>
-                <View style={styles.loggedStripLeft}>
-                  <View style={styles.loggedIconWell}>
-                    <Ionicons name="restaurant" size={18} color={BRAND} />
-                  </View>
-                  <View style={styles.loggedTextCol}>
-                    <Text
-                      style={[styles.loggedKicker, { color: muted }]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail">
-                      Logged today
-                    </Text>
-                    <Text
-                      style={[styles.loggedMain, { color: ink }]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail">
-                      <Text style={styles.loggedMainNum}>{eaten.toLocaleString()}</Text>
-                      <Text style={[styles.loggedSlash, { color: muted }]}> / </Text>
-                      <Text style={[styles.loggedTarget, { color: muted }]}>
-                        {adjustedTarget.toLocaleString()} kcal
-                      </Text>
-                    </Text>
+            <View
+              accessible
+              accessibilityRole="summary"
+              accessibilityLabel={accessibilityEnergy}
+              style={styles.energySheet}>
+              <View style={styles.todayHeader}>
+                <View style={styles.todayHeaderLeft}>
+                  <Text style={[styles.todayKicker, { color: muted }]}>Today's energy</Text>
+                  <Text style={[styles.todaySubtitle, { color: muted }]} numberOfLines={2}>
+                    {subtitle}
+                  </Text>
+                </View>
+                <View style={styles.todayHeaderActions}>
+                  {hk.healthKitStatus === 'connected' && hk.platformSupported ? (
+                    <Pressable
+                      onPress={() => void hk.refresh()}
+                      style={[styles.iconCircle, { backgroundColor: colors.surfaceMuted }]}
+                      hitSlop={8}
+                      accessibilityLabel="Refresh Apple Health data">
+                      {hk.refreshing ? (
+                        <ActivityIndicator size="small" color={colors.accent} />
+                      ) : (
+                        <Ionicons name="refresh" size={17} color={colors.accent} />
+                      )}
+                    </Pressable>
+                  ) : null}
+                  <View
+                    style={[
+                      styles.badgePill,
+                      {
+                        backgroundColor: badgeBg,
+                        paddingHorizontal: padH,
+                        borderColor: badgeBorder,
+                        borderWidth: badgeBorder ? StyleSheet.hairlineWidth : 0,
+                      },
+                    ]}>
+                    <View style={[styles.badgeDot, { backgroundColor: badgeDot }]} />
+                    <Text style={[styles.badgeText, { color: badgeFg }]}>{badgeLabel}</Text>
                   </View>
                 </View>
-                <View style={styles.loggedStripEnd}>
-                  <View style={styles.headerActions}>
-                    {hk.healthKitStatus === 'connected' && hk.platformSupported ? (
-                      <Pressable
-                        onPress={() => void hk.refresh()}
-                        style={[
-                          styles.iconCircle,
-                          { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F4F5' },
-                        ]}
-                        hitSlop={8}
-                        accessibilityLabel="Refresh Apple Health data">
-                        {hk.refreshing ? (
-                          <ActivityIndicator size="small" color={BRAND} />
-                        ) : (
-                          <Ionicons name="refresh" size={18} color={BRAND} />
-                        )}
-                      </Pressable>
-                    ) : null}
-                    {showStatusPill ? (
-                      <SmartStatusPill
-                        eatenToday={eaten}
-                        adjustedTarget={adjustedTarget}
-                        reducedMotion={reducedMotion}
-                      />
-                    ) : null}
-                  </View>
-                  {remaining >= 0 && adjustedTarget > 0 ? (
-                    <View
-                      style={[
-                        styles.remainChip,
-                        { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F4F4F5' },
-                      ]}>
-                      <Text style={[styles.remainChipText, { color: muted }]}>
-                        {remaining.toLocaleString()} left
-                      </Text>
-                    </View>
-                  ) : overPortion ? (
-                    <View style={[styles.remainChip, { backgroundColor: 'rgba(249,115,22,0.12)' }]}>
-                      <Text style={[styles.remainChipText, { color: ORANGE }]}>Over target</Text>
-                    </View>
-                  ) : null}
+              </View>
+
+              <View style={[styles.gaugeWrap, { width: gaugeW, minHeight: gaugeH }]}>
+                <SemiTripleEnergyGauge
+                  width={gaugeW}
+                  outerProgress01={outerGreenArc}
+                  outerOverflow01={orangeOverArc}
+                  middleProgress01={midFrac}
+                  innerProgress01={innerFrac}
+                  colors={gaugePalette}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.gaugeLabels,
+                    {
+                      top: gaugeH - gaugeW * 0.491,
+                      width: digitsBandMaxW,
+                      left: '50%',
+                      marginLeft: Math.round(-digitsBandMaxW / 2),
+                    },
+                  ]}>
+                  <Text style={[styles.gaugeLabelsKicker, { color: muted }]}>Energy</Text>
+                  <Text
+                    style={[
+                      styles.gaugeDigits,
+                      { color: ink, fontSize: digitsMaxFontSize, width: '100%', maxWidth: digitsBandMaxW },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.48}
+                    maxFontSizeMultiplier={1}
+                    selectable={false}>
+                    {eaten.toLocaleString()}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.gaugeAgainst,
+                      { color: muted, width: '100%', maxWidth: digitsBandMaxW },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                    maxFontSizeMultiplier={1}>
+                    of {adjustedTarget.toLocaleString()} kcal
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.metricRowTopRule, { borderTopColor: divider }]} />
+
+              <View style={styles.bottomMetrics}>
+                <View style={styles.metricRowThree}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Burned ${burnedPrimary}. active plus bmr`}
+                    onPress={() => setStatTip('burned')}
+                    style={styles.metricCol}>
+                    <Text style={[styles.metricLbl, { color: muted }]}>Burned</Text>
+                    <Text style={[styles.metricPrimary, { color: ink }]} numberOfLines={2}>
+                      {burnedPrimary}
+                    </Text>
+                    <Text style={[styles.metricSub, { color: muted }]}>active + bmr</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Deficit: ${deficitPrimary}. ${deficitSub}`}
+                    onPress={() => setStatTip('deficit')}
+                    style={styles.metricCol}>
+                    <Text style={[styles.metricLbl, { color: muted }]}>Deficit</Text>
+                    <Text style={[styles.metricPrimary, { color: overPortion ? colors.warm : colors.accentDeep }]}>
+                      {deficitPrimary}
+                    </Text>
+                    <Text style={[styles.metricSub, { color: muted }]}>{deficitSub}</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Wellness score ${wellnessScore}`}
+                    onPress={() => setStatTip('score')}
+                    style={styles.metricCol}>
+                    <Text style={[styles.metricLbl, { color: muted }]}>Score</Text>
+                    <Text style={[styles.metricPrimary, { color: ink }]}>
+                      {wellnessScore}
+                    </Text>
+                    <Text style={[styles.metricSub, { color: muted }]}>wellness index</Text>
+                  </Pressable>
                 </View>
               </View>
             </View>
@@ -247,10 +438,13 @@ export function DailyEnergyCard() {
               <View
                 style={[
                   styles.energySources,
-                  { borderColor: isDark ? colors.border : '#E8F0EC', backgroundColor: isDark ? colors.bg : '#FAFAFA' },
+                  {
+                    borderColor: colors.glassStroke,
+                    backgroundColor: isDark ? colors.surfaceMuted : colors.chipOnLight,
+                  },
                 ]}>
                 <View style={styles.energySourceItem}>
-                  <Ionicons name="flash-outline" size={16} color={BRAND} />
+                  <Ionicons name="flash-outline" size={16} color={colors.accent} />
                   <Text style={[styles.energySourceLabel, { color: muted }]}>Active</Text>
                   <Text style={[styles.energySourceVal, { color: ink }]}>
                     {burnLoading ? '…' : active.toLocaleString()}
@@ -278,56 +472,6 @@ export function DailyEnergyCard() {
               </View>
             ) : null}
 
-            <View
-              style={[
-                styles.statTrio,
-                {
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F8FBF9',
-                  borderColor: isDark ? 'rgba(52, 211, 153, 0.14)' : 'rgba(34, 197, 94, 0.08)',
-                },
-              ]}>
-              <StatTile
-                label="Eaten"
-                value={eaten}
-                icon="restaurant-outline"
-                variant="side"
-                accentColor={BRAND}
-                countDelay={200}
-                reducedMotion={reducedMotion}
-                onPress={() => setStatTip('eaten')}
-              />
-              <View style={[styles.statDivider, { backgroundColor: divider }]} />
-              <StatTile
-                label={remaining < 0 ? 'Over' : 'Remaining'}
-                value={remaining < 0 ? Math.abs(remaining) : remaining}
-                icon="locate-outline"
-                variant="brand"
-                accentColor={BRAND}
-                countDelay={320}
-                reducedMotion={reducedMotion}
-                valueColorOverride={remaining < 0 || overPortion ? ORANGE : undefined}
-                onPress={() => setStatTip('remaining')}
-              />
-              <View style={[styles.statDivider, { backgroundColor: divider }]} />
-              <StatTile
-                label="Burned"
-                value={active}
-                icon="flame-outline"
-                variant="side"
-                accentColor={ORANGE}
-                countDelay={440}
-                reducedMotion={reducedMotion}
-                valueText={
-                  burnLoading
-                    ? '…'
-                    : hk.healthKitStatus === 'unavailable' || hk.healthKitStatus === 'denied'
-                      ? '—'
-                      : undefined
-                }
-                onPress={() => setStatTip('burned')}
-              />
-            </View>
-
             {showHealthTile ? (
               <HealthConnectTile
                 variant={hk.healthKitStatus === 'denied' ? 'connect' : 'unavailable'}
@@ -342,18 +486,18 @@ export function DailyEnergyCard() {
                 style={({ pressed }) => [
                   styles.insightChip,
                   {
-                    backgroundColor: isDark ? 'rgba(34, 197, 94, 0.15)' : BRAND_SOFT,
-                    borderColor: isDark ? 'rgba(52,211,153,0.3)' : 'rgba(34,197,94,0.25)',
+                    backgroundColor: isDark ? `${colors.accent}26` : colors.accentSoft,
+                    borderColor: colors.glassStroke,
                     opacity: pressed ? 0.9 : 1,
                   },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Learn how activity adjusts your target">
-                <Ionicons name="sparkles" size={18} color={BRAND_DARK} />
-                <Text style={[styles.insightText, { color: BRAND_DARK }]} numberOfLines={2}>
+                <Ionicons name="sparkles" size={18} color={colors.accentDeep} />
+                <Text style={[styles.insightText, { color: colors.accentDeep }]} numberOfLines={2}>
                   +{activityAdd.toLocaleString()} kcal from today&apos;s activity — how we adjust your target
                 </Text>
-                <Ionicons name="chevron-forward" size={18} color={BRAND_DARK} />
+                <Ionicons name="chevron-forward" size={18} color={colors.accentDeep} />
               </Pressable>
             ) : null}
 
@@ -362,8 +506,8 @@ export function DailyEnergyCard() {
                 style={[
                   styles.formulaStrip,
                   {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
-                    borderColor: isDark ? colors.border : '#E2E8F0',
+                    backgroundColor: isDark ? colors.surfaceMuted : colors.chipOnLight,
+                    borderColor: colors.glassStroke,
                   },
                 ]}>
                 <Text style={[styles.formulaText, { color: muted }]}>
@@ -373,13 +517,15 @@ export function DailyEnergyCard() {
                 <Text style={[styles.formulaPlus, { color: muted }]}>+</Text>
                 <Text style={[styles.formulaText, { color: muted }]}>
                   Active{' '}
-                  <Text style={[styles.formulaNum, { color: ORANGE }]}>{active.toLocaleString()}</Text>
+                  <Text style={[styles.formulaNum, { color: colors.warm }]}>{active.toLocaleString()}</Text>
                   <Text style={[styles.formulaTiny, { color: muted }]}> × {eatBackLabel}</Text>
                 </Text>
                 <Text style={[styles.formulaPlus, { color: muted }]}>=</Text>
                 <Text style={[styles.formulaText, { color: muted }]}>
                   Target{' '}
-                  <Text style={[styles.formulaNum, { color: BRAND_DARK }]}>{adjustedTarget.toLocaleString()}</Text>
+                  <Text style={[styles.formulaNum, { color: colors.accentDeep }]}>
+                    {adjustedTarget.toLocaleString()}
+                  </Text>
                 </Text>
               </View>
             ) : null}
@@ -393,7 +539,7 @@ export function DailyEnergyCard() {
                   segments={WEIGHT_GOAL_SEGMENTS}
                   value={weightGoal}
                   onChange={handleWeightGoalChange}
-                  accent={BRAND}
+                  accent={colors.accent}
                 />
               </View>
             ) : (
@@ -402,11 +548,11 @@ export function DailyEnergyCard() {
                   style={[
                     styles.goalChip,
                     {
-                      backgroundColor: isDark ? 'rgba(34,197,94,0.15)' : BRAND_SOFT,
-                      borderColor: isDark ? 'rgba(52,211,153,0.25)' : 'rgba(34,197,94,0.2)',
+                      backgroundColor: isDark ? `${colors.accent}26` : colors.accentSoft,
+                      borderColor: colors.glassStroke,
                     },
                   ]}>
-                  <Text style={[styles.goalChipText, { color: BRAND_DARK }]}>{goalWord} goal</Text>
+                  <Text style={[styles.goalChipText, { color: colors.accentDeep }]}>{goalWord} goal</Text>
                 </View>
                 {!showHealthTile && syncFooter ? (
                   <>
@@ -444,7 +590,7 @@ export function DailyEnergyCard() {
                 your base target, so we never double-count it.
               </Text>
             </ScrollView>
-            <Pressable onPress={() => setInsightOpen(false)} style={[styles.modalBtn, { backgroundColor: BRAND }]}>
+            <Pressable onPress={() => setInsightOpen(false)} style={[styles.modalBtn, { backgroundColor: colors.accent }]}>
               <Text style={styles.modalBtnText}>Got it</Text>
             </Pressable>
           </Pressable>
@@ -459,22 +605,24 @@ export function DailyEnergyCard() {
         <Pressable style={styles.modalBackdrop} onPress={() => setStatTip(null)}>
           <Pressable style={[styles.modalCard, { backgroundColor: isDark ? colors.surface : '#FFF' }]} onPress={() => {}}>
             <Text style={[styles.modalTitle, { color: ink }]}>
-              {statTip === 'eaten'
-                ? 'Calories eaten'
-                : statTip === 'remaining'
-                  ? 'Remaining budget'
-                  : 'Active burn'}
+              {statTip === 'burned'
+                ? 'Burned energy'
+                : statTip === 'deficit'
+                  ? 'Budget vs logged'
+                  : 'Wellness index'}
             </Text>
             <Text style={[styles.modalBody, { color: muted }]}>
-              {statTip === 'eaten'
-                ? 'Total calories logged today from meals and snacks.'
-                : statTip === 'remaining'
+              {statTip === 'burned'
+                ? hkConnected
+                  ? 'Estimated total burn today: Apple Health active calories plus resting energy (included in many goal calculations). Connect Health on supported devices.'
+                  : 'Connect Apple Health to see active calories and resting energy summed here.'
+                : statTip === 'deficit'
                   ? healthDrivesTarget
-                    ? 'Today’s budget is your base target plus a share of active calories from Apple Health (50% when losing weight, 100% when maintaining or gaining), minus what you’ve logged.'
-                    : 'Your daily calorie target minus what you’ve eaten so far.'
-                  : 'Active calories from Apple Health for today (when connected).'}
+                    ? 'Compared to today’s adjusted intake target from your base budget plus eligible activity calories, this is calories still available or overrun.'
+                    : 'Calories still available versus your fixed daily calorie target—or how far past it you’ve gone.'
+                  : 'A blended 0–100 score from calorie balance around your daily target plus how evenly you’re pacing protein, carbs, and fat—it’s explanatory, not medical advice.'}
             </Text>
-            <Pressable onPress={() => setStatTip(null)} style={[styles.modalBtn, { backgroundColor: BRAND }]}>
+            <Pressable onPress={() => setStatTip(null)} style={[styles.modalBtn, { backgroundColor: colors.accent }]}>
               <Text style={styles.modalBtnText}>Close</Text>
             </Pressable>
           </Pressable>
@@ -500,117 +648,143 @@ function resolveAdjustedTarget(
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 16,
+    marginBottom: 0,
     alignSelf: 'stretch',
   },
   cardOuter: {
-    borderRadius: 26,
+    borderRadius: 22,
     ...Platform.select({
       ios: {
         shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.11,
-        shadowRadius: 24,
+        shadowOpacity: 0.08,
+        shadowRadius: 22,
       },
-      android: { elevation: 6 },
+      android: { elevation: 5 },
       default: {},
     }),
   },
   card: {
-    borderRadius: 26,
+    borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   cardPad: {
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 18,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 0,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
   },
   iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loggedStrip: {
-    paddingVertical: 14,
-    paddingHorizontal: 0,
-    marginBottom: 14,
-    backgroundColor: 'transparent',
-  },
-  loggedStripInner: {
+  energySheet: { marginBottom: 2 },
+  todayHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    rowGap: 10,
-    columnGap: 12,
+    gap: 10,
+    marginBottom: 4,
   },
-  loggedStripLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 200,
-  },
-  loggedTextCol: {
-    flex: 1,
-    minWidth: 120,
-  },
-  loggedStripEnd: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  loggedIconWell: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loggedKicker: {
+  todayHeaderLeft: { flex: 1, minWidth: 0, paddingRight: 6 },
+  todayKicker: {
     fontFamily: Fonts.semiBold,
-    fontSize: 11,
-    letterSpacing: 0.6,
+    fontSize: 10,
+    letterSpacing: 1.05,
     textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  todaySubtitle: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    letterSpacing: 0.1,
+  },
+  todayHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
+  badgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    borderRadius: 999,
+    maxWidth: 140,
+  },
+  badgeDot: { width: 7, height: 7, borderRadius: 3.5 },
+  badgeText: { fontFamily: Fonts.semiBold, fontSize: 11 },
+  gaugeWrap: { alignSelf: 'center', position: 'relative', marginBottom: 4 },
+  gaugeLabels: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  gaugeLabelsKicker: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  gaugeDigits: {
+    fontFamily: Fonts.bold,
+    fontSize: 30,
+    lineHeight: 34,
+    letterSpacing: -0.7,
+    fontVariant: ['tabular-nums'],
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  gaugeAgainst: { fontFamily: Fonts.medium, fontSize: 12, textAlign: 'center' },
+  metricRowTopRule: {
+    marginTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 14,
+    marginHorizontal: -2,
+  },
+  bottomMetrics: { marginBottom: 0 },
+  metricRowThree: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingHorizontal: 2,
+  },
+  metricCol: {
+    flex: 1,
+    alignItems: 'center',
+    minWidth: 0,
+    gap: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+  },
+  metricLbl: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 10,
+    letterSpacing: 0.75,
+    textTransform: 'uppercase',
+    textAlign: 'center',
     marginBottom: 2,
   },
-  loggedMain: {
-    fontFamily: Fonts.bold,
-    fontSize: 22,
-    letterSpacing: -0.5,
-  },
-  loggedMainNum: { fontFamily: Fonts.bold, fontSize: 22, color: BRAND },
-  loggedSlash: { fontFamily: Fonts.bold, fontSize: 20 },
-  loggedTarget: { fontFamily: Fonts.medium, fontSize: 18 },
-  remainChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    flexShrink: 0,
-  },
-  remainChipText: {
+  metricPrimary: {
     fontFamily: Fonts.semiBold,
-    fontSize: 12,
+    fontSize: 17,
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  metricSub: {
+    fontFamily: Fonts.medium,
+    fontSize: 10,
+    lineHeight: 14,
+    textAlign: 'center',
+    opacity: 0.92,
   },
   energySources: {
     flexDirection: 'row',
     alignItems: 'stretch',
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 12,
+    marginTop: 14,
+    marginBottom: 0,
     overflow: 'hidden',
   },
   energySourceItem: {
@@ -630,17 +804,6 @@ const styles = StyleSheet.create({
   },
   energySourceVal: { fontFamily: Fonts.semiBold, fontSize: 14 },
   energySourceUnit: { fontFamily: Fonts.regular, fontSize: 12 },
-  statTrio: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    borderRadius: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    marginBottom: 14,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  statDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch' },
   insightChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -648,6 +811,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 14,
     borderRadius: 16,
+    marginTop: 14,
     marginBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
   },
@@ -678,6 +842,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flexWrap: 'wrap',
     gap: 0,
+    marginTop: 4,
   },
   goalChip: {
     paddingHorizontal: 12,
@@ -693,6 +858,7 @@ const styles = StyleSheet.create({
   goalSegmentBlock: {
     marginBottom: 8,
     gap: 8,
+    marginTop: 14,
   },
   goalSegmentCaption: {
     fontFamily: Fonts.medium,
@@ -710,7 +876,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  syncBullet: { color: BRAND, fontSize: 11 },
+  syncBullet: { fontSize: 11 },
   err: { fontFamily: Fonts.regular, fontSize: 12, marginTop: 8 },
   modalBackdrop: {
     flex: 1,

@@ -378,6 +378,7 @@ export default function GroceriesScreen() {
     <CurvedHeroScreen
       title="Groceries"
       subtitle={heroSubtitle}
+      heroBackground="sage"
       tabRoot
       heroExpanded={HERO_GROCERIES_EXPANDED}
       contentInset={GROCERIES_CONTENT_INSET}

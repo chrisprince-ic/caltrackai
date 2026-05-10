@@ -13,12 +13,13 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { CurvedHeroScreen } from '@/components/CurvedHeroScreen';
-import { IconButton } from '@/components/hero/IconButton';
-import { TimeOfDayIcon } from '@/components/home/energy/TimeOfDayIcon.skia';
-
-import { HERO } from '@/constants/hero';
+import { AppLinearGradient } from '@/components/ui/AppLinearGradient';
 import { MEAL_PLAN_CARDS } from '@/constants/dashboard-mock';
+import { MacroviaCard } from '@/components/macrovia/MacroviaCard';
+import { MacroviaScreen } from '@/components/macrovia/MacroviaScreen';
+import { MacroviaTopBar } from '@/components/macrovia/MacroviaTopBar';
+import { MacroSpectrumBar } from '@/components/macrovia/MacroSpectrumBar';
+import { WeekCalorieBars, type WeekDayBar } from '@/components/macrovia/WeekCalorieBars';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionLog } from '@/contexts/NutritionLogContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
@@ -33,16 +34,31 @@ import { computeCalorieStreak } from '@/lib/calorie-streak';
 import { suggestWeeklyMealPlan } from '@/lib/ai-coach';
 import { setMealPlanSessionMeals } from '@/lib/meal-plan-session';
 import { fetchRecentDayTotals } from '@/lib/nutrition-history';
+import type { DayTotals } from '@/lib/nutrition-sync';
 import type { AiMealBrief } from '@/types/ai-nutrition';
 import type { LoggedMealEntry } from '@/types/logged-meal';
 import { AppMenuSheet } from '@/components/AppMenuSheet';
 import { DailyEnergyCard } from '@/components/home/DailyEnergyCard';
-import { MacroBar } from '@/components/ui/MacroBar';
-import { SectionHeader } from '@/components/ui/SectionHeader';
-import { COLORS, Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
+import { Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/AppThemeContext';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+
+function lastSevenCalorieBars(days: DayTotals[]): WeekDayBar[] {
+  const byKey = new Map(days.map((d) => [d.dateKey, d]));
+  const out: WeekDayBar[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    const key = getLogDateKey(d);
+    const hit = byKey.get(key);
+    out.push({
+      label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
+      value: hit?.calories ?? 0,
+    });
+  }
+  return out;
+}
 
 const AI_CARD_ACCENTS = [
   { accent: Palette.iris, tint: Palette.haze },
@@ -114,20 +130,12 @@ function MealCard({
   );
 }
 
-function RecentMealRow({
-  entry,
-  colors,
-  onPress,
-}: {
-  entry: LoggedMealEntry;
-  colors: {
-    surface: string;
-    border: string;
-    text: string;
-    textMuted: string;
-  };
-  onPress: () => void;
-}) {
+function formatMacroLine(e: LoggedMealEntry) {
+  return `P ${Math.round(e.proteinGrams)} · C ${Math.round(e.carbsGrams)} · F ${Math.round(e.fatGrams)}`;
+}
+
+function RecentMealRow({ entry, onPress }: { entry: LoggedMealEntry; onPress: () => void }) {
+  const { colors } = useAppTheme();
   const d = new Date(entry.loggedAt);
   const slot = mealSlotLabel(d.getHours());
   const sub = `${slot} · ${formatMealTime(entry.loggedAt)}`;
@@ -136,11 +144,11 @@ function RecentMealRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.recentRow,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { backgroundColor: colors.surface, borderColor: colors.glassStroke },
         pressed && { opacity: 0.92 },
       ]}>
-      <View style={[styles.recentIcon, { backgroundColor: COLORS.brandGreenTint }]}>
-        <Ionicons name="restaurant" size={18} color={COLORS.brandGreenDark} />
+      <View style={[styles.recentThumb, { backgroundColor: colors.surfaceMuted }]}>
+        <Ionicons name="restaurant" size={18} color={colors.accent} />
       </View>
       <View style={styles.recentMid}>
         <View style={styles.recentTopLine}>
@@ -148,11 +156,12 @@ function RecentMealRow({
             {entry.foodName}
           </Text>
           <Text style={[styles.recentKcal, { color: colors.text }]}>
-            {Math.round(entry.calories).toLocaleString()} kcal
+            {Math.round(entry.calories).toLocaleString()}{' '}
+            <Text style={[styles.kcalLbl, { color: colors.textMuted }]}>kcal</Text>
           </Text>
         </View>
-        <Text style={[styles.recentSub, { color: colors.textMuted }]} numberOfLines={1}>
-          {sub}
+        <Text style={[styles.recentSub, { color: colors.textMuted }]} numberOfLines={2}>
+          {sub} · {formatMacroLine(entry)}
         </Text>
       </View>
     </Pressable>
@@ -162,20 +171,25 @@ function RecentMealRow({
 export function HomeDashboard() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const reducedMotion = useReducedMotion();
-  const { colors, isDark } = useAppTheme();
+  const { colors } = useAppTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user, firebaseReady } = useAuth();
-  const { totals, refreshTodayLog, logSyncing, entries } = useNutritionLog();
-  const { dailyCalories, proteinG, carbsG, fatG, dietarySummary, refresh: refreshNutritionTargets } =
-    useNutritionTargets();
+  const { totals, refreshTodayLog, entries } = useNutritionLog();
+  const {
+    dailyCalories,
+    proteinG,
+    carbsG,
+    fatG,
+    dietarySummary,
+    coachNote,
+    refresh: refreshNutritionTargets,
+  } = useNutritionTargets();
   const cardW = Math.min(268, width * 0.72);
+  const [historyDays, setHistoryDays] = useState<DayTotals[]>([]);
   const [streak, setStreak] = useState(0);
   const [weeklyPlanMeals, setWeeklyPlanMeals] = useState<AiMealBrief[] | null>(null);
   const [weeklyPlanLoading, setWeeklyPlanLoading] = useState(false);
-
-  const iconInk = isDark ? '#F4FCE8' : '#1A2B26';
 
   const mealPlanSessionCache = useRef<{
     forUserId: string | null;
@@ -208,6 +222,7 @@ export function HomeDashboard() {
     useCallback(() => {
       if (!user?.uid || !firebaseReady) {
         setStreak(0);
+        setHistoryDays([]);
         return;
       }
       let cancelled = false;
@@ -215,6 +230,7 @@ export function HomeDashboard() {
         try {
           const days = await fetchRecentDayTotals(user.uid, 120);
           if (cancelled) return;
+          setHistoryDays(days);
           setStreak(
             computeCalorieStreak(
               dailyCalories,
@@ -222,7 +238,10 @@ export function HomeDashboard() {
             )
           );
         } catch {
-          if (!cancelled) setStreak(0);
+          if (!cancelled) {
+            setStreak(0);
+            setHistoryDays([]);
+          }
         }
       })();
       return () => {
@@ -319,134 +338,202 @@ export function HomeDashboard() {
     [entries]
   );
 
+  const weekBars = useMemo(() => lastSevenCalorieBars(historyDays), [historyDays]);
+  const weekAvg = useMemo(() => {
+    if (!weekBars.length) return 0;
+    return Math.round(weekBars.reduce((a, b) => a + b.value, 0) / weekBars.length);
+  }, [weekBars]);
+
+  const aiInsightBody = useMemo(() => {
+    const t = coachNote?.trim();
+    if (t) return t;
+    const p = totals.proteinGrams / Math.max(proteinG, 1);
+    if (p >= 0.92) {
+      return `You're landing most of your protein — this is the rhythm that quietly compounds.`;
+    }
+    if (totals.calories === 0) {
+      return `Log your first meal and I'll watch patterns emerge across your macros.`;
+    }
+    return `Fuel steadily toward your calorie target — protein-forward picks keep energy smooth all day.`;
+  }, [coachNote, totals.calories, totals.proteinGrams, proteinG]);
+
   return (
     <>
-      <CurvedHeroScreen
-        title={displayGreeting}
-        titleAffix={<TimeOfDayIcon reducedMotion={reducedMotion} />}
-        subtitle={dateLabel}
-        heroExpanded={HERO.EXPANDED}
-        /** Pull first card up so it sits on the green hero (~overlap px = this value). */
-        contentInset={80}
-        titleSizeExpanded={22}
-        rightActions={
-          <>
-            <IconButton
-              name="sparkles"
-              onPress={() => router.push('/subscription')}
-              accessibilityLabel="CalTrack Pro"
-              iconColor={iconInk}
-            />
-            <IconButton
-              name="person-outline"
-              onPress={() => setMenuOpen(true)}
-              accessibilityLabel="Open app menu"
-              iconColor={iconInk}
-            />
-          </>
-        }
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        tabRoot
-        titleDualWeight
-        titleSizeCollapsed={18}>
-        <Animated.View entering={FadeInDown.duration(400)}>
-          <DailyEnergyCard />
+      <MacroviaScreen refreshing={refreshing} onRefresh={onRefresh} tabRoot>
+        <MacroviaTopBar
+          title="CalTrack"
+          userInitial={firstName.charAt(0).toUpperCase() || '•'}
+          onPressBell={() => router.push('/subscription')}
+          onPressProfile={() => setMenuOpen(true)}
+        />
+
+        <Animated.View entering={FadeInDown.duration(420)}>
+          <Text style={[styles.heroOverline, { color: colors.textMuted }]}>{dateLabel}</Text>
+          <Text style={[styles.heroTitle, { color: colors.text }]}>{displayGreeting}</Text>
+          <Text style={[styles.heroSub, { color: colors.textSecondary }]}>
+            {streak > 0 ? (
+              <>
+                Day <Text style={styles.heroEmph}>{streak}</Text> of your protein-forward streak.
+              </>
+            ) : (
+              <>
+                Targets {Math.round(dailyCalories)} kcal · sync your macros from the ribbon below.
+              </>
+            )}
+          </Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(40).duration(420)}>
+          <MacroviaCard glass padding={14}>
+            <DailyEnergyCard />
+          </MacroviaCard>
         </Animated.View>
 
         {streak > 0 ? (
           <Animated.View
-            entering={FadeInDown.delay(30).duration(380).springify()}
-            style={[styles.streakCard, { backgroundColor: colors.streakBg, borderColor: colors.border }]}>
+            entering={FadeInDown.delay(56).duration(380).springify()}
+            style={[styles.streakInline, { backgroundColor: colors.streakBg }]}>
             <Text style={styles.streakEmoji}>🔥</Text>
             <Text style={[styles.streakNum, { color: colors.streakText }]}>{streak}</Text>
-            <Text style={[styles.streakSuffix, { color: colors.streakText }]}> day streak</Text>
+            <Text style={[styles.streakSuffix, { color: colors.textSecondary }]}>day streak</Text>
           </Animated.View>
         ) : null}
 
-        <Animated.View entering={FadeInDown.delay(100).duration(400).springify()}>
-          <SectionHeader
-            title="Macros"
-            syncing={Boolean(user && logSyncing)}
-            actionLabel="Edit targets"
-            actionColor={COLORS.brandGreen}
-            onAction={() => router.push('/nutrition-targets' as Href)}
-            primaryAction={{
-              label: '+ Log meal',
-              onPress: () => router.push('/manual-entry' as Href),
-            }}
-            primaryActionTone="dark"
-          />
-          <MacroBar
-            label="Protein"
-            current={Math.round(totals.proteinGrams)}
-            goal={proteinG}
-            color={Palette.flamingo}
-            colorEnd="#F472B6"
-            tint="#FFE8F0"
-            icon="fitness-outline"
-            delay={120}
-          />
-          <MacroBar
-            label="Carbs"
-            current={Math.round(totals.carbsGrams)}
-            goal={carbsG}
-            color={Palette.citrus}
-            colorEnd="#FBBF24"
-            tint="#FFF7ED"
-            icon="leaf-outline"
-            delay={150}
-          />
-          <MacroBar
-            label="Fats"
-            current={Math.round(totals.fatGrams)}
-            goal={fatG}
-            color={Palette.cyan}
-            colorEnd="#818CF8"
-            tint="#EEF2FF"
-            icon="water-outline"
-            delay={180}
-          />
+        <Animated.View entering={FadeInDown.delay(80).duration(420)}>
+          <MacroviaCard glass padding={18}>
+            <View style={styles.spectrumHead}>
+              <View>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Macro spectrum</Text>
+                <Text style={[styles.cardSub, { color: colors.textMuted }]}>By calorie share, not grams.</Text>
+              </View>
+              <Ionicons name="sparkles-outline" size={20} color={colors.textMuted} />
+            </View>
+            <MacroSpectrumBar
+              protein={Math.max(0, totals.proteinGrams)}
+              carbs={Math.max(0, totals.carbsGrams)}
+              fat={Math.max(0, totals.fatGrams)}
+              targetP={proteinG}
+              targetC={carbsG}
+              targetF={fatG}
+            />
+            <View style={styles.spectrumActions}>
+              <Pressable
+                onPress={() => router.push('/manual-entry' as Href)}
+                style={[styles.btnGhost, { borderColor: colors.hairline, backgroundColor: colors.surfaceMuted }]}>
+                <Text style={[styles.btnGhostTxt, { color: colors.textSecondary }]}>+ Log meal</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push('/nutrition-targets' as Href)}>
+                <AppLinearGradient
+                  colors={[colors.accent, colors.accentDeep]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.btnPrimary}>
+                  <Text style={styles.btnPrimaryTxt}>Edit targets</Text>
+                  <Ionicons name="arrow-forward" size={14} color="#fff" />
+                </AppLinearGradient>
+              </Pressable>
+            </View>
+          </MacroviaCard>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(120).duration(400).springify()} style={styles.recentBlock}>
-          <SectionHeader title="Recent meals" />
+        <Animated.View entering={FadeInDown.delay(100).duration(420)}>
+          <MacroviaCard
+            glass={false}
+            padding={18}
+            style={{
+              backgroundColor: colors.accentSoft,
+              borderColor: colors.glassStroke,
+            }}>
+            <View style={styles.aiRow}>
+              <AppLinearGradient
+                colors={[colors.accent, colors.violet]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.aiIconWrap}>
+                <Ionicons name="flash" size={16} color="#fff" />
+              </AppLinearGradient>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.aiTitle, { color: colors.text }]}>CalTrack AI</Text>
+                <Text style={[styles.aiMeta, { color: colors.textMuted }]}>Pattern watch · coach note</Text>
+              </View>
+              <Text style={[styles.aiBadge, { color: colors.accentDeep }]}>INSIGHT</Text>
+            </View>
+            <Text style={[styles.aiBody, { color: colors.text }]}>{aiInsightBody}</Text>
+          </MacroviaCard>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(120).duration(420)}>
+          <MacroviaCard glass padding={18}>
+            <View style={styles.spectrumHead}>
+              <View>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>7‑day calories</Text>
+                <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+                  Avg{' '}
+                  <Text style={{ fontFamily: Fonts.semiBold, color: colors.text }}>{weekAvg.toLocaleString()}</Text>{' '}
+                  · goal {Math.round(dailyCalories).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+            <WeekCalorieBars
+              data={
+                weekBars.length
+                  ? weekBars
+                  : [
+                      { label: 'M', value: 0 },
+                      { label: 'T', value: 0 },
+                      { label: 'W', value: 0 },
+                      { label: 'T', value: 0 },
+                      { label: 'F', value: 0 },
+                      { label: 'S', value: 0 },
+                      { label: 'S', value: 0 },
+                    ]
+              }
+            />
+          </MacroviaCard>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(140).duration(420)} style={styles.recentBlock}>
+          <View style={styles.sectionRow}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{`Today's meals`}</Text>
+            <Pressable
+              onPress={() => router.push('/manual-entry' as Href)}
+              style={styles.seeAllBtn}
+              accessibilityRole="button">
+              <Text style={[styles.seeAllTxt, { color: colors.textMuted }]}>Add meal</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+            </Pressable>
+          </View>
           {sortedEntries.length === 0 ? (
             <Pressable
               onPress={() => router.push('/manual-entry' as Href)}
               style={({ pressed }) => [
                 styles.recentEmpty,
-                { borderColor: colors.border },
+                { borderColor: colors.glassStroke },
                 pressed && { opacity: 0.9 },
               ]}>
-              <Ionicons name="add-circle-outline" size={22} color={COLORS.brandGreenDark} />
-              <Text style={[styles.recentEmptyText, { color: colors.textMuted }]}>
-                + Log your first meal
-              </Text>
+              <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+              <Text style={[styles.recentEmptyText, { color: colors.textMuted }]}>+ Log your first meal</Text>
             </Pressable>
           ) : (
             <View style={styles.recentList}>
               {sortedEntries.map((e) => (
-                <RecentMealRow
-                  key={e.id}
-                  entry={e}
-                  colors={colors}
-                  onPress={() => router.push('/manual-entry' as Href)}
-                />
+                <RecentMealRow key={e.id} entry={e} onPress={() => router.push('/manual-entry' as Href)} />
               ))}
             </View>
           )}
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(140).duration(400).springify()}>
-          <SectionHeader
-            title="Suggested meals"
-            actionLabel="Full week plan"
-            onAction={() => router.push('/meal-plan/weekly' as Href)}
-          />
+        <Animated.View entering={FadeInDown.delay(160).duration(420)}>
+          <View style={styles.sectionRow}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Suggested meals</Text>
+            <Pressable onPress={() => router.push('/meal-plan/weekly' as Href)} style={styles.seeAllBtn}>
+              <Text style={[styles.seeAllTxt, { color: colors.textMuted }]}>Full week</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+            </Pressable>
+          </View>
           {showMealPlanLoading ? (
             <View style={styles.mealLoader}>
-              <ActivityIndicator size="small" color={Palette.iris} />
+              <ActivityIndicator size="small" color={colors.accent} />
               <Text style={[styles.mealLoaderText, { color: colors.textMuted }]}>Loading your plan…</Text>
             </View>
           ) : (
@@ -472,51 +559,163 @@ export function HomeDashboard() {
           )}
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.delay(180).duration(400).springify()}
-          style={[styles.groceryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.groceryRow}>
-            <View style={[styles.groceryIcon, { backgroundColor: colors.iconWell }]}>
-              <Ionicons name="cart-outline" size={20} color={Palette.iris} />
+        <Animated.View entering={FadeInDown.delay(190).duration(420)}>
+          <MacroviaCard
+            glass={false}
+            padding={16}
+            style={{
+              marginTop: 6,
+              backgroundColor: colors.surface,
+              borderColor: colors.glassStroke,
+            }}>
+            <View style={styles.groceryRow}>
+              <AppLinearGradient
+                colors={[colors.warm, '#E8A749']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.groceryIconGrad}>
+                <Ionicons name="cart" size={22} color="#fff" />
+              </AppLinearGradient>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.groceryTitle, { color: colors.text }]}>Suggested groceries</Text>
+                <Text style={[styles.grocerySub, { color: colors.textMuted }]} numberOfLines={2}>
+                  Weekly list from your targets. Refreshes once per day.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
             </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={[styles.groceryTitle, { color: colors.text }]}>Suggested groceries</Text>
-              <Text style={[styles.grocerySub, { color: colors.textMuted }]} numberOfLines={2}>
-                Weekly list from your targets. Refreshes once per day.
-              </Text>
-            </View>
-          </View>
-          <Pressable
-            style={[styles.groceryBtn, { backgroundColor: colors.chipOnLight, borderColor: colors.borderStrong }]}
-            onPress={() => router.push('/(tabs)/groceries' as Href)}
-            accessibilityRole="button">
-            <Ionicons name="basket-outline" size={18} color={Palette.iris} />
-            <Text style={[styles.groceryBtnText, { color: Palette.iris }]}>Open grocery list</Text>
-          </Pressable>
+            <Pressable
+              style={[styles.groceryBtn, { backgroundColor: colors.chipOnLight }]}
+              onPress={() => router.push('/(tabs)/groceries' as Href)}
+              accessibilityRole="button">
+              <Ionicons name="basket-outline" size={18} color={colors.warm} />
+              <Text style={[styles.groceryBtnText, { color: colors.warm }]}>Open grocery list</Text>
+            </Pressable>
+          </MacroviaCard>
         </Animated.View>
 
-        <View style={{ height: 24 }} />
-      </CurvedHeroScreen>
+        <View style={{ height: 8 }} />
+      </MacroviaScreen>
       <AppMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  streakCard: {
+  heroOverline: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  heroTitle: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 28,
+    letterSpacing: -0.6,
+    lineHeight: 34,
+    marginBottom: 6,
+  },
+  heroSub: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  heroEmph: {
+    fontFamily: Fonts.semiBold,
+  },
+  streakInline: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start',
   },
-  streakEmoji: { fontSize: 26 },
-  streakNum: { fontFamily: Fonts.bold, fontSize: 24, letterSpacing: -0.5 },
-  streakSuffix: { fontFamily: Fonts.semiBold, fontSize: 16 },
+  streakEmoji: { fontSize: 22 },
+  streakNum: { fontFamily: Fonts.bold, fontSize: 20, letterSpacing: -0.5 },
+  streakSuffix: { fontFamily: Fonts.medium, fontSize: 13 },
+  spectrumHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  cardTitle: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 17,
+    letterSpacing: -0.3,
+    marginBottom: 2,
+  },
+  cardSub: { fontFamily: Fonts.regular, fontSize: 12 },
+  spectrumActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  btnGhost: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  btnGhostTxt: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+  },
+  btnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+  },
+  btnPrimaryTxt: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    color: '#fff',
+  },
+  aiRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  aiIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiTitle: { fontFamily: Fonts.semiBold, fontSize: 13 },
+  aiMeta: { fontFamily: Fonts.regular, fontSize: 10, marginTop: 1 },
+  aiBadge: { fontFamily: Fonts.semiBold, fontSize: 9 },
+  aiBody: { fontFamily: Fonts.medium, fontSize: 15, lineHeight: 22, letterSpacing: -0.2 },
+  sectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  seeAllTxt: { fontFamily: Fonts.semiBold, fontSize: 13 },
+  kcalLbl: { fontFamily: Fonts.medium, fontSize: 10 },
+  groceryIconGrad: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   mealLoader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -580,9 +779,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  recentIcon: {
-    width: 40,
-    height: 40,
+  recentThumb: {
+    width: 48,
+    height: 48,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
