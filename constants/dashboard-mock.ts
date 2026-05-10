@@ -17,6 +17,8 @@ export type MealPlanCard = {
   prepMin: number;
   accent: string;
   tint: string;
+  proteinG?: number;
+  carbsG?: number;
 };
 
 export const MEAL_PLAN_CARDS: MealPlanCard[] = [
@@ -24,19 +26,23 @@ export const MEAL_PLAN_CARDS: MealPlanCard[] = [
     id: '1',
     title: 'Mediterranean lunch bowl',
     kcal: 520,
-    tag: 'High protein',
+    tag: 'Balanced',
     prepMin: 15,
     accent: '#22C55E',
     tint: '#DCFCE7',
+    proteinG: 32,
+    carbsG: 48,
   },
   {
     id: '2',
     title: 'Lean chicken & quinoa',
     kcal: 480,
-    tag: 'Balanced',
+    tag: 'High protein',
     prepMin: 25,
     accent: '#FF6B9D',
     tint: '#FFE8F0',
+    proteinG: 42,
+    carbsG: 38,
   },
   {
     id: '3',
@@ -46,6 +52,8 @@ export const MEAL_PLAN_CARDS: MealPlanCard[] = [
     prepMin: 20,
     accent: '#00C2D1',
     tint: '#E0F8FA',
+    proteinG: 36,
+    carbsG: 28,
   },
   {
     id: '4',
@@ -55,6 +63,30 @@ export const MEAL_PLAN_CARDS: MealPlanCard[] = [
     prepMin: 5,
     accent: '#F5A623',
     tint: '#FFF8EB',
+    proteinG: 14,
+    carbsG: 58,
+  },
+  {
+    id: '5',
+    title: 'Turkey wrap with hummus',
+    kcal: 410,
+    tag: 'Lunch',
+    prepMin: 8,
+    accent: '#D85A30',
+    tint: '#FFF1E8',
+    proteinG: 28,
+    carbsG: 42,
+  },
+  {
+    id: '6',
+    title: 'Greek yogurt parfait',
+    kcal: 290,
+    tag: 'Snack',
+    prepMin: 5,
+    accent: '#7F77DD',
+    tint: '#EDE9FF',
+    proteinG: 18,
+    carbsG: 36,
   },
 ];
 

@@ -53,12 +53,42 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
   const [logSyncing, setLogSyncing] = useState(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
+  // Entries we tried to save to Firebase but the network/auth was down. We
+  // retry these on every refresh and on AppState 'active'. Without this a
+  // user could log a meal offline and lose it on next foreground.
+  const pendingWritesRef = useRef<LoggedMealEntry[]>([]);
+  const flushingRef = useRef(false);
+
+  const flushPendingWrites = useCallback(async (): Promise<void> => {
+    if (flushingRef.current) return;
+    if (!user || !firebaseReady) return;
+    if (pendingWritesRef.current.length === 0) return;
+    flushingRef.current = true;
+    try {
+      const queue = pendingWritesRef.current;
+      const stillPending: LoggedMealEntry[] = [];
+      for (const entry of queue) {
+        try {
+          await saveNutritionEntry(user.uid, entry);
+        } catch {
+          stillPending.push(entry);
+        }
+      }
+      pendingWritesRef.current = stillPending;
+    } finally {
+      flushingRef.current = false;
+    }
+  }, [user, firebaseReady]);
+
   const refreshTodayLog = useCallback(async () => {
     if (!user || !firebaseReady) {
       return;
     }
     setLogSyncing(true);
     try {
+      // First try to flush any local rows whose previous save failed; if the
+      // flush succeeds the remote read will already include those entries.
+      await flushPendingWrites();
       const list = await fetchTodayNutritionEntries(user.uid);
       // Merge: keep any locally-added entries whose Firebase write hasn't
       // propagated yet, identified by IDs not present in the remote result.
@@ -73,11 +103,14 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
     } finally {
       setLogSyncing(false);
     }
-  }, [user, firebaseReady]);
+  }, [user, firebaseReady, flushPendingWrites]);
 
   useEffect(() => {
     if (!user || !firebaseReady) {
-      if (!user) setEntries([]);
+      if (!user) {
+        setEntries([]);
+        pendingWritesRef.current = [];
+      }
       setLogSyncing(false);
       return;
     }
@@ -85,6 +118,7 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
     (async () => {
       setLogSyncing(true);
       try {
+        await flushPendingWrites();
         const list = await fetchTodayNutritionEntries(user.uid);
         if (!cancelled) {
           setEntries((prev) => {
@@ -101,7 +135,7 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.uid, firebaseReady]);
+  }, [user?.uid, firebaseReady, flushPendingWrites]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
@@ -131,7 +165,8 @@ export function NutritionLogProvider({ children }: { children: ReactNode }) {
         try {
           await saveNutritionEntry(user.uid, entry);
         } catch {
-          /* local row kept; RTDB rules / network may block */
+          // Network / auth blip — queue for retry on next refresh / foreground.
+          pendingWritesRef.current.push(entry);
         }
       }
     },

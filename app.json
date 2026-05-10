@@ -2,7 +2,7 @@
   "expo": {
     "name": "CalTrack AI",
     "slug": "caltrackai",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "caltrackai",
@@ -32,6 +32,14 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "CalTrack AI reads Active Energy and Resting Energy from Apple Health to show calories burned and to suggest a daily intake that fits your day.",
+          "NSHealthUpdateUsageDescription": "CalTrack AI only reads your energy data; it does not write to Apple Health.",
+          "background": false
+        }
+      ],
       "expo-router",
       [
         "expo-camera",

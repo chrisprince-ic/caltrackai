@@ -33,25 +33,31 @@ function RootLayoutBody() {
         <NutritionTargetsProvider>
           <RevenueCatProvider>
             <NutritionLogProvider>
-              <Stack screenOptions={{ headerShown: false }}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  // Hide the iOS back-button label globally so the route group
+                  // folder name (e.g. "(tabs)") never leaks into the UI. The
+                  // chevron alone is universally understood, matching modern
+                  // iOS app conventions.
+                  headerBackTitle: '',
+                  // @ts-expect-error native-stack supports hiding back title; Expo Router stack types omit it
+                  headerBackTitleVisible: false,
+                  headerBackButtonDisplayMode: 'minimal',
+                }}>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="welcome" />
                 <Stack.Screen name="onboarding" />
                 <Stack.Screen name="auth" />
                 <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="subscription" options={{ headerShown: true, title: 'CalTrack Pro' }} />
+                <Stack.Screen name="subscription" options={{ headerShown: false }} />
                 <Stack.Screen name="meal-plan/[planId]" options={{ headerShown: true, title: 'Meal plan' }} />
-                <Stack.Screen
-                  name="meal-recipe"
-                  options={{
-                    headerShown: true,
-                    title: 'Recipe',
-                    headerBackTitle: '',
-                    // @ts-expect-error native-stack supports hiding back title; Expo Router stack types omit it
-                    headerBackTitleVisible: false,
-                  }}
-                />
+                <Stack.Screen name="meal-recipe" options={{ headerShown: true, title: 'Recipe' }} />
                 <Stack.Screen name="nutrition-targets" options={{ headerShown: true, title: 'Nutrition targets' }} />
+                <Stack.Screen
+                  name="manual-entry"
+                  options={{ headerShown: true, title: 'Log a meal', presentation: 'modal' }}
+                />
                 <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
               </Stack>
               <StatusBar style={isDark ? 'light' : 'dark'} />

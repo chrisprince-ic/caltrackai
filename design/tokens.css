@@ -1,0 +1,149 @@
+/* Macrovia design tokens */
+:root, [data-theme="light"] {
+  --bg: oklch(0.985 0.005 80);
+  --bg-soft: oklch(0.965 0.008 75);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.98 0.005 80);
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-stroke: rgba(20, 22, 18, 0.06);
+  --ink: oklch(0.18 0.012 160);
+  --ink-2: oklch(0.42 0.012 160);
+  --ink-3: oklch(0.62 0.012 160);
+  --ink-4: oklch(0.78 0.008 160);
+  --hairline: oklch(0.92 0.005 160);
+  --accent: oklch(0.62 0.16 155);          /* emerald */
+  --accent-soft: oklch(0.94 0.05 155);
+  --accent-deep: oklch(0.42 0.16 155);
+  --warm: oklch(0.74 0.14 70);             /* amber */
+  --warm-soft: oklch(0.96 0.05 70);
+  --rose: oklch(0.66 0.17 22);
+  --violet: oklch(0.6 0.13 290);
+  --aurora-1: oklch(0.93 0.07 155 / 0.6);
+  --aurora-2: oklch(0.94 0.07 70 / 0.55);
+  --aurora-3: oklch(0.95 0.05 290 / 0.45);
+  --shadow-card: 0 1px 2px rgba(20,30,25,0.04), 0 8px 24px rgba(20,30,25,0.06);
+  --shadow-pop: 0 1px 2px rgba(20,30,25,0.05), 0 24px 48px -12px rgba(20,30,25,0.18);
+}
+
+[data-theme="dark"] {
+  --bg: oklch(0.16 0.012 160);
+  --bg-soft: oklch(0.13 0.012 160);
+  --surface: oklch(0.21 0.014 160);
+  --surface-2: oklch(0.19 0.012 160);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-stroke: rgba(255, 255, 255, 0.08);
+  --ink: oklch(0.97 0.005 160);
+  --ink-2: oklch(0.78 0.008 160);
+  --ink-3: oklch(0.62 0.01 160);
+  --ink-4: oklch(0.42 0.01 160);
+  --hairline: oklch(0.28 0.012 160);
+  --accent: oklch(0.78 0.18 155);
+  --accent-soft: oklch(0.32 0.08 155);
+  --accent-deep: oklch(0.62 0.16 155);
+  --warm: oklch(0.82 0.15 70);
+  --warm-soft: oklch(0.32 0.08 70);
+  --rose: oklch(0.74 0.18 22);
+  --violet: oklch(0.72 0.14 290);
+  --aurora-1: oklch(0.55 0.14 155 / 0.45);
+  --aurora-2: oklch(0.55 0.14 70 / 0.35);
+  --aurora-3: oklch(0.55 0.12 290 / 0.35);
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-pop: 0 1px 2px rgba(0,0,0,0.5), 0 24px 48px -12px rgba(0,0,0,0.6);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: 'Inter Tight', 'Inter', -apple-system, system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-feature-settings: 'tnum', 'zero';
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Glass surface */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 0.5px solid var(--glass-stroke);
+}
+
+/* Animations */
+@keyframes auroraDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(8%, -6%) scale(1.08); }
+  66% { transform: translate(-6%, 4%) scale(0.94); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes draw-stroke {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scan-line {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(280px); opacity: 0; }
+}
+@keyframes blob {
+  0%, 100% { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; }
+  50% { border-radius: 40% 60% 50% 50% / 60% 40% 60% 40%; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.4) 50%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.4s infinite;
+}
+
+/* Scrollbars hidden inside phone */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Disable tap highlight inside the device */
+.device * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button { font-family: inherit; }

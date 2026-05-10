@@ -2,9 +2,42 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import type { FoodVisionResult } from '@/lib/vision/vision-detect-food';
 
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+
+/**
+ * Tolerate common misconfiguration of EXPO_PUBLIC_GEMINI_MODEL (typos, quoting, etc.).
+ * The Generative AI SDK refuses unknown model names with a 404, which previously surfaced
+ * as a hard error to the user — fall back to the default if the value is obviously wrong.
+ */
+export function sanitizeGeminiModelName(raw: string | undefined): string {
+  const trimmed = raw?.trim().replace(/^['"]|['"]$/g, '') ?? '';
+  if (!trimmed) return DEFAULT_GEMINI_MODEL;
+
+  const TYPO_FIXES: Array<[RegExp, string]> = [
+    [/flase/gi, 'flash'],
+    [/falsh/gi, 'flash'],
+    [/flsh/gi, 'flash'],
+    [/proo/gi, 'pro'],
+  ];
+  let candidate = trimmed.toLowerCase();
+  for (const [pattern, replacement] of TYPO_FIXES) candidate = candidate.replace(pattern, replacement);
+
+  // Only accept known-good Google model prefixes; otherwise fall back to default.
+  const ALLOWED_PREFIXES = ['gemini-1.5-', 'gemini-2.0-', 'gemini-2.5-'];
+  if (!ALLOWED_PREFIXES.some((p) => candidate.startsWith(p))) {
+    if (__DEV__) {
+      console.warn(
+        `[gemini] Ignoring unsupported EXPO_PUBLIC_GEMINI_MODEL=${trimmed}; using ${DEFAULT_GEMINI_MODEL}.`
+      );
+    }
+    return DEFAULT_GEMINI_MODEL;
+  }
+  return candidate;
+}
+
 export function getGeminiScanConfig(): { apiKey: string; model: string } | null {
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY?.trim();
-  const model = process.env.EXPO_PUBLIC_GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
+  const model = sanitizeGeminiModelName(process.env.EXPO_PUBLIC_GEMINI_MODEL);
   if (!apiKey) return null;
   return { apiKey, model };
 }

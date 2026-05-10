@@ -1,3 +1,6 @@
+/**
+ * Camera (Scan) tab — intentionally bypasses CurvedHeroScreen: full-bleed viewfinder layout.
+ */
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
@@ -170,8 +173,7 @@ function WebPlaceholder() {
         </View>
         <Text style={styles.webTitle}>Camera on your phone</Text>
         <Text style={styles.webSub}>
-          Meal scanning uses the camera, Google Vision, and Gemini. Open on iOS or Android with API keys in{' '}
-          <Text style={{ fontFamily: Fonts.semiBold }}>.env</Text>.
+          Meal scanning uses your phone’s camera. Open this screen on iOS or Android.
         </Text>
       </View>
     </SafeAreaView>
@@ -197,6 +199,7 @@ function ScanCameraExperience() {
   const cameraRef = useRef<CameraView>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [facing, setFacing] = useState<'back' | 'front'>('back');
+  const [flashOn, setFlashOn] = useState(false);
   const [phase, setPhase] = useState<Phase>('camera');
   const [processIndex, setProcessIndex] = useState(0);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -369,7 +372,7 @@ function ScanCameraExperience() {
           </View>
           <Text style={styles.permTitle}>Camera access</Text>
           <Text style={styles.permBody}>
-            Allow the camera to frame meals live, or pick an existing photo from your gallery —             both are analyzed with Google Vision and Gemini.
+            Allow camera access to scan meals, or pick an existing photo from your gallery — we’ll estimate calories and macros automatically.
           </Text>
           <Pressable onPress={() => requestPermission()} style={({ pressed }) => [styles.permBtn, pressed && { opacity: 0.9 }]}>
             <Text style={styles.permBtnText}>Allow camera</Text>
@@ -401,6 +404,7 @@ function ScanCameraExperience() {
           style={StyleSheet.absoluteFill}
           facing={facing}
           mode="picture"
+          enableTorch={facing === 'back' && flashOn}
           onCameraReady={() => setCameraReady(true)}
         />
       ) : (
@@ -412,20 +416,44 @@ function ScanCameraExperience() {
 
       <SafeAreaView style={styles.overlay} edges={['top']}>
         <View style={styles.topBar}>
-          <View style={styles.livePill}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>{cameraGranted ? 'LIVE' : 'PHOTO'}</Text>
-          </View>
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              router.replace('/(tabs)' as Href);
+            }}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Close camera">
+            <Ionicons name="close" size={26} color="#FFFFFF" />
+          </Pressable>
           {cameraGranted ? (
-            <Pressable
-              onPress={() => {
-                setFacing((f) => (f === 'back' ? 'front' : 'back'));
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-              }}
-              style={styles.iconBtn}
-              accessibilityLabel="Flip camera">
-              <Ionicons name="camera-reverse-outline" size={24} color="#FFFFFF" />
-            </Pressable>
+            <View style={styles.topRightRow}>
+              <Pressable
+                onPress={() => {
+                  setFlashOn((f) => !f);
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                }}
+                style={[styles.iconBtn, flashOn && styles.iconBtnActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: flashOn }}
+                accessibilityLabel={flashOn ? 'Turn flash off' : 'Turn flash on'}>
+                <Ionicons
+                  name={flashOn ? 'flash' : 'flash-outline'}
+                  size={22}
+                  color={flashOn ? Palette.obsidian : '#FFFFFF'}
+                />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setFacing((f) => (f === 'back' ? 'front' : 'back'));
+                  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                }}
+                style={styles.iconBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Flip camera">
+                <Ionicons name="camera-reverse-outline" size={22} color="#FFFFFF" />
+              </Pressable>
+            </View>
           ) : (
             <View style={[styles.iconBtn, { opacity: 0 }]} pointerEvents="none" />
           )}
@@ -435,7 +463,7 @@ function ScanCameraExperience() {
           <>
             <View style={styles.hintWrap}>
               <Text style={styles.hintTitle}>Frame your meal</Text>
-              <Text style={styles.hintSub}>Capture or tap Gallery — Vision + Gemini estimates calories & macros</Text>
+              <Text style={styles.hintSub}>Capture or tap Gallery — we’ll estimate calories and macros automatically</Text>
             </View>
             <Viewfinder />
           </>
@@ -514,8 +542,8 @@ function ScanCameraExperience() {
                         <Text style={styles.calChipText}>This meal</Text>
                       </View>
                       <View style={styles.calChip}>
-                        <Ionicons name="shield-checkmark-outline" size={14} color={Palette.lavender} />
-                        <Text style={styles.calChipText}>Vision + Gemini</Text>
+                        <Ionicons name="sparkles-outline" size={14} color={Palette.lavender} />
+                        <Text style={styles.calChipText}>AI estimate</Text>
                       </View>
                     </View>
                   </View>
@@ -727,38 +755,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
   },
-  livePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF6B9D',
-  },
-  liveText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    letterSpacing: 1.2,
-    color: '#FFFFFF',
-  },
+  topRightRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.42)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  iconBtnActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
   },
   hintWrap: {
     position: 'absolute',

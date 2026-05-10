@@ -146,22 +146,25 @@ export default function NutritionTargetsScreen() {
           style={styles.primaryBtn}
           onPress={() => router.push('/(tabs)/insights' as Href)}
           accessibilityRole="button"
-          accessibilityLabel="Open insights and trends">
+          accessibilityLabel="View Insights: charts, trends, and coaching">
           <Ionicons name="stats-chart-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.primaryBtnText}>Open Insights (trends & coaching)</Text>
+          <Text style={styles.primaryBtnText} numberOfLines={1}>
+            View Insights
+          </Text>
         </Pressable>
 
         <Pressable
           style={styles.secondaryBtn}
           onPress={() => router.push('/onboarding?updateTargets=1' as Href)}
           accessibilityRole="button"
-          accessibilityLabel="Update nutrition targets with onboarding">
+          accessibilityLabel="Adjust calorie and macro targets by running onboarding again">
           <Ionicons name="refresh-outline" size={20} color={Palette.iris} />
-          <Text style={styles.secondaryBtnText}>Update targets — re-run onboarding</Text>
+          <Text style={styles.secondaryBtnText} numberOfLines={1}>
+            Adjust targets
+          </Text>
         </Pressable>
         <Text style={styles.reassure}>
-          Re-running onboarding only changes your calorie and macro targets. Scans, logs, and streaks stay on your
-          account.
+          Runs setup again for new targets only. Your meal logs, scans, and streaks are unchanged.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -314,6 +317,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     fontSize: 16,
     color: '#FFFFFF',
+    flexShrink: 1,
   },
   secondaryBtn: {
     flexDirection: 'row',
@@ -331,6 +335,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     fontSize: 16,
     color: Palette.iris,
+    flexShrink: 1,
   },
   reassure: {
     fontFamily: Fonts.regular,

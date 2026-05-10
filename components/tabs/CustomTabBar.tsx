@@ -40,6 +40,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const muted = colors.textMuted;
   const activeColor = Palette.iris;
 
+  // Camera screen owns the full viewport (no floating FAB / no tab bar peeking
+  // through). Hiding here is simpler than fighting Tabs' tabBarStyle.
+  if (scanFocused) {
+    return null;
+  }
+
   const go = (name: string) => {
     haptic();
     navigation.navigate(name as never);
@@ -124,7 +130,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: 'rgba(34, 197, 94, 0.1)',
-    shadowColor: '#16A34A',
+    shadowColor: Palette.lavender,
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1,
     shadowRadius: 20,

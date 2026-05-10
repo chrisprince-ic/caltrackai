@@ -58,6 +58,43 @@ export async function saveCachedWeeklyPlan(
   }
 }
 
+/**
+ * Drop the cached weekly plan for `dateKey`. Used by the "Generate new plan"
+ * button so the next focus on Home / Meal Plans triggers a fresh AI call.
+ *
+ * Also notifies any in-memory subscribers (e.g. HomeDashboard's session ref)
+ * so they can drop their cached meals and re-fetch immediately, instead of
+ * waiting for a full app reload.
+ */
+export async function clearCachedWeeklyPlan(dateKey: string = getLogDateKey()): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(WEEKLY_PREFIX + dateKey);
+  } catch {
+    /* non-fatal */
+  } finally {
+    notifyWeeklyPlanInvalidated();
+  }
+}
+
+const weeklyPlanInvalidationSubs = new Set<() => void>();
+
+export function subscribeWeeklyPlanInvalidation(cb: () => void): () => void {
+  weeklyPlanInvalidationSubs.add(cb);
+  return () => {
+    weeklyPlanInvalidationSubs.delete(cb);
+  };
+}
+
+function notifyWeeklyPlanInvalidated() {
+  for (const cb of weeklyPlanInvalidationSubs) {
+    try {
+      cb();
+    } catch {
+      /* don't let one bad subscriber kill the others */
+    }
+  }
+}
+
 type GroceryStored = { targetFp: string; items: AiGroceryItem[] };
 
 export async function loadCachedWeeklyGroceries(

@@ -9,11 +9,15 @@ import {
   type ReactNode,
 } from 'react';
 import { AppState, type AppStateStatus, Platform } from 'react-native';
-import type { CustomerInfo, PurchasesOffering } from 'react-native-purchases';
+import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 import Purchases from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
-import { REVENUECAT_ENTITLEMENT_PRO, REVENUECAT_OFFERING_ID } from '@/constants/revenuecat';
+import {
+  MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID,
+  REVENUECAT_ENTITLEMENT_PRO,
+  REVENUECAT_OFFERING_ID,
+} from '@/constants/revenuecat';
 import {
   credentialsIssueHelpMessage,
   getRevenueCatApiKey,
@@ -25,6 +29,8 @@ import { isPurchasesError, purchasesErrorMessage, PURCHASES_ERROR_CODE } from '@
 import { useAuth } from '@/contexts/AuthContext';
 
 const NATIVE_STORE = Platform.OS === 'ios' || Platform.OS === 'android';
+
+export type MacroviaPurchaseOutcome = 'success' | 'cancelled' | 'error';
 
 type RevenueCatCtx = {
   /** SDK configured and ready for calls on this device */
@@ -39,6 +45,8 @@ type RevenueCatCtx = {
   restorePurchases: () => Promise<CustomerInfo | null>;
   /** Current offering from cache (for custom UIs); paywall uses dashboard default if omitted */
   getCurrentOffering: () => Promise<PurchasesOffering | null>;
+  /** Macrovia monthly (`com.aevontech.macrovia.premium.monthly`) from the current RevenueCat offering */
+  purchaseMacroviaMonthly: () => Promise<MacroviaPurchaseOutcome>;
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
   /** Presents paywall only when `ChrisGroup Pro` is not active */
   presentPaywallIfNeeded: () => Promise<PAYWALL_RESULT | null>;
@@ -47,6 +55,14 @@ type RevenueCatCtx = {
 };
 
 const RevenueCatContext = createContext<RevenueCatCtx | null>(null);
+
+function findMacroviaMonthlyPackage(offering: PurchasesOffering): PurchasesPackage | null {
+  const id = MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID;
+  const exact = offering.availablePackages.find((p) => p.product.identifier === id);
+  if (exact) return exact;
+  const lower = id.toLowerCase();
+  return offering.availablePackages.find((p) => p.product.identifier.toLowerCase() === lower) ?? null;
+}
 
 function entitlementActive(info: CustomerInfo | null, id: string): boolean {
   return Boolean(info?.entitlements.active[id]?.isActive);
@@ -245,6 +261,38 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const purchaseMacroviaMonthly = useCallback(async (): Promise<MacroviaPurchaseOutcome> => {
+    if (!NATIVE_STORE || !configuredRef.current) {
+      setLastError('Subscriptions are only available in the iOS or Android app.');
+      return 'error';
+    }
+    try {
+      const offering = await resolveOffering();
+      if (!offering) {
+        setLastError(
+          'No subscription offering loaded. In RevenueCat, set a default offering that includes Macrovia monthly.'
+        );
+        return 'error';
+      }
+      const pkg = findMacroviaMonthlyPackage(offering);
+      if (!pkg) {
+        setLastError(
+          `Could not find "${MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID}" in the current offering. Add it in RevenueCat and App Store Connect.`
+        );
+        return 'error';
+      }
+      const { customerInfo: info } = await Purchases.purchasePackage(pkg);
+      setCustomerInfo(info);
+      return 'success';
+    } catch (e) {
+      if (isPurchasesError(e) && e.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+        return 'cancelled';
+      }
+      setLastError(purchasesErrorMessage(e));
+      return 'error';
+    }
+  }, []);
+
   const presentPaywall = useCallback(async (): Promise<PAYWALL_RESULT | null> => {
     if (!NATIVE_STORE || !configuredRef.current) {
       return null;
@@ -325,6 +373,7 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
       refreshCustomerInfo,
       restorePurchases,
       getCurrentOffering,
+      purchaseMacroviaMonthly,
       presentPaywall,
       presentPaywallIfNeeded,
       presentCustomerCenter,
@@ -339,6 +388,7 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
       refreshCustomerInfo,
       restorePurchases,
       getCurrentOffering,
+      purchaseMacroviaMonthly,
       presentPaywall,
       presentPaywallIfNeeded,
       presentCustomerCenter,

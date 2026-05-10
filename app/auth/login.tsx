@@ -12,16 +12,17 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MarketingBackdrop } from '@/components/auth/MarketingBackdrop';
+import { TextField } from '@/components/ui/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { getFirebaseAuth } from '@/lib/firebase';
 import { friendlyFirebaseAuthMessage } from '@/lib/firebase-auth-errors';
+import { openLegalUrl } from '@/lib/legal-browser';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
 
@@ -51,7 +52,7 @@ export default function LoginScreen() {
   async function onEmailLogin() {
     setError(null);
     if (!email.trim() || !password) {
-      setError('Enter email and password.');
+      setError('Enter your email and password.');
       return;
     }
     triggerLightHaptic();
@@ -91,9 +92,11 @@ export default function LoginScreen() {
             <Ionicons name="cloud-offline-outline" size={40} color={Palette.lavender} />
             <Text style={styles.missingTitle}>Service unavailable</Text>
             <Text style={styles.missingBody}>
-              We could not connect to our servers right now. Please check your internet connection and try again.
+              We could not reach the server right now. Check your internet connection and try again.
             </Text>
-            <Pressable style={({ pressed }) => [styles.missingBack, pressed && styles.pressed]} onPress={() => router.replace('/welcome' as Href)}>
+            <Pressable
+              style={({ pressed }) => [styles.missingBack, pressed && styles.pressed]}
+              onPress={() => router.replace('/welcome' as Href)}>
               <Text style={styles.missingBackText}>Back to welcome</Text>
             </Pressable>
           </View>
@@ -124,39 +127,46 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}>
+          {/* Back button */}
           <Pressable
             onPress={() => router.replace('/welcome' as Href)}
             hitSlop={12}
-            style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}>
+            style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Back to welcome">
             <View style={styles.backPill}>
               <Ionicons name="chevron-back" size={20} color={Palette.iris} />
             </View>
             <Text style={styles.backLink}>Back</Text>
           </Pressable>
 
+          {/* Top spacer pushes the form down so it sits ~40% from the top */}
+          <View style={styles.topSpacer} />
+
           <Animated.View entering={FadeInDown.duration(420).springify()} style={styles.headerBlock}>
             <Text style={styles.eyebrow}>WELCOME BACK</Text>
             <Text style={styles.title}>Sign in</Text>
-            <Text style={styles.subtitle}>Use your email and password—your diary syncs securely with Firebase.</Text>
+            <Text style={styles.subtitle}>Pick up right where you left off.</Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(80).duration(440).springify()} style={styles.formCard}>
+          <Animated.View entering={FadeInDown.delay(80).duration(440).springify()} style={styles.form}>
             {!showReset ? (
               <>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
+                <TextField
+                  label="Email"
                   value={email}
                   onChangeText={setEmail}
                   placeholder="you@email.com"
-                  placeholderTextColor={Palette.dusk}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
-                  style={styles.input}
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                  containerStyle={styles.field}
                 />
 
                 <View style={styles.passwordHeader}>
-                  <Text style={styles.label}>Password</Text>
+                  <Text style={styles.fieldLabelInline}>Password</Text>
                   <Pressable
                     onPress={() => {
                       setResetEmail(email);
@@ -169,17 +179,16 @@ export default function LoginScreen() {
                     <Text style={styles.forgotLink}>Forgot?</Text>
                   </Pressable>
                 </View>
-                <TextInput
+                <TextField
                   value={password}
                   onChangeText={setPassword}
                   placeholder="••••••••"
-                  placeholderTextColor={Palette.dusk}
-                  secureTextEntry
+                  showPasswordToggle
                   autoCapitalize="none"
                   autoCorrect={false}
                   textContentType="password"
                   autoComplete="password"
-                  style={styles.input}
+                  containerStyle={styles.field}
                 />
 
                 {error ? (
@@ -191,10 +200,14 @@ export default function LoginScreen() {
 
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Sign in with email"
+                  accessibilityLabel="Sign in"
                   disabled={submitting}
                   onPress={() => void onEmailLogin()}
-                  style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed, submitting && { opacity: 0.75 }]}>
+                  style={({ pressed }) => [
+                    styles.primaryBtn,
+                    pressed && styles.pressed,
+                    submitting && { opacity: 0.75 },
+                  ]}>
                   {submitting ? (
                     <ActivityIndicator color={Palette.white} />
                   ) : (
@@ -204,18 +217,31 @@ export default function LoginScreen() {
                     </>
                   )}
                 </Pressable>
+
+                <View style={styles.switchInline}>
+                  <Text style={styles.switchMuted}>New here? </Text>
+                  <Pressable
+                    onPress={() => router.push('/auth/sign-up' as Href)}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel="Create an account">
+                    <Text style={styles.switchAccent}>Create an account</Text>
+                  </Pressable>
+                </View>
               </>
             ) : (
               <>
                 <Pressable
-                  onPress={() => { setShowReset(false); setResetSuccess(false); }}
+                  onPress={() => {
+                    setShowReset(false);
+                    setResetSuccess(false);
+                  }}
                   style={styles.resetBackRow}
                   hitSlop={8}>
                   <Ionicons name="chevron-back" size={18} color={Palette.iris} />
                   <Text style={styles.resetBackText}>Back to sign in</Text>
                 </Pressable>
 
-                <Text style={styles.label}>Reset password</Text>
                 {resetSuccess ? (
                   <View style={styles.successBox}>
                     <Ionicons name="checkmark-circle" size={18} color="#1A7A4A" />
@@ -225,22 +251,29 @@ export default function LoginScreen() {
                   </View>
                 ) : (
                   <>
-                    <TextInput
+                    <TextField
+                      label="Reset password"
+                      helperText="We'll email you a link to set a new password."
                       value={resetEmail}
                       onChangeText={setResetEmail}
                       placeholder="your@email.com"
-                      placeholderTextColor={Palette.dusk}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
-                      style={styles.input}
+                      textContentType="emailAddress"
+                      autoComplete="email"
+                      containerStyle={styles.field}
                     />
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel="Send password reset email"
                       disabled={resetSubmitting}
                       onPress={() => void onSendReset()}
-                      style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed, resetSubmitting && { opacity: 0.75 }]}>
+                      style={({ pressed }) => [
+                        styles.primaryBtn,
+                        pressed && styles.pressed,
+                        resetSubmitting && { opacity: 0.75 },
+                      ]}>
                       {resetSubmitting ? (
                         <ActivityIndicator color={Palette.white} />
                       ) : (
@@ -253,12 +286,21 @@ export default function LoginScreen() {
             )}
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.switchWrap}>
-            <Pressable onPress={() => router.push('/auth/sign-up' as Href)} style={styles.switchRow}>
-              <Text style={styles.switchMuted}>New here? </Text>
-              <Text style={styles.switchAccent}>Create an account</Text>
-            </Pressable>
-          </Animated.View>
+          {/* Bottom spacer is smaller than the top so the form sits at ~40% from the top */}
+          <View style={styles.bottomSpacer} />
+
+          {/* Legal footer */}
+          <Text style={styles.legalFooter}>
+            By continuing you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => void openLegalUrl('terms')}>
+              Terms
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.legalLink} onPress={() => void openLegalUrl('privacy')}>
+              Privacy Policy
+            </Text>
+            .
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -269,46 +311,34 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Palette.ghost },
   flex: { flex: 1 },
   scroll: {
+    flexGrow: 1,
     paddingHorizontal: 22,
-    paddingBottom: 36,
+    paddingTop: 16,
+    paddingBottom: 16,
     maxWidth: 460,
     width: '100%',
     alignSelf: 'center',
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  missingWrap: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
+  missingWrap: { flex: 1, padding: 24, justifyContent: 'center' },
   missingCard: {
     backgroundColor: Palette.white,
     borderRadius: 24,
     padding: 24,
     gap: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: '#E5E7EB',
     maxWidth: 420,
     alignSelf: 'center',
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 24,
     elevation: 4,
   },
-  missingTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 22,
-    color: Palette.obsidian,
-  },
-  missingBody: {
-    fontFamily: Fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: Palette.dusk,
-  },
-  mono: { fontFamily: Fonts.semiBold, color: Palette.iris },
+  missingTitle: { fontFamily: Fonts.bold, fontSize: 22, color: Palette.obsidian },
+  missingBody: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 22, color: Palette.dusk },
   missingBack: {
     marginTop: 4,
     backgroundColor: Palette.haze,
@@ -319,11 +349,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(34, 197, 94, 0.15)',
   },
   missingBackText: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
+
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 22,
     alignSelf: 'flex-start',
   },
   backPill: {
@@ -334,16 +364,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: '#E5E7EB',
   },
   backLink: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
-  headerBlock: {
-    marginBottom: 20,
-    paddingRight: 8,
-  },
+
+  // Spacers create a vertical center-with-a-bias layout: the form sits at
+  // roughly 40% from the top, not dead center.
+  topSpacer: { flex: 1, minHeight: 24 },
+  bottomSpacer: { flex: 0.7, minHeight: 24 },
+
+  headerBlock: { marginBottom: 24, paddingRight: 8 },
   eyebrow: {
     fontFamily: Fonts.semiBold,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 2.8,
     color: Palette.lavender,
     marginBottom: 10,
@@ -362,68 +395,34 @@ const styles = StyleSheet.create({
     color: Palette.dusk,
     maxWidth: 360,
   },
-  formCard: {
-    backgroundColor: Palette.white,
-    borderRadius: 24,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.06,
-    shadowRadius: 26,
-    elevation: 5,
-  },
-  label: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    color: Palette.obsidian,
-    marginBottom: 8,
-    marginTop: 2,
-  },
-  input: {
-    fontFamily: Fonts.regular,
-    fontSize: 16,
-    color: Palette.obsidian,
-    backgroundColor: '#F0FDF4',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
-  },
-  errorBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: '#FFE8F2',
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(155, 31, 82, 0.12)',
-  },
-  errorText: { flex: 1, fontFamily: Fonts.medium, fontSize: 14, color: '#9B1F52', lineHeight: 20 },
+
+  form: {},
+  field: { marginBottom: 14 },
+  fieldLabelInline: { fontFamily: Fonts.semiBold, fontSize: 14, color: Palette.obsidian },
   passwordHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
-    marginTop: 2,
   },
-  forgotLink: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    color: Palette.iris,
-  },
-  resetBackRow: {
+  forgotLink: { fontFamily: Fonts.semiBold, fontSize: 13, color: Palette.iris },
+
+  errorBox: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#FEF2F2',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
+  errorText: { flex: 1, fontFamily: Fonts.medium, fontSize: 14, color: '#9B1F52', lineHeight: 20 },
+
+  resetBackRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 16 },
   resetBackText: { fontFamily: Fonts.semiBold, fontSize: 14, color: Palette.iris },
+
   successBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -436,23 +435,47 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   successText: { flex: 1, fontFamily: Fonts.medium, fontSize: 14, color: '#1A7A4A', lineHeight: 20 },
+
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: Palette.iris,
-    paddingVertical: 16,
+    height: 56,
     borderRadius: 16,
     marginTop: 4,
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 4,
   },
   primaryLabel: { fontFamily: Fonts.bold, fontSize: 16, color: Palette.white },
-  switchWrap: {
-    marginTop: 22,
+
+  switchInline: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 4,
   },
-  switchRow: { paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   switchMuted: { fontFamily: Fonts.regular, fontSize: 15, color: Palette.dusk },
   switchAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Palette.iris },
+
+  legalFooter: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
+  legalLink: {
+    fontFamily: Fonts.semiBold,
+    color: Palette.iris,
+    textDecorationLine: 'underline',
+  },
+
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
 });

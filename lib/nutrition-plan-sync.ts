@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { get, ref, set } from 'firebase/database';
 
-import type { PersistedNutritionPlan } from '@/types/nutrition-plan-persisted';
+import type { PersistedNutritionPlan, WeightGoalDirection } from '@/types/nutrition-plan-persisted';
 import { getFirebaseDatabase } from '@/lib/firebase';
 
 const PATH = 'nutritionPlan';
@@ -19,6 +19,9 @@ export function normalizePersistedPlan(v: unknown): PersistedNutritionPlan | nul
     return null;
   }
   const updatedAt = Math.round(Number(o.updatedAt));
+  const wg = o.weightGoal;
+  const weightGoal: WeightGoalDirection | undefined =
+    wg === 'lose' || wg === 'maintain' || wg === 'gain' ? wg : undefined;
   return {
     dailyCalories,
     proteinG,
@@ -26,6 +29,7 @@ export function normalizePersistedPlan(v: unknown): PersistedNutritionPlan | nul
     fatG,
     coachNote: typeof o.coachNote === 'string' ? o.coachNote : undefined,
     dietarySummary: typeof o.dietarySummary === 'string' ? o.dietarySummary : undefined,
+    weightGoal,
     updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
   };
 }

@@ -1,12 +1,14 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
+import { APP_SCREEN_GRADIENT_LIGHT } from '@/constants/hero';
+
 /** Gradient background + decorative blobs for auth / marketing screens. */
 export function MarketingBackdrop() {
   return (
     <>
       <LinearGradient
-        colors={['#F0FDF4', '#F9FAFB', '#EFF6FF']}
+        colors={[...APP_SCREEN_GRADIENT_LIGHT]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}

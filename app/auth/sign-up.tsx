@@ -10,15 +10,16 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MarketingBackdrop } from '@/components/auth/MarketingBackdrop';
+import { TextField } from '@/components/ui/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { friendlyFirebaseAuthMessage } from '@/lib/firebase-auth-errors';
+import { openLegalUrl } from '@/lib/legal-browser';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
 
@@ -31,9 +32,9 @@ export default function SignUpScreen() {
   const { user, initializing, firebaseReady, signUpWithProfile } = useAuth();
 
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,14 +44,21 @@ export default function SignUpScreen() {
     }
   }, [user, initializing, router]);
 
+  const canSubmit =
+    agreed && !submitting && name.trim().length > 0 && email.trim().length > 0 && password.length >= 8;
+
   async function onEmailSignUp() {
     setError(null);
+    if (!agreed) {
+      setError('Please agree to the Terms and Privacy Policy to continue.');
+      return;
+    }
     if (!name.trim()) {
       setError('Please enter your name.');
       return;
     }
     if (!email.trim() || !password || password.length < 8) {
-      setError('Enter a valid email and password (at least 8 characters).');
+      setError('Enter a valid email and a password of at least 8 characters.');
       return;
     }
     triggerLightHaptic();
@@ -60,7 +68,7 @@ export default function SignUpScreen() {
         email: email.trim(),
         password,
         name: name.trim(),
-        phone: phone.trim(),
+        phone: '',
       });
     } catch (e) {
       setError(friendlyFirebaseAuthMessage(e));
@@ -78,9 +86,11 @@ export default function SignUpScreen() {
             <Ionicons name="cloud-offline-outline" size={40} color={Palette.lavender} />
             <Text style={styles.missingTitle}>Service unavailable</Text>
             <Text style={styles.missingBody}>
-              We could not connect to our servers right now. Please check your internet connection and try again.
+              We could not reach the server right now. Check your internet connection and try again.
             </Text>
-            <Pressable style={({ pressed }) => [styles.missingBack, pressed && styles.pressed]} onPress={() => router.replace('/welcome' as Href)}>
+            <Pressable
+              style={({ pressed }) => [styles.missingBack, pressed && styles.pressed]}
+              onPress={() => router.replace('/welcome' as Href)}>
               <Text style={styles.missingBackText}>Back to welcome</Text>
             </Pressable>
           </View>
@@ -111,70 +121,87 @@ export default function SignUpScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}>
+          {/* Back button */}
           <Pressable
             onPress={() => router.replace('/welcome' as Href)}
             hitSlop={12}
-            style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}>
+            style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Back to welcome">
             <View style={styles.backPill}>
               <Ionicons name="chevron-back" size={20} color={Palette.iris} />
             </View>
             <Text style={styles.backLink}>Back</Text>
           </Pressable>
 
+          <View style={styles.topSpacer} />
+
           <Animated.View entering={FadeInDown.duration(420).springify()} style={styles.headerBlock}>
             <Text style={styles.eyebrow}>JOIN CALTRACK</Text>
             <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>
-              A few details and you’re set—we’ll store your profile securely in Firebase.
-            </Text>
+            <Text style={styles.subtitle}>A few details and you’re set.</Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(80).duration(440).springify()} style={styles.formCard}>
-            <Text style={styles.label}>Full name</Text>
-            <TextInput
+          <Animated.View entering={FadeInDown.delay(80).duration(440).springify()} style={styles.form}>
+            <TextField
+              label="Full name"
               value={name}
               onChangeText={setName}
               placeholder="Alex Morgan"
-              placeholderTextColor={Palette.dusk}
               autoCapitalize="words"
-              style={styles.input}
+              textContentType="name"
+              autoComplete="name"
+              containerStyle={styles.field}
             />
 
-            <Text style={styles.label}>Phone</Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Optional"
-              placeholderTextColor={Palette.dusk}
-              keyboardType="phone-pad"
-              style={styles.input}
-            />
-
-            <Text style={styles.label}>Email</Text>
-            <TextInput
+            <TextField
+              label="Email"
               value={email}
               onChangeText={setEmail}
               placeholder="you@email.com"
-              placeholderTextColor={Palette.dusk}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              style={styles.input}
+              textContentType="emailAddress"
+              autoComplete="email"
+              containerStyle={styles.field}
             />
 
-            <Text style={styles.label}>Password</Text>
-            <TextInput
+            <TextField
+              label="Password"
+              helperText="At least 8 characters."
               value={password}
               onChangeText={setPassword}
-              placeholder="At least 8 characters"
-              placeholderTextColor={Palette.dusk}
-              secureTextEntry
+              placeholder="Create a password"
+              showPasswordToggle
               autoCapitalize="none"
               autoCorrect={false}
               textContentType="newPassword"
               autoComplete="password-new"
-              style={styles.input}
+              containerStyle={styles.field}
             />
+
+            <Pressable
+              onPress={() => setAgreed((a) => !a)}
+              style={styles.legalRow}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreed }}
+              accessibilityLabel="Agree to Terms of Use and Privacy Policy">
+              <View style={[styles.checkbox, agreed && styles.checkboxOn]}>
+                {agreed ? <Ionicons name="checkmark" size={14} color={Palette.white} /> : null}
+              </View>
+              <Text style={styles.legalText}>
+                I agree to the{' '}
+                <Text style={styles.legalRowLink} onPress={() => void openLegalUrl('terms')}>
+                  Terms of Use
+                </Text>{' '}
+                and{' '}
+                <Text style={styles.legalRowLink} onPress={() => void openLegalUrl('privacy')}>
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
+            </Pressable>
 
             {error ? (
               <View style={styles.errorBox}>
@@ -185,10 +212,15 @@ export default function SignUpScreen() {
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Create account with email"
-              disabled={submitting}
+              accessibilityLabel="Create account"
+              accessibilityState={{ disabled: !canSubmit }}
+              disabled={!canSubmit}
               onPress={() => void onEmailSignUp()}
-              style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed, submitting && { opacity: 0.75 }]}>
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && canSubmit && styles.pressed,
+                !canSubmit && styles.primaryBtnDisabled,
+              ]}>
               {submitting ? (
                 <ActivityIndicator color={Palette.white} />
               ) : (
@@ -198,14 +230,32 @@ export default function SignUpScreen() {
                 </>
               )}
             </Pressable>
+
+            <View style={styles.switchInline}>
+              <Text style={styles.switchMuted}>Already have an account? </Text>
+              <Pressable
+                onPress={() => router.push('/auth/login' as Href)}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in">
+                <Text style={styles.switchAccent}>Sign in</Text>
+              </Pressable>
+            </View>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.switchWrap}>
-            <Pressable onPress={() => router.push('/auth/login' as Href)} style={styles.switchRow}>
-              <Text style={styles.switchMuted}>Already have an account? </Text>
-              <Text style={styles.switchAccent}>Sign in</Text>
-            </Pressable>
-          </Animated.View>
+          <View style={styles.bottomSpacer} />
+
+          <Text style={styles.legalFooter}>
+            By continuing you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => void openLegalUrl('terms')}>
+              Terms
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.legalLink} onPress={() => void openLegalUrl('privacy')}>
+              Privacy Policy
+            </Text>
+            .
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -216,46 +266,34 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Palette.ghost },
   flex: { flex: 1 },
   scroll: {
+    flexGrow: 1,
     paddingHorizontal: 22,
-    paddingBottom: 36,
+    paddingTop: 16,
+    paddingBottom: 16,
     maxWidth: 460,
     width: '100%',
     alignSelf: 'center',
   },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  missingWrap: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
+  missingWrap: { flex: 1, padding: 24, justifyContent: 'center' },
   missingCard: {
     backgroundColor: Palette.white,
     borderRadius: 24,
     padding: 24,
     gap: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: '#E5E7EB',
     maxWidth: 420,
     alignSelf: 'center',
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 24,
     elevation: 4,
   },
-  missingTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 22,
-    color: Palette.obsidian,
-  },
-  missingBody: {
-    fontFamily: Fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: Palette.dusk,
-  },
-  mono: { fontFamily: Fonts.semiBold, color: Palette.iris },
+  missingTitle: { fontFamily: Fonts.bold, fontSize: 22, color: Palette.obsidian },
+  missingBody: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 22, color: Palette.dusk },
   missingBack: {
     marginTop: 4,
     backgroundColor: Palette.haze,
@@ -263,14 +301,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(34, 197, 94, 0.15)',
   },
   missingBackText: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
+
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 22,
     alignSelf: 'flex-start',
   },
   backPill: {
@@ -281,16 +319,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: '#E5E7EB',
   },
   backLink: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
-  headerBlock: {
-    marginBottom: 20,
-    paddingRight: 8,
-  },
+
+  topSpacer: { flex: 1, minHeight: 24 },
+  bottomSpacer: { flex: 0.7, minHeight: 24 },
+
+  headerBlock: { marginBottom: 24, paddingRight: 8 },
   eyebrow: {
     fontFamily: Fonts.semiBold,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 2.8,
     color: Palette.lavender,
     marginBottom: 10,
@@ -309,66 +348,93 @@ const styles = StyleSheet.create({
     color: Palette.dusk,
     maxWidth: 360,
   },
-  formCard: {
-    backgroundColor: Palette.white,
-    borderRadius: 24,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.08,
-    shadowRadius: 26,
-    elevation: 5,
+
+  form: {},
+  field: { marginBottom: 14 },
+
+  legalRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+    marginTop: 4,
+    marginBottom: 16,
+    paddingVertical: 4,
   },
-  label: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    color: Palette.obsidian,
-    marginBottom: 8,
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    backgroundColor: Palette.white,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 2,
   },
-  input: {
+  checkboxOn: { backgroundColor: Palette.iris, borderColor: Palette.iris },
+  legalText: {
+    flex: 1,
     fontFamily: Fonts.regular,
-    fontSize: 16,
-    color: Palette.obsidian,
-    backgroundColor: '#F0FDF4',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    fontSize: 13,
+    lineHeight: 19,
+    color: Palette.dusk,
   },
+  legalRowLink: { fontFamily: Fonts.semiBold, color: Palette.iris, textDecorationLine: 'underline' },
+
   errorBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: '#FFE8F2',
+    backgroundColor: '#FEF2F2',
     padding: 14,
     borderRadius: 14,
-    marginBottom: 16,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(155, 31, 82, 0.12)',
+    borderColor: '#FECACA',
   },
   errorText: { flex: 1, fontFamily: Fonts.medium, fontSize: 14, color: '#9B1F52', lineHeight: 20 },
+
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: Palette.iris,
-    paddingVertical: 16,
+    height: 56,
     borderRadius: 16,
     marginTop: 4,
+    shadowColor: Palette.iris,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 4,
   },
+  primaryBtnDisabled: { backgroundColor: '#9CA3AF', shadowOpacity: 0, elevation: 0 },
   primaryLabel: { fontFamily: Fonts.bold, fontSize: 16, color: Palette.white },
-  switchWrap: {
-    marginTop: 22,
+
+  switchInline: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 4,
   },
-  switchRow: { paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   switchMuted: { fontFamily: Fonts.regular, fontSize: 15, color: Palette.dusk },
   switchAccent: { fontFamily: Fonts.semiBold, fontSize: 15, color: Palette.iris },
+
+  legalFooter: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
+  legalLink: {
+    fontFamily: Fonts.semiBold,
+    color: Palette.iris,
+    textDecorationLine: 'underline',
+  },
+
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
 });

@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
+import { APP_SCREEN_GRADIENT_LIGHT } from '@/constants/hero';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 
 type Props = {
@@ -16,7 +17,7 @@ export function ScreenBackground({ children }: Props) {
 
   const gradColors: [string, string, string] = isDark
     ? ['#081510', '#111827', '#0E1628']
-    : ['#F0FDF4', '#FAFAFA', '#EFF6FF'];
+    : [...APP_SCREEN_GRADIENT_LIGHT];
 
   const blob1Bg = isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.13)';
   const blob2Bg = isDark ? 'rgba(99,102,241,0.07)' : 'rgba(99,102,241,0.09)';

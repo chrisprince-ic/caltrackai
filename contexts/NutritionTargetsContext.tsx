@@ -11,7 +11,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { DASHBOARD_CALORIES, DASHBOARD_MACROS } from '@/constants/dashboard-mock';
 import { fetchUserNutritionPlan } from '@/lib/nutrition-plan-sync';
-import type { PersistedNutritionPlan } from '@/types/nutrition-plan-persisted';
+import type { PersistedNutritionPlan, WeightGoalDirection } from '@/types/nutrition-plan-persisted';
 
 type Ctx = {
   plan: PersistedNutritionPlan | null;
@@ -23,6 +23,8 @@ type Ctx = {
   fatG: number;
   coachNote: string | null;
   dietarySummary: string;
+  /** Onboarding goal; Home energy card is read-only — profile/onboarding only changes this. */
+  weightGoal: WeightGoalDirection;
 };
 
 const NutritionTargetsContext = createContext<Ctx | null>(null);
@@ -58,6 +60,7 @@ export function NutritionTargetsProvider({ children }: { children: ReactNode }) 
     const proteinG = plan?.proteinG ?? DASHBOARD_MACROS.protein.goal;
     const carbsG = plan?.carbsG ?? DASHBOARD_MACROS.carbs.goal;
     const fatG = plan?.fatG ?? DASHBOARD_MACROS.fat.goal;
+    const weightGoal: WeightGoalDirection = plan?.weightGoal ?? 'maintain';
     return {
       plan,
       loading,
@@ -68,6 +71,7 @@ export function NutritionTargetsProvider({ children }: { children: ReactNode }) 
       fatG,
       coachNote: plan?.coachNote ?? null,
       dietarySummary: plan?.dietarySummary ?? '',
+      weightGoal,
     };
   }, [plan, loading, refresh]);
 

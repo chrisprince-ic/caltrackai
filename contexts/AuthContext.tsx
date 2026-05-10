@@ -38,7 +38,8 @@ type AuthCtx = {
   }) => Promise<void>;
   signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signOutUser: () => Promise<void>;
-  deleteAccount: (password?: string) => Promise<void>;
+  /** Re-authenticates then deletes Firebase user + RTDB `users/{uid}`. */
+  deleteAccount: (opts?: { password?: string; googleIdToken?: string }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthCtx | null>(null);
@@ -134,14 +135,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const deleteAccount = useCallback(async (password?: string) => {
+  const deleteAccount = useCallback(async (opts?: { password?: string; googleIdToken?: string }) => {
     const auth = getFirebaseAuth();
     const currentUser = auth.currentUser;
     if (!currentUser) throw new Error('Not signed in.');
 
-    if (password && currentUser.email) {
-      const credential = EmailAuthProvider.credential(currentUser.email, password);
-      await reauthenticateWithCredential(currentUser, credential);
+    const providers = new Set(currentUser.providerData.map((p) => p.providerId));
+    const hasPassword = providers.has('password') && Boolean(currentUser.email);
+    const hasGoogle = providers.has('google.com');
+
+    if (opts?.googleIdToken) {
+      await reauthenticateWithCredential(currentUser, GoogleAuthProvider.credential(opts.googleIdToken));
+    } else if (opts?.password && currentUser.email) {
+      await reauthenticateWithCredential(
+        currentUser,
+        EmailAuthProvider.credential(currentUser.email, opts.password)
+      );
+    } else if (hasPassword) {
+      const err = new Error('Confirm with your password before deleting your account.');
+      Object.assign(err, { code: 'auth/password-required' });
+      throw err;
+    } else if (hasGoogle) {
+      const err = new Error('Confirm with Google before deleting your account.');
+      Object.assign(err, { code: 'auth/google-reauth-required' });
+      throw err;
     }
 
     try {

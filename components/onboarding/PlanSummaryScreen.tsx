@@ -180,6 +180,7 @@ export function PlanSummaryScreen() {
         fatG,
         coachNote,
         dietarySummary,
+        weightGoal: plan.effectiveGoal,
       });
       await refreshTargets();
     } catch {

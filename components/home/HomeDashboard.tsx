@@ -1,18 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { type Href, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CurvedHeroScreen } from '@/components/CurvedHeroScreen';
+import { IconButton } from '@/components/hero/IconButton';
+import { TimeOfDayIcon } from '@/components/home/energy/TimeOfDayIcon.skia';
+
+import { HERO } from '@/constants/hero';
 import { MEAL_PLAN_CARDS } from '@/constants/dashboard-mock';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionLog } from '@/contexts/NutritionLogContext';
@@ -22,21 +27,22 @@ import {
   getLogDateKey,
   loadCachedWeeklyPlan,
   saveCachedWeeklyPlan,
+  subscribeWeeklyPlanInvalidation,
 } from '@/lib/ai-meal-daily-cache';
 import { computeCalorieStreak } from '@/lib/calorie-streak';
 import { suggestWeeklyMealPlan } from '@/lib/ai-coach';
 import { setMealPlanSessionMeals } from '@/lib/meal-plan-session';
 import { fetchRecentDayTotals } from '@/lib/nutrition-history';
 import type { AiMealBrief } from '@/types/ai-nutrition';
+import type { LoggedMealEntry } from '@/types/logged-meal';
 import { AppMenuSheet } from '@/components/AppMenuSheet';
-import { CalorieCard } from '@/components/ui/CalorieCard';
+import { DailyEnergyCard } from '@/components/home/DailyEnergyCard';
 import { MacroBar } from '@/components/ui/MacroBar';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { ScreenBackground } from '@/components/ui/ScreenBackground';
+import { COLORS, Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
-import { Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/AppThemeContext';
-import { StyleSheet } from 'react-native';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const AI_CARD_ACCENTS = [
   { accent: Palette.iris, tint: Palette.haze },
@@ -56,6 +62,17 @@ function aiBriefToCardItem(m: AiMealBrief, i: number): (typeof MEAL_PLAN_CARDS)[
     accent: c.accent,
     tint: c.tint,
   };
+}
+
+function mealSlotLabel(hour: number): string {
+  if (hour < 11) return 'Breakfast';
+  if (hour < 16) return 'Lunch';
+  if (hour < 19) return 'Snack';
+  return 'Dinner';
+}
+
+function formatMealTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
 function MealCard({
@@ -97,19 +114,68 @@ function MealCard({
   );
 }
 
+function RecentMealRow({
+  entry,
+  colors,
+  onPress,
+}: {
+  entry: LoggedMealEntry;
+  colors: {
+    surface: string;
+    border: string;
+    text: string;
+    textMuted: string;
+  };
+  onPress: () => void;
+}) {
+  const d = new Date(entry.loggedAt);
+  const slot = mealSlotLabel(d.getHours());
+  const sub = `${slot} · ${formatMealTime(entry.loggedAt)}`;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.recentRow,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        pressed && { opacity: 0.92 },
+      ]}>
+      <View style={[styles.recentIcon, { backgroundColor: COLORS.brandGreenTint }]}>
+        <Ionicons name="restaurant" size={18} color={COLORS.brandGreenDark} />
+      </View>
+      <View style={styles.recentMid}>
+        <View style={styles.recentTopLine}>
+          <Text style={[styles.recentName, { color: colors.text }]} numberOfLines={1}>
+            {entry.foodName}
+          </Text>
+          <Text style={[styles.recentKcal, { color: colors.text }]}>
+            {Math.round(entry.calories).toLocaleString()} kcal
+          </Text>
+        </View>
+        <Text style={[styles.recentSub, { color: colors.textMuted }]} numberOfLines={1}>
+          {sub}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export function HomeDashboard() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const reducedMotion = useReducedMotion();
   const { colors, isDark } = useAppTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { user, firebaseReady } = useAuth();
-  const { totals, refreshTodayLog, logSyncing } = useNutritionLog();
+  const { totals, refreshTodayLog, logSyncing, entries } = useNutritionLog();
   const { dailyCalories, proteinG, carbsG, fatG, dietarySummary, refresh: refreshNutritionTargets } =
     useNutritionTargets();
   const cardW = Math.min(268, width * 0.72);
   const [streak, setStreak] = useState(0);
   const [weeklyPlanMeals, setWeeklyPlanMeals] = useState<AiMealBrief[] | null>(null);
   const [weeklyPlanLoading, setWeeklyPlanLoading] = useState(false);
+
+  const iconInk = isDark ? '#F4FCE8' : '#1A2B26';
 
   const mealPlanSessionCache = useRef<{
     forUserId: string | null;
@@ -119,6 +185,15 @@ export function HomeDashboard() {
 
   const mealPlanTargetsRef = useRef({ dailyCalories, proteinG, carbsG, fatG, dietarySummary });
   mealPlanTargetsRef.current = { dailyCalories, proteinG, carbsG, fatG, dietarySummary };
+
+  const [planInvalidationTick, setPlanInvalidationTick] = useState(0);
+  useEffect(() => {
+    return subscribeWeeklyPlanInvalidation(() => {
+      mealPlanSessionCache.current = { forUserId: null, settled: false, meals: null };
+      setWeeklyPlanMeals(null);
+      setPlanInvalidationTick((t) => t + 1);
+    });
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,21 +206,28 @@ export function HomeDashboard() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!user?.uid || !firebaseReady) { setStreak(0); return; }
+      if (!user?.uid || !firebaseReady) {
+        setStreak(0);
+        return;
+      }
       let cancelled = false;
       (async () => {
         try {
           const days = await fetchRecentDayTotals(user.uid, 120);
           if (cancelled) return;
-          setStreak(computeCalorieStreak(
-            dailyCalories,
-            days.map((d) => ({ dateKey: d.dateKey, calories: d.calories }))
-          ));
+          setStreak(
+            computeCalorieStreak(
+              dailyCalories,
+              days.map((d) => ({ dateKey: d.dateKey, calories: d.calories }))
+            )
+          );
         } catch {
           if (!cancelled) setStreak(0);
         }
       })();
-      return () => { cancelled = true; };
+      return () => {
+        cancelled = true;
+      };
     }, [user?.uid, firebaseReady, dailyCalories])
   );
 
@@ -175,8 +257,11 @@ export function HomeDashboard() {
           let list = await loadCachedWeeklyPlan(dateKey, targetFp);
           if (!list?.length) {
             list = await suggestWeeklyMealPlan({
-              dailyCalories: t.dailyCalories, proteinG: t.proteinG,
-              carbsG: t.carbsG, fatG: t.fatG, dietaryNotes: t.dietarySummary,
+              dailyCalories: t.dailyCalories,
+              proteinG: t.proteinG,
+              carbsG: t.carbsG,
+              fatG: t.fatG,
+              dietaryNotes: t.dietarySummary,
             });
             if (list.length) await saveCachedWeeklyPlan(dateKey, targetFp, list);
           }
@@ -193,21 +278,34 @@ export function HomeDashboard() {
           if (!cancelled) setWeeklyPlanLoading(false);
         }
       })();
-      return () => { cancelled = true; };
-    }, [user?.uid])
+      return () => {
+        cancelled = true;
+      };
+    }, [user?.uid, planInvalidationTick])
   );
 
-  const greeting = useMemo(() => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  }, []);
+  const firstName = user?.displayName?.split(' ')[0] ?? 'there';
+  const hour = new Date().getHours();
+  const phrase =
+    hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const fullGreeting = `${phrase}, ${firstName}`;
+  const displayGreeting = fullGreeting.length > 22 ? `Hi, ${firstName}` : fullGreeting;
+  const dateLabel = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
 
-  const dateLabel = useMemo(
-    () => new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
-    []
-  );
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      if (user) {
+        await Promise.all([refreshTodayLog(), refreshNutritionTargets()]);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user, refreshTodayLog, refreshNutritionTargets]);
 
   const showMealPlanLoading = Boolean(user?.uid && (weeklyPlanMeals === null || weeklyPlanLoading));
   const suggestedSlice = weeklyPlanMeals?.length ? weeklyPlanMeals.slice(0, 4) : [];
@@ -216,39 +314,46 @@ export function HomeDashboard() {
       ? suggestedSlice.map((m, i) => ({ item: aiBriefToCardItem(m, i), recipeIdx: i }))
       : MEAL_PLAN_CARDS.map((item) => ({ item, recipeIdx: null }));
 
-  return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenBackground>
-      <AppMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces>
+  const sortedEntries = useMemo(
+    () => [...entries].sort((a, b) => b.loggedAt - a.loggedAt),
+    [entries]
+  );
 
-        {/* Header */}
+  return (
+    <>
+      <CurvedHeroScreen
+        title={displayGreeting}
+        titleAffix={<TimeOfDayIcon reducedMotion={reducedMotion} />}
+        subtitle={dateLabel}
+        heroExpanded={HERO.EXPANDED}
+        /** Pull first card up so it sits on the green hero (~overlap px = this value). */
+        contentInset={80}
+        titleSizeExpanded={22}
+        rightActions={
+          <>
+            <IconButton
+              name="sparkles"
+              onPress={() => router.push('/subscription')}
+              accessibilityLabel="CalTrack Pro"
+              iconColor={iconInk}
+            />
+            <IconButton
+              name="person-outline"
+              onPress={() => setMenuOpen(true)}
+              accessibilityLabel="Open app menu"
+              iconColor={iconInk}
+            />
+          </>
+        }
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        tabRoot
+        titleDualWeight
+        titleSizeCollapsed={18}>
         <Animated.View entering={FadeInDown.duration(400)}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={[styles.greeting, { color: colors.text }]}>{greeting}</Text>
-              <Text style={[styles.dateLine, { color: colors.textMuted }]}>{dateLabel}</Text>
-            </View>
-            <View style={styles.headerActions}>
-              <Pressable
-                style={[styles.iconBtn, { backgroundColor: colors.iconWell, borderColor: colors.iconWellBorder }]}
-                onPress={() => router.push('/subscription')}
-                accessibilityRole="button"
-                accessibilityLabel="CalTrack Pro">
-                <Ionicons name="sparkles" size={20} color={Palette.iris} />
-              </Pressable>
-              <Pressable
-                style={[styles.iconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                onPress={() => setMenuOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Open app menu">
-                <Ionicons name="person-circle-outline" size={26} color={Palette.iris} />
-              </Pressable>
-            </View>
-          </View>
+          <DailyEnergyCard />
         </Animated.View>
 
-        {/* Streak banner */}
         {streak > 0 ? (
           <Animated.View
             entering={FadeInDown.delay(30).duration(380).springify()}
@@ -259,22 +364,18 @@ export function HomeDashboard() {
           </Animated.View>
         ) : null}
 
-        {/* Calorie card */}
-        <Animated.View entering={FadeInDown.delay(60).duration(420).springify()}>
-          <CalorieCard
-            consumed={totals.calories}
-            goal={dailyCalories}
-            syncing={Boolean(user && logSyncing)}
-            isDark={isDark}
-          />
-        </Animated.View>
-
-        {/* Macros */}
         <Animated.View entering={FadeInDown.delay(100).duration(400).springify()}>
           <SectionHeader
             title="Macros"
+            syncing={Boolean(user && logSyncing)}
             actionLabel="Edit targets"
+            actionColor={COLORS.brandGreen}
             onAction={() => router.push('/nutrition-targets' as Href)}
+            primaryAction={{
+              label: '+ Log meal',
+              onPress: () => router.push('/manual-entry' as Href),
+            }}
+            primaryActionTone="dark"
           />
           <MacroBar
             label="Protein"
@@ -308,7 +409,35 @@ export function HomeDashboard() {
           />
         </Animated.View>
 
-        {/* Suggested meals */}
+        <Animated.View entering={FadeInDown.delay(120).duration(400).springify()} style={styles.recentBlock}>
+          <SectionHeader title="Recent meals" />
+          {sortedEntries.length === 0 ? (
+            <Pressable
+              onPress={() => router.push('/manual-entry' as Href)}
+              style={({ pressed }) => [
+                styles.recentEmpty,
+                { borderColor: colors.border },
+                pressed && { opacity: 0.9 },
+              ]}>
+              <Ionicons name="add-circle-outline" size={22} color={COLORS.brandGreenDark} />
+              <Text style={[styles.recentEmptyText, { color: colors.textMuted }]}>
+                + Log your first meal
+              </Text>
+            </Pressable>
+          ) : (
+            <View style={styles.recentList}>
+              {sortedEntries.map((e) => (
+                <RecentMealRow
+                  key={e.id}
+                  entry={e}
+                  colors={colors}
+                  onPress={() => router.push('/manual-entry' as Href)}
+                />
+              ))}
+            </View>
+          )}
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.delay(140).duration(400).springify()}>
           <SectionHeader
             title="Suggested meals"
@@ -343,7 +472,6 @@ export function HomeDashboard() {
           )}
         </Animated.View>
 
-        {/* Groceries teaser */}
         <Animated.View
           entering={FadeInDown.delay(180).duration(400).springify()}
           style={[styles.groceryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -363,34 +491,18 @@ export function HomeDashboard() {
             onPress={() => router.push('/(tabs)/groceries' as Href)}
             accessibilityRole="button">
             <Ionicons name="basket-outline" size={18} color={Palette.iris} />
-            <Text style={[styles.groceryBtnText, { color: Palette.iris }]}>Open AI grocery suggestions</Text>
+            <Text style={[styles.groceryBtnText, { color: Palette.iris }]}>Open grocery list</Text>
           </Pressable>
         </Animated.View>
 
         <View style={{ height: 24 }} />
-      </ScrollView>
-      </ScreenBackground>
-    </SafeAreaView>
+      </CurvedHeroScreen>
+      <AppMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F0FDF4' },
-  scroll: { paddingHorizontal: 20, paddingBottom: 100 },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  greeting: { fontFamily: Fonts.bold, fontSize: 28, lineHeight: 34 },
-  dateLine: { fontFamily: Fonts.regular, fontSize: 15, marginTop: 4 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconBtn: {
-    width: 44, height: 44, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
-  },
   streakCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -406,13 +518,18 @@ const styles = StyleSheet.create({
   streakNum: { fontFamily: Fonts.bold, fontSize: 24, letterSpacing: -0.5 },
   streakSuffix: { fontFamily: Fonts.semiBold, fontSize: 16 },
   mealLoader: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: 10, paddingVertical: 24, paddingHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 24,
+    paddingHorizontal: 4,
   },
   mealLoaderText: { fontFamily: Fonts.regular, fontSize: 14 },
   mealScroll: { paddingRight: 20, gap: 12, paddingBottom: 8 },
   mealCard: {
-    borderRadius: 20, padding: 16, marginRight: 12,
+    borderRadius: 20,
+    padding: 16,
+    marginRight: 12,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -421,39 +538,106 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   mealAccent: {
-    width: 52, height: 52, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   mealTag: {
-    fontFamily: Fonts.semiBold, fontSize: 11,
-    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6,
+    fontFamily: Fonts.semiBold,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
   },
   mealTitle: {
-    fontFamily: Fonts.bold, fontSize: 17, lineHeight: 22,
-    marginBottom: 12, minHeight: 44,
+    fontFamily: Fonts.bold,
+    fontSize: 17,
+    lineHeight: 22,
+    marginBottom: 12,
+    minHeight: 44,
   },
   mealMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
   metaText: { fontFamily: Fonts.medium, fontSize: 12 },
+  recentBlock: { marginTop: 4 },
+  recentList: { gap: 10 },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  recentIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentMid: { flex: 1, minWidth: 0 },
+  recentTopLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 2,
+  },
+  recentName: { flex: 1, fontFamily: Fonts.semiBold, fontSize: 15 },
+  recentKcal: { fontFamily: Fonts.semiBold, fontSize: 14, flexShrink: 0 },
+  recentSub: { fontFamily: Fonts.regular, fontSize: 13 },
+  recentEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  recentEmptyText: { fontFamily: Fonts.semiBold, fontSize: 15 },
   groceryCard: {
-    borderRadius: 24, padding: 18, marginTop: 20, borderWidth: 1,
+    borderRadius: 24,
+    padding: 18,
+    marginTop: 20,
+    borderWidth: 1,
   },
   groceryRow: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    gap: 12, marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 14,
   },
   groceryIcon: {
-    width: 44, height: 44, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   groceryTitle: { fontFamily: Fonts.bold, fontSize: 17 },
   grocerySub: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 18, marginTop: 4 },
   groceryBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, paddingVertical: 12, borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   groceryBtnText: { fontFamily: Fonts.semiBold, fontSize: 14 },
