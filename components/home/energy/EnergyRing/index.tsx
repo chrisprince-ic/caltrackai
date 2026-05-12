@@ -1,110 +1,158 @@
-import { BlurMask, Canvas, Circle, Group, Path, Skia } from '@shopify/react-native-skia';
+import { Canvas, Circle, Group, Path, Skia } from '@shopify/react-native-skia';
 import { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { Palette } from '@/constants/palette';
 
-export const ENERGY_RING_SIZE = 220;
-const CX = ENERGY_RING_SIZE / 2;
-const CY = ENERGY_RING_SIZE / 2;
+export const ENERGY_RING_DEFAULT_SIZE = 172;
 
-const R_OUTER = 84;
-const SW_OUTER = 13;
-const R_INNER = 62;
-const SW_INNER = 9;
+const BASE = ENERGY_RING_DEFAULT_SIZE;
+const BASE_R = 54;
+const BASE_SW = 11;
+const BASE_INNER_R = 42;
+const BASE_INNER_SW = 6;
 
-const AMBER = Palette.amber;
-const OVER_COLOR = Palette.rose;
+const DEFAULT_TRACK = '#E5E7EB';
+const DEFAULT_PROGRESS = Palette.iris;
+const DEFAULT_OVERFLOW = '#F97316';
+
+export type EnergyRingPalette = {
+  track: string;
+  progress: string;
+  overflow: string;
+};
+
+export type EnergyRingActivityRing = {
+  /** When false, inner ring is not drawn. */
+  enabled: boolean;
+  /** 0–1 share of inner ring to fill (e.g. active / adjusted target). */
+  fraction: number;
+  /** Inner track + stroke colors when activity ring is shown. */
+  trackColor: string;
+  progressColor: string;
+};
 
 type Props = {
   eaten: number;
   adjustedTarget: number;
   burnedCalories: number;
   reducedMotion: boolean;
-  isDark?: boolean;
+  /** Outer calorie ring palette (defaults brand green). */
+  palette?: Partial<EnergyRingPalette>;
+  /** Optional inner ring — activity vs budget (shows when `enabled`). */
+  activityRing?: EnergyRingActivityRing | null;
+  /** Total canvas dimension; geometry scales proportionally. */
+  size?: number;
 };
 
-/** Dual-ring energy visualization: outer = eaten vs. goal, inner = active burn. */
-export function EnergyRing({ eaten, adjustedTarget, burnedCalories, isDark = false }: Props) {
-  const target = Math.max(1, adjustedTarget);
-  const eatenRatio = eaten / target;
-  const burnedRatio = Math.min(burnedCalories / target, 1);
+/** Calorie budget ring (+ optional inner activity ring) — Skia on native. */
+export function EnergyRing({
+  eaten,
+  adjustedTarget,
+  burnedCalories: _burnedCalories,
+  reducedMotion: _reducedMotion,
+  palette,
+  activityRing,
+  size = BASE,
+}: Props) {
+  const k = size / BASE;
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = BASE_R * k;
+  const sw = BASE_SW * k;
+  const innerR = BASE_INNER_R * k;
+  const innerSw = BASE_INNER_SW * k;
 
-  const outerProgress = Math.min(Math.max(eatenRatio, 0), 1);
-  const isOver = eatenRatio > 1;
-  const outerOverflow = isOver ? Math.min(eatenRatio - 1, 0.5) : 0;
-  const innerProgress = Math.min(Math.max(burnedRatio, 0), 1);
+  const trackColor = palette?.track ?? DEFAULT_TRACK;
+  const progressColor = palette?.progress ?? DEFAULT_PROGRESS;
+  const overflowColor = palette?.overflow ?? DEFAULT_OVERFLOW;
 
-  const trackColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(31,138,91,0.10)';
-  const outerColor = isOver ? OVER_COLOR : Palette.iris;
-  const outerGlow = isOver ? 'rgba(196,74,53,0.30)' : 'rgba(31,138,91,0.28)';
+  const target = Math.max(0, adjustedTarget);
+  const ratio = target > 0 ? eaten / target : 0;
+  const greenSweep = Math.min(Math.max(ratio, 0), 1);
+  const orangeSweep = ratio > 1 ? Math.min(ratio - 1, 0.45) : 0;
 
-  const outerArcPath = useMemo(() => {
-    const p = Skia.Path.Make();
-    const sweep = outerProgress * 360 - 0.01;
-    if (sweep <= 0) return p;
-    p.addArc(Skia.XYWHRect(CX - R_OUTER, CY - R_OUTER, R_OUTER * 2, R_OUTER * 2), -90, sweep);
-    return p;
-  }, [outerProgress]);
-
-  const outerOverflowPath = useMemo(() => {
-    const p = Skia.Path.Make();
-    if (outerOverflow <= 0) return p;
-    const sweep = outerOverflow * 360;
-    const start = -90 + outerProgress * 360;
-    p.addArc(Skia.XYWHRect(CX - R_OUTER, CY - R_OUTER, R_OUTER * 2, R_OUTER * 2), start, sweep);
-    return p;
-  }, [outerOverflow, outerProgress]);
-
-  const innerArcPath = useMemo(() => {
-    const p = Skia.Path.Make();
-    const sweep = innerProgress * 360 - 0.01;
-    if (sweep <= 0) return p;
-    p.addArc(Skia.XYWHRect(CX - R_INNER, CY - R_INNER, R_INNER * 2, R_INNER * 2), -90, sweep);
-    return p;
-  }, [innerProgress]);
+  const innerFracRaw = activityRing?.enabled ? Math.min(Math.max(activityRing.fraction, 0), 1) : 0;
 
   const circularClip = useMemo(() => {
     const p = Skia.Path.Make();
-    p.addCircle(CX, CY, ENERGY_RING_SIZE / 2);
+    p.addCircle(cx, cy, size / 2);
     return p;
-  }, []);
+  }, [cx, cy, size]);
+
+  const arcGreenPath = useMemo(() => {
+    const p = Skia.Path.Make();
+    const sweep = greenSweep * 360 - 0.01;
+    if (sweep <= 0) return p;
+    p.addArc(Skia.XYWHRect(cx - R, cy - R, R * 2, R * 2), -90, sweep);
+    return p;
+  }, [greenSweep, cx, cy, R]);
+
+  const arcOrangePath = useMemo(() => {
+    const p = Skia.Path.Make();
+    if (orangeSweep <= 0) return p;
+    const sweep = orangeSweep * 360;
+    const start = -90 + greenSweep * 360;
+    p.addArc(Skia.XYWHRect(cx - R, cy - R, R * 2, R * 2), start, sweep);
+    return p;
+  }, [orangeSweep, greenSweep, cx, cy, R]);
+
+  const innerSweep = useMemo(() => {
+    if (!activityRing?.enabled) return 0;
+    const f = innerFracRaw;
+    if (f <= 0) return 0;
+    return f * 360 - 0.01;
+  }, [activityRing?.enabled, innerFracRaw]);
+
+  const innerArcPath = useMemo(() => {
+    const p = Skia.Path.Make();
+    if (innerSweep <= 0) return p;
+    p.addArc(Skia.XYWHRect(cx - innerR, cy - innerR, innerR * 2, innerR * 2), -90, innerSweep);
+    return p;
+  }, [innerSweep, cx, cy, innerR]);
+
+  const showInner = Boolean(activityRing?.enabled);
 
   return (
-    <Canvas style={styles.canvas} pointerEvents="none">
+    <Canvas style={[styles.canvas, { width: size, height: size }]} pointerEvents="none">
       <Group clip={circularClip}>
-        {/* Tracks */}
-        <Circle cx={CX} cy={CY} r={R_OUTER} style="stroke" strokeWidth={SW_OUTER} color={trackColor} />
-        <Circle cx={CX} cy={CY} r={R_INNER} style="stroke" strokeWidth={SW_INNER} color={trackColor} />
-
-        {/* Outer arc: glow then solid */}
-        {outerProgress > 0 ? (
-          <>
-            <Path path={outerArcPath} style="stroke" strokeWidth={SW_OUTER + 10} strokeCap="round" color={outerGlow}>
-              <BlurMask blur={8} style="normal" />
-            </Path>
-            <Path path={outerArcPath} style="stroke" strokeWidth={SW_OUTER} strokeCap="round" color={outerColor} />
-          </>
+        <Circle cx={cx} cy={cy} r={R} style="stroke" strokeWidth={sw} color={trackColor} />
+        {greenSweep > 0 ? (
+          <Path
+            path={arcGreenPath}
+            style="stroke"
+            strokeWidth={sw}
+            strokeCap="round"
+            color={progressColor}
+          />
         ) : null}
-
-        {/* Outer overflow (over target) */}
-        {outerOverflow > 0 ? (
-          <>
-            <Path path={outerOverflowPath} style="stroke" strokeWidth={SW_OUTER + 10} strokeCap="round" color="rgba(196,74,53,0.30)">
-              <BlurMask blur={8} style="normal" />
-            </Path>
-            <Path path={outerOverflowPath} style="stroke" strokeWidth={SW_OUTER} strokeCap="round" color={OVER_COLOR} />
-          </>
+        {orangeSweep > 0 ? (
+          <Path
+            path={arcOrangePath}
+            style="stroke"
+            strokeWidth={sw}
+            strokeCap="round"
+            color={overflowColor}
+          />
         ) : null}
-
-        {/* Inner arc: burned (amber) */}
-        {innerProgress > 0 ? (
-          <>
-            <Path path={innerArcPath} style="stroke" strokeWidth={SW_INNER + 8} strokeCap="round" color="rgba(200,151,10,0.28)">
-              <BlurMask blur={6} style="normal" />
-            </Path>
-            <Path path={innerArcPath} style="stroke" strokeWidth={SW_INNER} strokeCap="round" color={AMBER} />
-          </>
+        {showInner ? (
+          <Circle
+            cx={cx}
+            cy={cy}
+            r={innerR}
+            style="stroke"
+            strokeWidth={innerSw}
+            color={activityRing!.trackColor}
+          />
+        ) : null}
+        {showInner && innerSweep > 0 ? (
+          <Path
+            path={innerArcPath}
+            style="stroke"
+            strokeWidth={innerSw}
+            strokeCap="round"
+            color={activityRing!.progressColor}
+          />
         ) : null}
       </Group>
     </Canvas>
@@ -112,5 +160,5 @@ export function EnergyRing({ eaten, adjustedTarget, burnedCalories, isDark = fal
 }
 
 const styles = StyleSheet.create({
-  canvas: { width: ENERGY_RING_SIZE, height: ENERGY_RING_SIZE },
+  canvas: { alignSelf: 'center' },
 });

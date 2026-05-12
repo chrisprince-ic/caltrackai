@@ -1,43 +1,46 @@
 import { Palette } from '@/constants/palette';
+import { MacroviaLight } from '@/constants/macrovia';
 
-/** Brand emerald gradient — Macrovia three-stop emerald. */
+/** Brand green gradient — legacy stops for non-flat variants / dark hero fallback. */
 const BRAND = Palette.iris;
-export const HERO_GRADIENT_STOPS = ['#38B273', BRAND, '#0D5C3A'] as const;
-export const HERO_GRADIENT_STOPS_DARK = ['#1A5C38', '#0F3D26', '#081F13'] as const;
+export const HERO_GRADIENT_STOPS = ['#4FD17E', BRAND, '#1FB256'] as const;
+export const HERO_GRADIENT_STOPS_DARK = ['#2E9B58', Palette.lavender, '#0F3D22'] as const;
 
 /**
- * Two-stop fill (e.g. pills) — endpoints of `HERO_GRADIENT_STOPS`.
+ * Two-stop fill (e.g. pills) — endpoints of `HERO_GRADIENT_STOPS`, same family as Scan FAB.
  */
 export const BRAND_GREEN_GRADIENT_2: readonly [string, string] = [
   HERO_GRADIENT_STOPS[0],
   HERO_GRADIENT_STOPS[2],
 ];
 
-/** Soft light surfaces (stat tiles, strips). */
+/** Soft light surfaces (stat tiles, strips) using FAB tint tokens. */
 export const BRAND_GREEN_SOFT_GRADIENT_2: readonly [string, string] = [Palette.haze, Palette.mist];
 
-/** Empty / idle states — light emerald. */
+/** Empty / idle states — light mint in the FAB green family. */
 export const BRAND_GREEN_SOFT_GRADIENT_3: readonly [string, string, string] = [
-  '#F2FBF6',
+  '#ECFDF5',
   Palette.haze,
   Palette.mist,
 ];
 
-/** Light app shell / auth — emerald corner then warm off-white. */
+/** Light app shell / auth — green corner matches Scan FAB hues, then neutral. */
 export const APP_SCREEN_GRADIENT_LIGHT: readonly [string, string, string] = [
   Palette.haze,
   Palette.ghost,
-  '#F5F4F0',
+  '#EFF6FF',
 ];
 
-/** Flat brand emerald (home header). */
+/** Flat brand green (home header) — same as Scan FAB `Palette.iris`. */
 export const HERO_FLAT_GREEN = Palette.iris;
 
-/** Scroll-collapse hero dimensions. */
+/** Scroll-collapse hero dimensions — keep in sync across curved-hero screens. */
 export const HERO = {
+  /** Height band behind greeting + rounded bottom edge (~220–240px). */
   EXPANDED: 232,
   COLLAPSED: 88,
   TRIGGER: 60,
+  /** Rounded bottom of the green header (original screenshots). */
   CORNER_RADIUS: 36,
 } as const;
 
@@ -45,7 +48,9 @@ export type HeroBackgroundVariant = 'green' | 'sage' | 'dark';
 
 type HeroTheme = {
   gradient: readonly [string, string, string];
+  /** When set, hero uses solid fill instead of diagonal gradient (home flat green). */
   headerSolid?: string;
+  /** RN StatusBar: `'dark'` → `dark-content` (dark icons). `'light'` → `light-content`. */
   statusBarStyle: 'dark' | 'light';
   titleColor: string;
   subtitleColor: string;
@@ -56,29 +61,33 @@ export const HERO_BACKGROUNDS: Record<HeroBackgroundVariant, HeroTheme> = {
   green: {
     gradient: [HERO_FLAT_GREEN, HERO_FLAT_GREEN, HERO_FLAT_GREEN],
     headerSolid: HERO_FLAT_GREEN,
-    statusBarStyle: 'light',
-    titleColor: '#FFFFFF',
-    subtitleColor: 'rgba(255,255,255,0.75)',
-    pageBg: Palette.ghost,
+    statusBarStyle: 'dark',
+    titleColor: '#1A2B26',
+    subtitleColor: 'rgba(26, 43, 38, 0.7)',
+    pageBg: '#F4FBF7',
   },
   sage: {
-    gradient: ['#EBF7F0', '#E0EEE6', '#D4EDE3'],
+    gradient: [
+      MacroviaLight.bg,
+      MacroviaLight.bgSoft,
+      MacroviaLight.accentSoft,
+    ] as readonly [string, string, string],
     statusBarStyle: 'dark',
-    titleColor: Palette.obsidian,
-    subtitleColor: 'rgba(26,40,32,0.55)',
-    pageBg: '#EBF7F0',
+    titleColor: MacroviaLight.ink,
+    subtitleColor: 'rgba(74, 89, 82, 0.72)',
+    pageBg: MacroviaLight.bg,
   },
   dark: {
-    gradient: ['#1A3320', '#0F2018', '#070D0A'],
+    gradient: ['#1A2E10', '#0F1F08', '#070D04'],
     statusBarStyle: 'light',
     titleColor: '#FFFFFF',
-    subtitleColor: 'rgba(255,255,255,0.65)',
-    pageBg: Palette.darkBg,
+    subtitleColor: 'rgba(255, 255, 255, 0.65)',
+    pageBg: '#0F1F08',
   },
 };
 
-/** Emerald hero on dark app theme — flat darker forest green. */
-export const HERO_GREEN_SOLID_DARK = '#0A2E18';
+/** Green hero on dark app theme — flat darker green (no diagonal gradient). */
+export const HERO_GREEN_SOLID_DARK = '#1B5C3F';
 
-/** Emerald hero on dark app theme — gradient stops. */
+/** Green hero on dark app theme — legacy gradient stops if needed elsewhere. */
 export const HERO_GREEN_GRADIENT_DARK_MODE = HERO_GRADIENT_STOPS_DARK;

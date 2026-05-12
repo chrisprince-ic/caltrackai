@@ -1,15 +1,18 @@
-import { Palette } from '@/constants/palette';
+import { MacroviaDark, MacroviaLight } from '@/constants/macrovia';
 
-/** Semantic UI colors — light (Ghost) vs dark (Void/Obsidian). */
+/** Semantic UI colors — Macrovia (light aurora shell / dark obsidian-emerald). */
 export type AppThemeColors = {
   bg: string;
+  bgSoft: string;
   surface: string;
   surfaceMuted: string;
+  surface2: string;
   text: string;
   textMuted: string;
   textSecondary: string;
   border: string;
   borderStrong: string;
+  hairline: string;
   haze: string;
   chipOnLight: string;
   streakBg: string;
@@ -19,60 +22,112 @@ export type AppThemeColors = {
   shadow: string;
   iconWell: string;
   iconWellBorder: string;
+  accent: string;
+  accentDeep: string;
+  accentSoft: string;
+  warm: string;
+  warmSoft: string;
+  rose: string;
+  violet: string;
+  glass: string;
+  glassStroke: string;
+  aurora1: string;
+  aurora2: string;
+  aurora3: string;
+  visionMint: string;
+  proteinMacro: string;
+  carbsMacro: string;
+  fatMacro: string;
 };
 
 const LIGHT: AppThemeColors = {
-  bg: Palette.ghost,                              // #FAFAF8 warm off-white
-  surface: Palette.white,
-  surfaceMuted: Palette.haze,                     // #EBF7F0 light emerald
-  text: Palette.obsidian,                         // #1A2820 green-tinted dark
-  textMuted: Palette.dusk,                        // #838E88
-  textSecondary: Palette.dusk,
-  border: 'rgba(31,138,91,0.10)',                 // emerald hairline
-  borderStrong: 'rgba(31,138,91,0.18)',
-  haze: Palette.haze,
-  chipOnLight: Palette.haze,
-  streakBg: Palette.watchBg,                      // #FBF3D8 amber soft
-  streakText: Palette.watchText,                  // #7A5A0A dark amber
-  streakHint: Palette.dusk,
-  calDivider: 'rgba(31,138,91,0.12)',
-  shadow: Palette.obsidian,
-  iconWell: Palette.haze,
-  iconWellBorder: 'rgba(31,138,91,0.18)',
+  bg: MacroviaLight.bg,
+  bgSoft: MacroviaLight.bgSoft,
+  surface: MacroviaLight.surface,
+  surfaceMuted: MacroviaLight.surface2,
+  surface2: MacroviaLight.surface2,
+  text: MacroviaLight.ink,
+  textMuted: MacroviaLight.ink3,
+  textSecondary: MacroviaLight.ink2,
+  border: MacroviaLight.glassStroke,
+  borderStrong: 'rgba(20,22,18,0.1)',
+  hairline: MacroviaLight.hairline,
+  haze: MacroviaLight.accentSoft,
+  chipOnLight: MacroviaLight.accentSoft,
+  streakBg: MacroviaLight.warmSoft,
+  streakText: MacroviaLight.warm,
+  streakHint: MacroviaLight.ink3,
+  calDivider: MacroviaLight.hairline,
+  shadow: MacroviaLight.shadowCard,
+  iconWell: MacroviaLight.surface2,
+  iconWellBorder: MacroviaLight.glassStroke,
+  accent: MacroviaLight.accent,
+  accentDeep: MacroviaLight.accentDeep,
+  accentSoft: MacroviaLight.accentSoft,
+  warm: MacroviaLight.warm,
+  warmSoft: MacroviaLight.warmSoft,
+  rose: MacroviaLight.rose,
+  violet: MacroviaLight.violet,
+  glass: MacroviaLight.glass,
+  glassStroke: MacroviaLight.glassStroke,
+  aurora1: MacroviaLight.aurora1,
+  aurora2: MacroviaLight.aurora2,
+  aurora3: MacroviaLight.aurora3,
+  visionMint: MacroviaLight.visionMint,
+  proteinMacro: MacroviaLight.accentDeep,
+  carbsMacro: MacroviaLight.warm,
+  fatMacro: MacroviaLight.violet,
 };
 
 const DARK: AppThemeColors = {
-  bg: Palette.darkBg,                             // #131E16 deep forest
-  surface: Palette.darkSurface,                   // #1A2B1E
-  surfaceMuted: Palette.darkSurfaceMuted,         // #1E3023
-  text: '#F2F8F3',                                // near-white green tint
-  textMuted: '#8FA293',                           // muted green-grey
-  textSecondary: Palette.mist,                    // #D4EDE3
-  border: Palette.darkBorder,
-  borderStrong: Palette.darkBorderStrong,
-  haze: 'rgba(31,138,91,0.18)',
-  chipOnLight: 'rgba(31,138,91,0.22)',
-  streakBg: 'rgba(200,151,10,0.16)',              // amber soft dark
-  streakText: '#E5B840',                          // amber light
-  streakHint: '#8FA293',
-  calDivider: 'rgba(212,237,227,0.12)',
-  shadow: '#000000',
-  iconWell: 'rgba(31,138,91,0.24)',
-  iconWellBorder: 'rgba(212,237,227,0.18)',
+  bg: MacroviaDark.bg,
+  bgSoft: MacroviaDark.bgSoft,
+  surface: MacroviaDark.surface,
+  surfaceMuted: MacroviaDark.surface2,
+  surface2: MacroviaDark.surface2,
+  text: MacroviaDark.ink,
+  textMuted: MacroviaDark.ink3,
+  textSecondary: MacroviaDark.ink2,
+  border: MacroviaDark.glassStroke,
+  borderStrong: 'rgba(255,255,255,0.14)',
+  hairline: MacroviaDark.hairline,
+  haze: MacroviaDark.accentSoft,
+  chipOnLight: MacroviaDark.accentSoft,
+  streakBg: MacroviaDark.warmSoft,
+  streakText: MacroviaDark.warm,
+  streakHint: MacroviaDark.ink3,
+  calDivider: MacroviaDark.hairline,
+  shadow: MacroviaDark.shadowPop,
+  iconWell: MacroviaDark.surface2,
+  iconWellBorder: MacroviaDark.glassStroke,
+  accent: MacroviaDark.accent,
+  accentDeep: MacroviaDark.accentDeep,
+  accentSoft: MacroviaDark.accentSoft,
+  warm: MacroviaDark.warm,
+  warmSoft: MacroviaDark.warmSoft,
+  rose: MacroviaDark.rose,
+  violet: MacroviaDark.violet,
+  glass: MacroviaDark.glass,
+  glassStroke: MacroviaDark.glassStroke,
+  aurora1: MacroviaDark.aurora1,
+  aurora2: MacroviaDark.aurora2,
+  aurora3: MacroviaDark.aurora3,
+  visionMint: MacroviaDark.visionMint,
+  proteinMacro: MacroviaDark.accent,
+  carbsMacro: MacroviaDark.warm,
+  fatMacro: MacroviaDark.violet,
 };
 
 export function getAppThemeColors(isDark: boolean): AppThemeColors {
   return isDark ? DARK : LIGHT;
 }
 
+/** Legacy named accents — mapped to Macrovia hues for older imports. */
 export const ACCENT = {
-  iris: Palette.iris,
-  lavender: Palette.lavender,
-  mist: Palette.mist,
-  amber: Palette.amber,
-  violet: Palette.violet,
-  rose: Palette.rose,
-  flamingo: Palette.flamingo,
-  citrus: Palette.citrus,
-  cyan: Palette.cyan,
+  iris: LIGHT.accent,
+  lavender: LIGHT.accentDeep,
+  mist: MacroviaLight.accentSoft,
+  flamingo: MacroviaLight.accentDeep,
+  citrus: MacroviaLight.warm,
+  cyan: MacroviaLight.violet,
 } as const;

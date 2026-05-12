@@ -2,12 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppLinearGradient } from '@/components/ui/AppLinearGradient';
 import { Fonts } from '@/constants/theme';
-import { Palette } from '@/constants/palette';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 
 type TabDef = {
@@ -17,14 +16,20 @@ type TabDef = {
   iconActive: keyof typeof Ionicons.glyphMap;
 };
 
+/** Macrovia layout: Today · Meals · FAB scan · Groceries · Progress */
 const SIDE_TABS: [TabDef, TabDef][] = [
   [
-    { name: 'index', label: 'Home', icon: 'home-outline', iconActive: 'home' },
-    { name: 'meal-plans', label: 'Plans', icon: 'calendar-outline', iconActive: 'calendar' },
+    { name: 'index', label: 'Today', icon: 'home-outline', iconActive: 'home' },
+    { name: 'meal-plans', label: 'Meals', icon: 'restaurant-outline', iconActive: 'restaurant' },
   ],
   [
     { name: 'groceries', label: 'Groceries', icon: 'basket-outline', iconActive: 'basket' },
-    { name: 'insights', label: 'Charts', icon: 'stats-chart-outline', iconActive: 'stats-chart' },
+    {
+      name: 'insights',
+      label: 'Progress',
+      icon: 'trending-up-outline',
+      iconActive: 'trending-up',
+    },
   ],
 ];
 
@@ -36,15 +41,11 @@ function haptic() {
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { isDark } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const active = state.routes[state.index]?.name;
-  const scanFocused = active === 'scan';
-  const activeColor = isDark ? '#38B273' : Palette.iris;
-  const mutedColor = isDark ? '#8FA293' : Palette.dusk;
+  const muted = colors.textMuted;
 
-  if (scanFocused) {
-    return null;
-  }
+  if (active === 'scan') return null;
 
   const go = (name: string) => {
     haptic();
@@ -61,26 +62,23 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         accessibilityState={{ selected: focused }}
         accessibilityLabel={`${tab.label} tab`}>
         <View
-          style={
-            focused
-              ? [
-                  styles.activeIndicator,
-                  {
-                    backgroundColor: isDark
-                      ? 'rgba(56,178,115,0.15)'
-                      : 'rgba(31,138,91,0.12)',
-                  },
-                ]
-              : undefined
-          }>
+          style={[
+            styles.iconBubble,
+            focused && { backgroundColor: `${colors.accent}22` },
+          ]}>
           <Ionicons
             name={focused ? tab.iconActive : tab.icon}
-            size={22}
-            color={focused ? activeColor : mutedColor}
+            size={21}
+            color={focused ? colors.accentDeep : muted}
           />
         </View>
         <Text
-          style={[styles.tabLabel, { color: focused ? activeColor : mutedColor }]}
+          style={[
+            styles.tabLabel,
+            { color: muted },
+            focused && { color: colors.accentDeep },
+            focused && { fontFamily: Fonts.semiBold },
+          ]}
           numberOfLines={1}>
           {tab.label}
         </Text>
@@ -88,106 +86,111 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     );
   };
 
-  return (
-    <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-      {/* barOuter: no overflow — lets FAB float above the bar */}
-      <View style={styles.barOuter}>
-        {/* FAB lives here, outside the overflow-hidden surface */}
-        <View style={styles.fabWrap}>
-          <Pressable
-            onPress={() => go('scan')}
-            style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Scan food for calories">
-            <LinearGradient
-              colors={['#38B273', Palette.iris, '#0D5C3A']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.fabGrad}>
-              <Ionicons name="camera" size={26} color="#FFFFFF" />
-            </LinearGradient>
-          </Pressable>
-          <Text style={[styles.fabCaption, { color: mutedColor }]}>Scan</Text>
+  const tabRow = (
+    <View style={styles.surfaceInner}>
+      <View style={styles.rowInner}>
+        <View style={styles.side}>
+          {SIDE_TABS[0].map((tab) => (
+            <TabItem key={tab.name} tab={tab} />
+          ))}
         </View>
-
-        {/* barSurface: overflow hidden for BlurView clipping */}
-        <View style={styles.barSurface}>
-          <BlurView
-            intensity={isDark ? 60 : 72}
-            tint={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-          {/* Tint overlay */}
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: isDark
-                  ? 'rgba(26,43,30,0.55)'
-                  : 'rgba(255,255,255,0.55)',
-              },
-            ]}
-          />
-          {/* Border */}
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              styles.barBorder,
-              {
-                borderColor: isDark
-                  ? 'rgba(212,237,227,0.10)'
-                  : 'rgba(31,138,91,0.10)',
-              },
-            ]}
-          />
-
-          <View style={styles.row}>
-            <View style={styles.side}>
-              {SIDE_TABS[0].map((tab) => (
-                <TabItem key={tab.name} tab={tab} />
-              ))}
-            </View>
-            <View style={styles.fabSpacer} />
-            <View style={styles.side}>
-              {SIDE_TABS[1].map((tab) => (
-                <TabItem key={tab.name} tab={tab} />
-              ))}
-            </View>
-          </View>
+        <View style={styles.fabSpacer} />
+        <View style={styles.side}>
+          {SIDE_TABS[1].map((tab) => (
+            <TabItem key={tab.name} tab={tab} />
+          ))}
         </View>
       </View>
+      <Pressable
+        onPress={() => go('scan')}
+        style={({ pressed }) => [
+          styles.fabPress,
+          styles.fabWrap,
+          pressed && { transform: [{ scale: 0.97 }] },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Scan food">
+        <AppLinearGradient
+          colors={[colors.accent, colors.accentDeep]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fab}>
+          <Ionicons name="scan-outline" size={26} color="#fff" />
+        </AppLinearGradient>
+      </Pressable>
+    </View>
+  );
+
+  const bottomInset = Math.max(insets.bottom, 10);
+
+  return (
+    <View style={[styles.outer, { paddingBottom: bottomInset }]}>
+      {Platform.OS === 'ios' ? (
+        <BlurView
+          intensity={38}
+          tint={isDark ? 'dark' : 'light'}
+          style={[
+            styles.surface,
+            {
+              borderColor: colors.glassStroke,
+              backgroundColor: isDark ? 'rgba(28,34,31,0.65)' : 'rgba(255,255,255,0.76)',
+            },
+          ]}>
+          {tabRow}
+        </BlurView>
+      ) : (
+        <View
+          style={[
+            styles.surface,
+            {
+              borderColor: colors.glassStroke,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.92)',
+            },
+          ]}>
+          {tabRow}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   outer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'transparent',
     paddingHorizontal: 14,
+    overflow: 'visible',
   },
-  barOuter: {
-    // No overflow here — FAB absolute positioning must not be clipped
-    shadowColor: '#1A2820',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 18,
-  },
-  barSurface: {
+  surface: {
     borderRadius: 28,
-    overflow: 'hidden',
-    paddingTop: 10,
-    paddingBottom: 6,
+    overflow: 'visible',
+    paddingTop: 8,
+    paddingBottom: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.16,
+        shadowRadius: 36,
+      },
+      default: { elevation: 18 },
+    }),
   },
-  barBorder: {
-    borderRadius: 28,
-    borderWidth: 0.5,
+  surfaceInner: {
+    overflow: 'visible',
+    paddingTop: 22,
+    position: 'relative',
   },
-  row: {
+  rowInner: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
+    minHeight: 52,
+    position: 'relative',
   },
   side: {
     flex: 1,
@@ -199,57 +202,49 @@ const styles = StyleSheet.create({
   },
   fabWrap: {
     position: 'absolute',
-    alignSelf: 'center',
-    top: -36,
+    left: '50%',
+    marginLeft: -29,
+    top: -34,
     zIndex: 20,
-    alignItems: 'center',
-    left: 0,
-    right: 0,
+    elevation: 24,
   },
-  fab: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    shadowColor: Palette.iris,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 18,
-    elevation: 16,
-  },
-  fabGrad: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  fabPress: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fabPressed: {
-    transform: [{ scale: 0.95 }],
-    opacity: 0.92,
-  },
-  fabCaption: {
-    marginTop: 4,
-    fontFamily: Fonts.semiBold,
-    fontSize: 10,
-    letterSpacing: 0.3,
+  fab: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.22,
+        shadowRadius: 16,
+      },
+      default: { elevation: 10 },
+    }),
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    gap: 3,
+    gap: 2,
+    paddingVertical: 4,
     minWidth: 0,
-    minHeight: 48,
-    justifyContent: 'center',
   },
-  activeIndicator: {
+  iconBubble: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 999,
-    padding: 7,
-    marginBottom: -2,
   },
   tabLabel: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 10,
+    fontFamily: Fonts.medium,
+    fontSize: 9.5,
     letterSpacing: 0.2,
   },
 });

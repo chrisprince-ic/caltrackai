@@ -19,6 +19,7 @@ import { MarketingBackdrop } from '@/components/auth/MarketingBackdrop';
 import { TextField } from '@/components/ui/TextField';
 import { useAuth } from '@/contexts/AuthContext';
 import { friendlyFirebaseAuthMessage } from '@/lib/firebase-auth-errors';
+import { getMissingFirebasePublicKeys } from '@/lib/firebase';
 import { openLegalUrl } from '@/lib/legal-browser';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -77,6 +78,8 @@ export default function SignUpScreen() {
     }
   }
 
+  const missingFirebaseKeys = firebaseReady ? [] : getMissingFirebasePublicKeys();
+
   if (!firebaseReady) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -84,9 +87,20 @@ export default function SignUpScreen() {
         <View style={styles.missingWrap}>
           <View style={styles.missingCard}>
             <Ionicons name="cloud-offline-outline" size={40} color={Palette.lavender} />
-            <Text style={styles.missingTitle}>Service unavailable</Text>
+            <Text style={styles.missingTitle}>Firebase not configured</Text>
             <Text style={styles.missingBody}>
-              We could not reach the server right now. Check your internet connection and try again.
+              This build does not include the required Firebase keys, so account creation cannot start.
+              {missingFirebaseKeys.length > 0 ? (
+                <>
+                  {'\n\n'}
+                  Missing: {missingFirebaseKeys.join(', ')}.
+                  {'\n\n'}
+                  Add them to a <Text style={styles.missingBold}>.env</Text> file in the project root (from Firebase
+                  Console → Project settings → Your apps). Use one{' '}
+                  <Text style={styles.missingBold}>KEY=value</Text> per line with no quotes, then restart Expo with{' '}
+                  <Text style={styles.missingBold}>npx expo start --clear</Text>.
+                </>
+              ) : null}
             </Text>
             <Pressable
               style={({ pressed }) => [styles.missingBack, pressed && styles.pressed]}
@@ -292,6 +306,7 @@ const styles = StyleSheet.create({
   },
   missingTitle: { fontFamily: Fonts.bold, fontSize: 22, color: Palette.obsidian },
   missingBody: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 22, color: Palette.dusk },
+  missingBold: { fontFamily: Fonts.semiBold, color: Palette.obsidian },
   missingBack: {
     marginTop: 4,
     backgroundColor: Palette.haze,

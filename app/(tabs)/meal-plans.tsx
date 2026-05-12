@@ -216,8 +216,9 @@ export default function MealPlansScreen() {
 
   return (
     <CurvedHeroScreen
-      title="Meal plans"
-      subtitle="Built from your daily targets"
+      title="Meals"
+      subtitle="Built from your targets"
+      heroBackground="sage"
       tabRoot
       rightActions={
         <IconButton

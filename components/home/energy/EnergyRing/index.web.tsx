@@ -1,147 +1,140 @@
 import { useMemo } from 'react';
-import Svg, { Circle, ClipPath, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, G, Path } from 'react-native-svg';
 
 import { Palette } from '@/constants/palette';
 
-export const ENERGY_RING_SIZE = 220;
-const CX = ENERGY_RING_SIZE / 2;
-const CY = ENERGY_RING_SIZE / 2;
+export const ENERGY_RING_DEFAULT_SIZE = 172;
 
-const R_OUTER = 84;
-const SW_OUTER = 13;
-const R_INNER = 62;
-const SW_INNER = 9;
+const BASE = ENERGY_RING_DEFAULT_SIZE;
+const BASE_R = 54;
+const BASE_SW = 11;
+const BASE_INNER_R = 42;
+const BASE_INNER_SW = 6;
 
-const AMBER = Palette.amber;
-const OVER_COLOR = Palette.rose;
+const DEFAULT_TRACK = '#E5E7EB';
+const DEFAULT_PROGRESS = Palette.iris;
+const DEFAULT_OVERFLOW = '#F97316';
+
+export type EnergyRingPalette = {
+  track: string;
+  progress: string;
+  overflow: string;
+};
+
+export type EnergyRingActivityRing = {
+  enabled: boolean;
+  fraction: number;
+  trackColor: string;
+  progressColor: string;
+};
 
 type Props = {
   eaten: number;
   adjustedTarget: number;
   burnedCalories: number;
   reducedMotion: boolean;
-  isDark?: boolean;
+  palette?: Partial<EnergyRingPalette>;
+  activityRing?: EnergyRingActivityRing | null;
+  size?: number;
 };
 
-function makeArc(cx: number, cy: number, r: number, progress: number, startDeg = -90): string {
-  const sweep = Math.max(0, progress * 360 - 0.01);
-  if (sweep <= 0) return '';
-  const flag = sweep > 180 ? 1 : 0;
-  const sr = (startDeg * Math.PI) / 180;
-  const er = ((startDeg + sweep) * Math.PI) / 180;
-  const x1 = cx + r * Math.cos(sr);
-  const y1 = cy + r * Math.sin(sr);
-  const x2 = cx + r * Math.cos(er);
-  const y2 = cy + r * Math.sin(er);
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${flag} 1 ${x2} ${y2}`;
-}
+export function EnergyRing({
+  eaten,
+  adjustedTarget,
+  burnedCalories: _burnedCalories,
+  reducedMotion: _rm,
+  palette,
+  activityRing,
+  size = BASE,
+}: Props) {
+  const k = size / BASE;
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = BASE_R * k;
+  const sw = BASE_SW * k;
+  const innerR = BASE_INNER_R * k;
+  const innerSw = BASE_INNER_SW * k;
 
-export function EnergyRing({ eaten, adjustedTarget, burnedCalories, isDark = false }: Props) {
-  const target = Math.max(1, adjustedTarget);
-  const eatenRatio = eaten / target;
-  const burnedRatio = Math.min(burnedCalories / target, 1);
+  const trackColor = palette?.track ?? DEFAULT_TRACK;
+  const progressColor = palette?.progress ?? DEFAULT_PROGRESS;
+  const overflowColor = palette?.overflow ?? DEFAULT_OVERFLOW;
 
-  const outerProgress = Math.min(Math.max(eatenRatio, 0), 1);
-  const isOver = eatenRatio > 1;
-  const outerOverflow = isOver ? Math.min(eatenRatio - 1, 0.5) : 0;
-  const innerProgress = Math.min(Math.max(burnedRatio, 0), 1);
+  const target = Math.max(0, adjustedTarget);
+  const ratio = target > 0 ? eaten / target : 0;
+  const greenFrac = Math.min(Math.max(ratio, 0), 1);
+  const orangeFrac = ratio > 1 ? Math.min(ratio - 1, 0.45) : 0;
 
-  const trackColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(31,138,91,0.10)';
-  const outerColor = isOver ? OVER_COLOR : Palette.iris;
+  const innerFracRaw =
+    activityRing?.enabled ?? false ? Math.min(Math.max(activityRing!.fraction, 0), 1) : 0;
+  const innerSweepDeg = innerFracRaw > 0 ? innerFracRaw * 360 - 0.01 : 0;
+  const showInner = Boolean(activityRing?.enabled);
 
-  const arcOuter = useMemo(() => makeArc(CX, CY, R_OUTER, outerProgress), [outerProgress]);
-  const arcOverflow = useMemo(
-    () =>
-      outerOverflow > 0
-        ? makeArc(CX, CY, R_OUTER, outerOverflow, -90 + outerProgress * 360)
-        : '',
-    [outerOverflow, outerProgress]
-  );
-  const arcInner = useMemo(() => makeArc(CX, CY, R_INNER, innerProgress), [innerProgress]);
+  const arcGreenOuter = useMemo(() => arcPath(cx, cy, R, -90, Math.max(0, greenFrac * 360 - 0.01)), [cx, cy, R, greenFrac]);
+
+  const arcOrange = useMemo(() => {
+    if (orangeFrac <= 0) return '';
+    const sweep = orangeFrac * 360;
+    const start = -90 + greenFrac * 360;
+    return arcPath(cx, cy, R, start, sweep);
+  }, [orangeFrac, greenFrac, cx, cy, R]);
+
+  const innerArc = useMemo(() => {
+    if (!showInner || innerSweepDeg <= 0) return '';
+    return arcPath(cx, cy, innerR, -90, innerSweepDeg);
+  }, [showInner, innerSweepDeg, cx, cy, innerR]);
 
   return (
-    <Svg
-      width={ENERGY_RING_SIZE}
-      height={ENERGY_RING_SIZE}
-      viewBox={`0 0 ${ENERGY_RING_SIZE} ${ENERGY_RING_SIZE}`}>
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
-        <LinearGradient id="outerGrad" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor="#38B273" />
-          <Stop offset="1" stopColor={Palette.iris} />
-        </LinearGradient>
-        <LinearGradient id="innerGrad" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor="#E5B840" />
-          <Stop offset="1" stopColor={AMBER} />
-        </LinearGradient>
         <ClipPath id="energyRingClip">
-          <Circle cx={CX} cy={CY} r={ENERGY_RING_SIZE / 2} />
+          <Circle cx={cx} cy={cy} r={size / 2} />
         </ClipPath>
       </Defs>
-
-      {/* Tracks */}
-      <Circle cx={CX} cy={CY} r={R_OUTER} stroke={trackColor} strokeWidth={SW_OUTER} fill="none" />
-      <Circle cx={CX} cy={CY} r={R_INNER} stroke={trackColor} strokeWidth={SW_INNER} fill="none" />
-
-      {/* Outer arc glow (wider, semi-transparent) */}
-      {arcOuter ? (
-        <Path
-          d={arcOuter}
-          stroke={isOver ? 'rgba(196,74,53,0.22)' : 'rgba(31,138,91,0.22)'}
-          strokeWidth={SW_OUTER + 10}
-          strokeLinecap="round"
-          fill="none"
-        />
-      ) : null}
-      {/* Outer arc solid */}
-      {arcOuter ? (
-        <Path
-          d={arcOuter}
-          stroke={isOver ? OVER_COLOR : 'url(#outerGrad)'}
-          strokeWidth={SW_OUTER}
-          strokeLinecap="round"
-          fill="none"
-        />
-      ) : null}
-
-      {/* Overflow arc */}
-      {arcOverflow ? (
-        <>
+      <G clipPath="url(#energyRingClip)">
+        <Circle cx={cx} cy={cy} r={R} stroke={trackColor} strokeWidth={sw} fill="none" />
+        {greenFrac > 0 && arcGreenOuter ? (
           <Path
-            d={arcOverflow}
-            stroke="rgba(196,74,53,0.22)"
-            strokeWidth={SW_OUTER + 10}
+            d={arcGreenOuter}
+            stroke={progressColor}
+            strokeWidth={sw}
             strokeLinecap="round"
             fill="none"
           />
+        ) : null}
+        {orangeFrac > 0 && arcOrange ? (
           <Path
-            d={arcOverflow}
-            stroke={OVER_COLOR}
-            strokeWidth={SW_OUTER}
+            d={arcOrange}
+            stroke={overflowColor}
+            strokeWidth={sw}
             strokeLinecap="round"
             fill="none"
           />
-        </>
-      ) : null}
-
-      {/* Inner arc glow + solid (burned) */}
-      {arcInner ? (
-        <>
+        ) : null}
+        {showInner ? (
+          <Circle cx={cx} cy={cy} r={innerR} stroke={activityRing!.trackColor} strokeWidth={innerSw} fill="none" />
+        ) : null}
+        {showInner && innerArc ? (
           <Path
-            d={arcInner}
-            stroke="rgba(200,151,10,0.22)"
-            strokeWidth={SW_INNER + 8}
+            d={innerArc}
+            stroke={activityRing!.progressColor}
+            strokeWidth={innerSw}
             strokeLinecap="round"
             fill="none"
           />
-          <Path
-            d={arcInner}
-            stroke="url(#innerGrad)"
-            strokeWidth={SW_INNER}
-            strokeLinecap="round"
-            fill="none"
-          />
-        </>
-      ) : null}
+        ) : null}
+      </G>
     </Svg>
   );
+}
+
+function arcPath(cx: number, cy: number, R: number, startDeg: number, sweepDeg: number): string {
+  if (sweepDeg <= 0) return '';
+  const sr = (startDeg * Math.PI) / 180;
+  const er = ((startDeg + sweepDeg) * Math.PI) / 180;
+  const flag = sweepDeg > 180 ? 1 : 0;
+  const x1 = cx + R * Math.cos(sr);
+  const y1 = cy + R * Math.sin(sr);
+  const x2 = cx + R * Math.cos(er);
+  const y2 = cy + R * Math.sin(er);
+  return `M ${x1} ${y1} A ${R} ${R} 0 ${flag} 1 ${x2} ${y2}`;
 }

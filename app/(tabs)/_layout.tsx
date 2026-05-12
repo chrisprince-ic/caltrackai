@@ -24,6 +24,7 @@ export default function TabLayout() {
           shadowOpacity: 0,
           shadowOffset: { width: 0, height: 0 },
           shadowColor: 'transparent',
+          overflow: 'visible',
         },
         tabBarBackground: () => <View style={{ flex: 1, backgroundColor: 'transparent' }} />,
       }}>

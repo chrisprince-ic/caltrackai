@@ -448,8 +448,9 @@ export default function InsightsScreen() {
 
   return (
     <CurvedHeroScreen
-      title="Insights"
-      subtitle="Understand your week"
+      title="Progress"
+      subtitle="Your trends & streaks"
+      heroBackground="sage"
       tabRoot
       rightActions={
         <View style={{ flexShrink: 0 }}>
