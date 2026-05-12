@@ -4,5 +4,8 @@
  */
 export const SUBSCRIPTION_TRIAL_DAYS = 7;
 
-/** Shown when store price has not loaded yet */
-export const SUBSCRIPTION_MONTHLY_PRICE_FALLBACK = 'price shown at checkout';
+/** Fallback price string shown before the store product loads */
+export const SUBSCRIPTION_MONTHLY_PRICE_FALLBACK = '$6.99';
+
+/** Canonical monthly price — keep in sync with App Store Connect */
+export const SUBSCRIPTION_MONTHLY_PRICE_USD = '$6.99';

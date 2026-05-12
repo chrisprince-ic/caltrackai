@@ -4,15 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CurvedHeroScreen } from '@/components/CurvedHeroScreen';
-import { HERO } from '@/constants/hero';
+import { AppLinearGradient } from '@/components/ui/AppLinearGradient';
 import { MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID, REVENUECAT_ENTITLEMENT_PRO } from '@/constants/revenuecat';
 import {
   SUBSCRIPTION_MONTHLY_PRICE_FALLBACK,
@@ -24,29 +26,25 @@ import { useAppTheme } from '@/contexts/AppThemeContext';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { openLegalUrl } from '@/lib/legal-browser';
 
-const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string }[] = [
-  {
-    icon: 'camera-outline',
-    title: 'AI meal scans',
-    body: 'Point your camera at food for quick calorie and macro estimates.',
-  },
-  {
-    icon: 'stats-chart-outline',
-    title: 'Insights',
-    body: 'See trends and stay aligned with your daily targets.',
-  },
-  {
-    icon: 'restaurant-outline',
-    title: 'Plans & macros',
-    body: 'Meal ideas and grocery lists tailored to your goals.',
-  },
+// ─── Feature list ────────────────────────────────────────────────────────────
+
+const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { icon: 'camera-outline',      label: 'AI meal scanning — point & log instantly'  },
+  { icon: 'stats-chart-outline', label: 'Weekly insights & calorie trend analysis'  },
+  { icon: 'restaurant-outline',  label: 'Personalised meal plans & recipes'          },
+  { icon: 'basket-outline',      label: 'Smart grocery lists from your targets'      },
+  { icon: 'sparkles-outline',    label: 'AI nutrition coach — ask anything'          },
 ];
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function SubscriptionScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { welcome } = useLocalSearchParams<{ welcome?: string }>();
   const isWelcome = welcome === '1';
   const { colors, isDark } = useAppTheme();
+
   const {
     ready,
     loading,
@@ -61,51 +59,47 @@ export default function SubscriptionScreen() {
   } = useRevenueCat();
 
   const [busy, setBusy] = useState(false);
-  const [monthlyPriceLabel, setMonthlyPriceLabel] = useState<string | null>(null);
+  const [priceLabel, setPriceLabel] = useState<string | null>(null);
 
-  const goToApp = useCallback(() => {
-    router.replace('/(tabs)' as Href);
-  }, [router]);
-
-  const onBack = useCallback(() => {
-    if (isWelcome) {
-      goToApp();
-      return;
-    }
-    if (router.canGoBack()) router.back();
-    else router.replace('/(tabs)' as Href);
-  }, [router, isWelcome, goToApp]);
-
+  // Load live price from App Store
   useEffect(() => {
     if (!ready || Platform.OS === 'web') return;
     let cancelled = false;
     void (async () => {
-      const offering = await getCurrentOffering();
-      if (cancelled || !offering) return;
-      const pkg = offering.availablePackages.find(
-        (p) => p.product.identifier === MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID
-      );
-      if (pkg?.product.priceString) {
-        setMonthlyPriceLabel(pkg.product.priceString);
-      }
+      try {
+        const offering = await getCurrentOffering();
+        if (cancelled || !offering) return;
+        const pkg = offering.availablePackages.find(
+          (p) => p.product.identifier === MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID
+        );
+        if (pkg?.product.priceString) setPriceLabel(pkg.product.priceString);
+      } catch { /* fallback already set */ }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [ready, getCurrentOffering]);
 
-  const billingLine = useMemo(() => {
-    const price = monthlyPriceLabel ?? SUBSCRIPTION_MONTHLY_PRICE_FALLBACK;
-    return `${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${price} billed monthly. Cancel anytime in Settings.`;
-  }, [monthlyPriceLabel]);
+  const price = priceLabel ?? SUBSCRIPTION_MONTHLY_PRICE_FALLBACK;
 
-  const proEntitlement = customerInfo?.entitlements.all[REVENUECAT_ENTITLEMENT_PRO];
+  const billingLine = useMemo(
+    () => `${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${price}/month. Cancel anytime.`,
+    [price],
+  );
+
+  const goToApp = useCallback(() => router.replace('/(tabs)' as Href), [router]);
+
+  const onBack = useCallback(() => {
+    if (isWelcome) { goToApp(); return; }
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)' as Href);
+  }, [router, isWelcome, goToApp]);
 
   const onSubscribe = useCallback(async () => {
     if (!ready) {
       Alert.alert(
-        'Setup required',
-        'Add your RevenueCat public SDK key in .env, link Macrovia monthly in the RevenueCat dashboard, and rebuild the app to purchase on device.'
+        'Not available',
+        Platform.OS === 'web'
+          ? 'Open this screen in the iOS or Android app to subscribe.'
+          : 'Add your RevenueCat public SDK key in .env and rebuild to enable purchases.'
       );
       return;
     }
@@ -114,13 +108,11 @@ export default function SubscriptionScreen() {
     try {
       const outcome = await purchaseMacroviaMonthly();
       if (outcome === 'success') {
-        Alert.alert('CalTrack Pro', 'Your trial or subscription is active.', [
-          { text: isWelcome ? 'Continue' : 'OK', onPress: isWelcome ? goToApp : undefined },
-        ]);
-        return;
-      }
-      if (outcome === 'cancelled') {
-        return;
+        Alert.alert(
+          'Welcome to Macrovia Pro 🎉',
+          `Your ${SUBSCRIPTION_TRIAL_DAYS}-day free trial has started.`,
+          [{ text: isWelcome ? 'Get started' : 'OK', onPress: isWelcome ? goToApp : undefined }],
+        );
       }
     } finally {
       setBusy(false);
@@ -135,12 +127,14 @@ export default function SubscriptionScreen() {
       const info = await restorePurchases();
       const active = info?.entitlements.active[REVENUECAT_ENTITLEMENT_PRO]?.isActive;
       if (active && isWelcome) {
-        Alert.alert('Restored', 'Your subscription is active.', [{ text: 'Continue', onPress: goToApp }]);
+        Alert.alert('Restored', 'Macrovia Pro is active.', [{ text: 'Continue', onPress: goToApp }]);
         return;
       }
       Alert.alert(
-        'Restore',
-        active ? 'CalTrack Pro is active on this account.' : 'No active subscription found for this Apple ID.'
+        'Restore purchases',
+        active
+          ? 'Macrovia Pro is active on this account.'
+          : 'No active subscription found for this Apple ID.',
       );
     } finally {
       setBusy(false);
@@ -148,357 +142,464 @@ export default function SubscriptionScreen() {
   }, [ready, clearError, restorePurchases, isWelcome, goToApp]);
 
   const onManage = useCallback(async () => {
-    if (!ready) return;
-    if (Platform.OS === 'web') {
-      Alert.alert('Manage subscription', 'Use the iOS or Android app to open subscription management.');
-      return;
-    }
+    if (!ready || Platform.OS === 'web') return;
     setBusy(true);
     clearError();
-    try {
-      await presentCustomerCenter();
-    } finally {
-      setBusy(false);
-    }
+    try { await presentCustomerCenter(); }
+    finally { setBusy(false); }
   }, [ready, clearError, presentCustomerCenter]);
 
-  const surface = colors.surface;
-  const border = colors.border;
-  const muted = colors.textMuted;
-  const ink = colors.text;
+  const ctaDisabled = !ready || busy || Platform.OS === 'web';
 
+  // ── Already pro ────────────────────────────────────────────────────────────
   if (isWelcome && isPro && !loading) {
     return (
-      <CurvedHeroScreen
-        title={"You're all set"}
-        subtitle="CalTrack Pro is active"
-        showBackButton
-        onBackPress={goToApp}
-        heroExpanded={HERO.EXPANDED}
-        contentInset={72}
-        scrollEnabled={false}>
-        <View style={[styles.proCard, { backgroundColor: surface, borderColor: border }]}>
-          <Ionicons name="checkmark-circle" size={48} color={Palette.iris} style={styles.proIcon} />
-          <Text style={[styles.proBody, { color: muted }]}>
-            Continue to your dashboard and start logging meals.
+      <View style={[styles.root, { backgroundColor: colors.bg }]}>
+        <View style={[styles.proCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="checkmark-circle" size={56} color={Palette.iris} />
+          <Text style={[styles.proTitle, { color: colors.text }]}>You're all set!</Text>
+          <Text style={[styles.proSub, { color: colors.textMuted }]}>
+            Macrovia Pro is active. All features unlocked.
           </Text>
           <Pressable
             onPress={goToApp}
-            style={({ pressed }) => [styles.primaryCta, { opacity: pressed ? 0.92 : 1 }]}>
-            <Text style={styles.primaryCtaText}>Continue to app</Text>
-            <Ionicons name="arrow-forward" size={20} color={Palette.white} />
+            style={({ pressed }) => [styles.ctaBtn, pressed && { opacity: 0.88 }]}
+            accessibilityRole="button">
+            <Text style={styles.ctaBtnText}>Continue to app</Text>
+            <Ionicons name="arrow-forward" size={19} color="#fff" />
           </Pressable>
         </View>
-      </CurvedHeroScreen>
+      </View>
     );
   }
 
+  // ── Main paywall ───────────────────────────────────────────────────────────
   return (
-    <CurvedHeroScreen
-      title="CalTrack Pro"
-      subtitle={isWelcome ? 'Macrovia · start your trial' : 'Macrovia premium monthly'}
-      showBackButton
-      onBackPress={onBack}
-      heroExpanded={HERO.EXPANDED}
-      contentInset={72}
-      titleSizeExpanded={22}
-      resetScrollOnFocus={false}>
-      <View style={[styles.heroCard, { backgroundColor: surface, borderColor: border }]}>
-        <View style={styles.heroBadgeRow}>
-          <Ionicons name="sparkles" size={18} color={Palette.iris} />
-          <Text style={[styles.heroBadge, { color: Palette.lavender }]}>Macrovia</Text>
-        </View>
-        <Text style={[styles.heroTitle, { color: ink }]}>
-          {SUBSCRIPTION_TRIAL_DAYS} days free, then monthly
-        </Text>
-        <Text style={[styles.heroBody, { color: muted }]}>{billingLine}</Text>
-        <Text style={[styles.productId, { color: muted }]} numberOfLines={1} ellipsizeMode="middle">
-          {MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID}
-        </Text>
-      </View>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
+      {/* ── Hero ── */}
+      <AppLinearGradient
+        colors={['#0D5C3A', '#1B8A5B', '#24A06A']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.hero, { paddingTop: insets.top + 12 }]}>
 
-      {FEATURES.map((f) => (
-        <View key={f.title} style={[styles.featureCard, { backgroundColor: surface, borderColor: border }]}>
-          <View style={[styles.featureIcon, { backgroundColor: isDark ? 'rgba(31,138,91,0.12)' : Palette.haze }]}>
-            <Ionicons name={f.icon} size={22} color={Palette.iris} />
-          </View>
-          <View style={styles.featureText}>
-            <Text style={[styles.featureTitle, { color: ink }]}>{f.title}</Text>
-            <Text style={[styles.featureBody, { color: muted }]}>{f.body}</Text>
-          </View>
-        </View>
-      ))}
+        {/* Close / back */}
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [styles.heroClose, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel={isWelcome ? 'Skip' : 'Close'}>
+          {isWelcome
+            ? <Text style={styles.heroCloseSkip}>Skip</Text>
+            : <Ionicons name="close" size={22} color="rgba(255,255,255,0.9)" />}
+        </Pressable>
 
-      {!isWelcome ? (
-        <View style={[styles.statusRow, { borderColor: border, backgroundColor: isDark ? colors.bg : Palette.haze }]}>
-          <View style={[styles.statusDot, isPro ? styles.statusDotOn : styles.statusDotOff]} />
-          <Text style={[styles.statusText, { color: ink }]} numberOfLines={1}>
-            {loading ? 'Checking subscription…' : isPro ? 'Pro active' : 'Free plan'}
+        {/* App icon + name */}
+        <View style={styles.heroCenter}>
+          <View style={styles.heroIconWrap}>
+            <Image
+              source={require('@/assets/images/icon.png')}
+              style={styles.heroIcon}
+              resizeMode="cover"
+            />
+          </View>
+          <Text style={styles.heroAppName}>Macrovia Pro</Text>
+          <Text style={styles.heroTagline}>Your smart nutrition coach</Text>
+        </View>
+
+        {/* Trial badge */}
+        <View style={styles.trialBadge}>
+          <Ionicons name="gift-outline" size={15} color="#fff" />
+          <Text style={styles.trialBadgeText}>
+            {SUBSCRIPTION_TRIAL_DAYS}-Day Free Trial
           </Text>
-          {proEntitlement?.expirationDate && !loading ? (
-            <Text style={[styles.statusMeta, { color: muted }]} numberOfLines={1}>
-              {' · '}
-              {proEntitlement.expirationDate}
+        </View>
+      </AppLinearGradient>
+
+      {/* ── Scrollable content ── */}
+      <ScrollView
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 24 }]}
+        showsVerticalScrollIndicator={false}>
+
+        {/* Pricing row */}
+        <View style={[styles.pricingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.pricingLeft}>
+            <Text style={[styles.pricingMain, { color: colors.text }]}>
+              {price}
+              <Text style={[styles.pricingPer, { color: colors.textMuted }]}> / month</Text>
             </Text>
-          ) : null}
+            <Text style={[styles.pricingTrial, { color: Palette.iris }]}>
+              First {SUBSCRIPTION_TRIAL_DAYS} days free
+            </Text>
+          </View>
+          <View style={[styles.pricingBadge, { backgroundColor: `${Palette.iris}18` }]}>
+            <Text style={[styles.pricingBadgeText, { color: Palette.iris }]}>Most popular</Text>
+          </View>
         </View>
-      ) : null}
 
-      {lastError ? (
-        <View style={[styles.errorBanner, { borderColor: 'rgba(220,38,38,0.35)', backgroundColor: 'rgba(220,38,38,0.08)' }]}>
-          <Ionicons name="alert-circle-outline" size={18} color="#DC2626" />
-          <Text style={styles.errorText} numberOfLines={3}>
-            {lastError}
+        {/* Feature list */}
+        <View style={[styles.featureCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.featureHeading, { color: colors.text }]}>Everything included</Text>
+          {FEATURES.map((f) => (
+            <View key={f.icon} style={styles.featureRow}>
+              <View style={[styles.featureIconWrap, { backgroundColor: `${Palette.iris}18` }]}>
+                <Ionicons name={f.icon} size={18} color={Palette.iris} />
+              </View>
+              <Text style={[styles.featureLabel, { color: colors.text }]}>{f.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Error banner */}
+        {lastError ? (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
+            <Text style={styles.errorText} numberOfLines={3}>{lastError}</Text>
+            <Pressable onPress={clearError} hitSlop={10}>
+              <Text style={styles.errorDismiss}>×</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Sandbox notice in Expo Go */}
+        {Platform.OS === 'web' && (
+          <Text style={[styles.webNote, { color: colors.textMuted }]}>
+            Purchases are only available in the iOS or Android app.
           </Text>
-          <Pressable onPress={clearError} hitSlop={10}>
-            <Text style={styles.errorDismiss}>×</Text>
+        )}
+
+        {/* ── Primary CTA ── */}
+        <Pressable
+          onPress={() => void onSubscribe()}
+          disabled={ctaDisabled}
+          style={({ pressed }) => [
+            styles.ctaBtn,
+            ctaDisabled && styles.ctaDisabled,
+            pressed && !ctaDisabled && { opacity: 0.88 },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${SUBSCRIPTION_TRIAL_DAYS}-day free trial`}>
+          {busy ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.ctaBtnText}>
+                Start {SUBSCRIPTION_TRIAL_DAYS}-day free trial
+              </Text>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            </>
+          )}
+        </Pressable>
+
+        {/* Billing line — Apple requirement */}
+        <Text style={[styles.billingLine, { color: colors.textMuted }]}>
+          {billingLine}
+        </Text>
+
+        {/* ── Apple-required legal copy ── */}
+        <Text style={[styles.legalBody, { color: colors.textMuted }]}>
+          Payment will be charged to your Apple ID account at confirmation of purchase. The subscription
+          automatically renews unless it is cancelled at least 24 hours before the end of the current period.
+          Your account will be charged for renewal within 24 hours prior to the end of the current period.
+          You can manage and cancel your subscriptions by going to your App Store account settings after purchase.
+          Any unused portion of a free trial period will be forfeited when you purchase a subscription.
+        </Text>
+
+        {/* Legal links row — Apple requirement */}
+        <View style={styles.legalLinksRow}>
+          <Pressable onPress={() => void openLegalUrl('terms')} hitSlop={8} accessibilityRole="link">
+            <Text style={[styles.legalLink, { color: Palette.iris }]}>Terms of Use</Text>
+          </Pressable>
+          <Text style={[styles.legalDot, { color: colors.textMuted }]}>·</Text>
+          <Pressable onPress={() => void openLegalUrl('privacy')} hitSlop={8} accessibilityRole="link">
+            <Text style={[styles.legalLink, { color: Palette.iris }]}>Privacy Policy</Text>
           </Pressable>
         </View>
-      ) : null}
 
-      {Platform.OS === 'web' ? (
-        <Text style={[styles.webNote, { color: muted }]}>
-          In-app purchases run on the iOS and Android builds. Open this screen in the installed app to subscribe.
-        </Text>
-      ) : null}
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Start ${SUBSCRIPTION_TRIAL_DAYS} day free trial`}
-        onPress={() => void onSubscribe()}
-        disabled={!ready || busy || Platform.OS === 'web'}
-        style={({ pressed }) => [
-          styles.primaryCta,
-          (!ready || busy || Platform.OS === 'web') && styles.ctaDisabled,
-          { opacity: pressed ? 0.92 : 1 },
-        ]}>
-        {busy ? (
-          <ActivityIndicator color={Palette.white} />
-        ) : (
-          <>
-            <Text style={styles.primaryCtaText}>Start {SUBSCRIPTION_TRIAL_DAYS}-day free trial</Text>
-            <Ionicons name="arrow-forward" size={20} color={Palette.white} />
-          </>
-        )}
-      </Pressable>
-
-      <Text style={[styles.legal, { color: muted }]}>
-        Payment is charged to your Apple ID. After the free trial, your subscription renews monthly unless you cancel
-        at least 24 hours before the period ends. Manage or cancel in Apple Subscriptions.
-      </Text>
-
-      <View style={styles.legalLinksRow}>
-        <Pressable onPress={() => void openLegalUrl('terms')} hitSlop={8} accessibilityRole="link">
-          <Text style={[styles.link, { color: Palette.iris }]}>Terms of Use (EULA)</Text>
-        </Pressable>
-        <Text style={[styles.linkSep, { color: muted }]}> · </Text>
-        <Pressable onPress={() => void openLegalUrl('privacy')} hitSlop={8} accessibilityRole="link">
-          <Text style={[styles.link, { color: Palette.iris }]}>Privacy Policy</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.linkRow}>
-        <Pressable onPress={() => void onRestore()} disabled={!ready || busy} hitSlop={8}>
-          <Text style={[styles.link, { color: Palette.iris }]}>Restore purchases</Text>
-        </Pressable>
-        {isPro ? (
-          <>
-            <Text style={[styles.linkSep, { color: muted }]}> · </Text>
-            <Pressable onPress={() => void onManage()} disabled={!ready || busy} hitSlop={8}>
-              <Text style={[styles.link, { color: Palette.iris }]}>Manage</Text>
-            </Pressable>
-          </>
-        ) : null}
-      </View>
-
-      {isWelcome ? (
-        <Pressable onPress={goToApp} style={styles.notNow}>
-          <Text style={[styles.notNowText, { color: muted }]}>Not now</Text>
-        </Pressable>
-      ) : null}
-    </CurvedHeroScreen>
+        {/* Restore + Manage row */}
+        <View style={styles.utilRow}>
+          <Pressable
+            onPress={() => void onRestore()}
+            disabled={!ready || busy}
+            hitSlop={8}
+            accessibilityRole="button">
+            <Text style={[styles.utilLink, { color: colors.textMuted }]}>Restore purchases</Text>
+          </Pressable>
+          {isPro && (
+            <>
+              <Text style={[styles.legalDot, { color: colors.textMuted }]}>·</Text>
+              <Pressable
+                onPress={() => void onManage()}
+                disabled={!ready || busy}
+                hitSlop={8}
+                accessibilityRole="button">
+                <Text style={[styles.utilLink, { color: colors.textMuted }]}>Manage subscription</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  heroCard: {
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 18,
-    marginBottom: 12,
+  root: { flex: 1 },
+
+  // Hero
+  hero: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
   },
-  heroBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-  },
-  heroBadge: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  heroTitle: {
-    fontFamily: Fonts.bold,
-    fontSize: 20,
-    letterSpacing: -0.3,
-    marginBottom: 8,
-  },
-  heroBody: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  productId: {
-    fontFamily: Fonts.regular,
-    fontSize: 11,
-    marginTop: 10,
-  },
-  featureCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 14,
-    marginBottom: 10,
-  },
-  featureIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  heroClose: {
+    alignSelf: 'flex-end',
+    padding: 4,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featureText: { flex: 1, minWidth: 0 },
-  featureTitle: {
+  heroCloseSkip: {
+    color: 'rgba(255,255,255,0.85)',
     fontFamily: Fonts.semiBold,
     fontSize: 15,
-    marginBottom: 4,
   },
-  featureBody: {
+  heroCenter: {
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
+  },
+  heroIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  heroIcon: { width: 72, height: 72 },
+  heroAppName: {
+    fontFamily: Fonts.bold,
+    fontSize: 26,
+    color: '#fff',
+    letterSpacing: -0.4,
+  },
+  heroTagline: {
     fontFamily: Fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.78)',
   },
-  statusRow: {
+  trialBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    gap: 6,
+    alignSelf: 'center',
+    marginTop: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statusDotOn: { backgroundColor: Palette.iris },
-  statusDotOff: { backgroundColor: Palette.dusk },
-  statusText: {
+  trialBadgeText: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
+    color: '#fff',
+    letterSpacing: 0.2,
   },
-  statusMeta: {
+
+  // Body
+  body: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    gap: 12,
+  },
+
+  // Pricing card
+  pricingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  pricingLeft: { gap: 2 },
+  pricingMain: {
+    fontFamily: Fonts.bold,
+    fontSize: 24,
+    letterSpacing: -0.4,
+  },
+  pricingPer: {
     fontFamily: Fonts.regular,
-    fontSize: 12,
-    flexShrink: 1,
+    fontSize: 14,
   },
+  pricingTrial: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+  },
+  pricingBadge: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+  },
+  pricingBadgeText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 11,
+    letterSpacing: 0.2,
+  },
+
+  // Feature list
+  featureCard: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 16,
+    gap: 12,
+  },
+  featureHeading: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    letterSpacing: 0.1,
+    marginBottom: 2,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  featureIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  featureLabel: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    flex: 1,
+    lineHeight: 20,
+  },
+
+  // Error
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderRadius: 14,
+    gap: 8,
+    borderRadius: 12,
     borderWidth: 1,
+    borderColor: 'rgba(220,38,38,0.3)',
+    backgroundColor: 'rgba(220,38,38,0.07)',
     padding: 12,
-    marginBottom: 12,
   },
   errorText: {
     flex: 1,
     fontFamily: Fonts.regular,
     fontSize: 13,
-    color: '#991B1B',
+    color: '#DC2626',
     lineHeight: 18,
   },
   errorDismiss: {
-    fontSize: 20,
-    color: '#991B1B',
+    fontSize: 18,
+    color: '#DC2626',
     paddingHorizontal: 4,
   },
+
   webNote: {
     fontFamily: Fonts.regular,
     fontSize: 13,
     lineHeight: 19,
-    marginBottom: 12,
+    textAlign: 'center',
   },
-  primaryCta: {
+
+  // CTA
+  ctaBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: Palette.iris,
     borderRadius: 16,
     paddingVertical: 16,
-    marginBottom: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: Palette.iris,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+      },
+      default: { elevation: 6 },
+    }),
   },
-  ctaDisabled: {
-    opacity: 0.45,
-  },
-  primaryCtaText: {
+  ctaDisabled: { opacity: 0.45 },
+  ctaBtnText: {
     fontFamily: Fonts.bold,
     fontSize: 16,
-    color: Palette.white,
+    color: '#fff',
   },
-  legal: {
+
+  // Billing / legal
+  billingLine: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: -2,
+  },
+  legalBody: {
     fontFamily: Fonts.regular,
     fontSize: 11,
     lineHeight: 16,
-    marginBottom: 10,
+    textAlign: 'center',
   },
   legalLinksRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    gap: 8,
   },
-  linkRow: {
+  legalLink: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+  },
+  legalDot: { fontSize: 13 },
+  utilRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 4,
   },
-  link: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
+  utilLink: {
+    fontFamily: Fonts.medium,
+    fontSize: 13,
   },
-  linkSep: { fontSize: 14 },
-  notNow: {
-    alignSelf: 'center',
-    paddingVertical: 10,
-  },
-  notNowText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-  },
+
+  // Already-pro screen
   proCard: {
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 24,
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 14,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    margin: 20,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  proIcon: { marginBottom: 12 },
-  proBody: {
+  proTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: 24,
+    letterSpacing: -0.4,
+  },
+  proSub: {
     fontFamily: Fonts.regular,
     fontSize: 15,
-    lineHeight: 22,
     textAlign: 'center',
-    marginBottom: 20,
+    lineHeight: 22,
   },
 });

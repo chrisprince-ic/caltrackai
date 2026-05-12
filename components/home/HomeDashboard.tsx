@@ -4,6 +4,7 @@ import { type Href, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -165,7 +166,6 @@ export function HomeDashboard() {
     carbsG,
     fatG,
     dietarySummary,
-    coachNote,
     refresh: refreshNutritionTargets,
   } = useNutritionTargets();
   const cardW = Math.min(268, width * 0.72);
@@ -322,40 +322,36 @@ export function HomeDashboard() {
   );
 
 
-  const aiInsightBody = useMemo(() => {
-    const t = coachNote?.trim();
-    if (t) return t;
-    const p = totals.proteinGrams / Math.max(proteinG, 1);
-    if (p >= 0.92) {
-      return `You're landing most of your protein — this is the rhythm that quietly compounds.`;
-    }
-    if (totals.calories === 0) {
-      return `Log your first meal and I'll watch patterns emerge across your macros.`;
-    }
-    return `Fuel steadily toward your calorie target — protein-forward picks keep energy smooth all day.`;
-  }, [coachNote, totals.calories, totals.proteinGrams, proteinG]);
 
   return (
     <>
-      <MacroviaScreen refreshing={refreshing} onRefresh={onRefresh} tabRoot>
-        <MacroviaTopBar
-          title="CalTrack"
-          userInitial={firstName.charAt(0).toUpperCase() || '•'}
-          onPressProfile={() => setMenuOpen(true)}
-        />
+      <MacroviaScreen
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        tabRoot
+        heroColor={colors.accentDeep}
+        stickyHeader={(scrollY) => (
+          <MacroviaTopBar
+            title="Macrovia"
+            scrollY={scrollY}
+            userInitial={firstName.charAt(0).toUpperCase() || '•'}
+            onPressProfile={() => setMenuOpen(true)}
+          />
+        )}>
+
 
         <Animated.View entering={FadeInDown.duration(420)}>
-          <Text style={[styles.heroOverline, { color: colors.textMuted }]}>{dateLabel}</Text>
-          <Text style={[styles.heroTitle, { color: colors.text }]}>{displayGreeting}</Text>
-          <Text style={[styles.heroSub, { color: colors.textSecondary }]}>
+          <Text style={[styles.heroOverline, { color: 'rgba(255,255,255,0.7)' }]}>{dateLabel}</Text>
+          <Text style={[styles.heroTitle, { color: '#fff' }]}>{displayGreeting}</Text>
+          <Text style={[styles.heroSub, { color: 'rgba(255,255,255,0.82)' }]}>
             {streak > 0 ? (
               <>
-                Day <Text style={styles.heroEmph}>{streak}</Text> streak — keep it going.
+                Day <Text style={[styles.heroEmph, { color: '#fff' }]}>{streak}</Text> streak — keep it going.
               </>
             ) : (
               <>
                 Daily target:{' '}
-                <Text style={[styles.heroEmph, { color: colors.text }]}>
+                <Text style={[styles.heroEmph, { color: '#fff' }]}>
                   {Math.round(dailyCalories).toLocaleString()} kcal
                 </Text>
               </>
@@ -400,63 +396,27 @@ export function HomeDashboard() {
           </MacroviaCard>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(100).duration(420)}>
-          <MacroviaCard
-            glass={false}
-            padding={18}
-            style={{
-              backgroundColor: colors.accentSoft,
-              borderColor: colors.glassStroke,
-            }}>
-            <View style={styles.aiRow}>
-              <AppLinearGradient
-                colors={[colors.accent, colors.violet]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.aiIconWrap}>
-                <Ionicons name="flash" size={16} color="#fff" />
-              </AppLinearGradient>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.aiTitle, { color: colors.text }]}>CalTrack AI</Text>
-                <Text style={[styles.aiMeta, { color: colors.textMuted }]}>Pattern watch · coach note</Text>
-              </View>
-              <Text style={[styles.aiBadge, { color: colors.accentDeep }]}>INSIGHT</Text>
+
+
+        {sortedEntries.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(140).duration(420)} style={styles.recentBlock}>
+            <View style={styles.sectionRow}>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>{`Today's meals`}</Text>
+              <Pressable
+                onPress={() => router.push('/manual-entry' as Href)}
+                style={styles.seeAllBtn}
+                accessibilityRole="button">
+                <Text style={[styles.seeAllTxt, { color: colors.textMuted }]}>Add meal</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+              </Pressable>
             </View>
-            <Text style={[styles.aiBody, { color: colors.text }]}>{aiInsightBody}</Text>
-          </MacroviaCard>
-        </Animated.View>
-
-
-        <Animated.View entering={FadeInDown.delay(140).duration(420)} style={styles.recentBlock}>
-          <View style={styles.sectionRow}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>{`Today's meals`}</Text>
-            <Pressable
-              onPress={() => router.push('/manual-entry' as Href)}
-              style={styles.seeAllBtn}
-              accessibilityRole="button">
-              <Text style={[styles.seeAllTxt, { color: colors.textMuted }]}>Add meal</Text>
-              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-            </Pressable>
-          </View>
-          {sortedEntries.length === 0 ? (
-            <Pressable
-              onPress={() => router.push('/manual-entry' as Href)}
-              style={({ pressed }) => [
-                styles.recentEmpty,
-                { borderColor: colors.glassStroke },
-                pressed && { opacity: 0.9 },
-              ]}>
-              <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
-              <Text style={[styles.recentEmptyText, { color: colors.textMuted }]}>+ Log your first meal</Text>
-            </Pressable>
-          ) : (
             <View style={styles.recentList}>
               {sortedEntries.map((e) => (
                 <RecentMealRow key={e.id} entry={e} onPress={() => router.push('/manual-entry' as Href)} />
               ))}
             </View>
-          )}
-        </Animated.View>
+          </Animated.View>
+        )}
 
         <Animated.View entering={FadeInDown.delay(160).duration(420)}>
           <View style={styles.sectionRow}>
@@ -699,6 +659,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.07,
+        shadowRadius: 10,
+      },
+      default: { elevation: 3 },
+    }),
   },
   recentThumb: {
     width: 48,

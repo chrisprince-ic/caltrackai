@@ -10,7 +10,7 @@ export async function buildUserDataExportJson(uid: string): Promise<string> {
   const snap = await get(ref(db, `users/${uid}`));
   const payload = {
     exportedAt: new Date().toISOString(),
-    app: 'CalTrack AI',
+    app: 'Macrovia',
     userId: uid,
     data: snap.exists() ? snap.val() : null,
   };
@@ -29,6 +29,6 @@ export async function shareUserDataExport(uid: string): Promise<void> {
   }
   await Share.share({
     message: text,
-    title: 'CalTrack AI — my data export',
+    title: 'Macrovia — my data export',
   });
 }

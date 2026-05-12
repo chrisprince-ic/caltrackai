@@ -172,11 +172,12 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     ...Platform.select({
       ios: {
-        shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.16,
-        shadowRadius: 36,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.18,
+        shadowRadius: 24,
       },
-      default: { elevation: 18 },
+      default: { elevation: 20 },
     }),
   },
   surfaceInner: {

@@ -1,24 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { Animated, Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppLinearGradient } from '@/components/ui/AppLinearGradient';
 import { Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 
-const MARK_PATH =
-  'M4 18 L4 8 Q4 4 8 4 L8 14 Q8 18 12 18 L12 8 Q12 4 16 4 L16 14 Q16 18 20 18';
+const TITLE_FADE_PX = 140;
 
 type Props = {
   title?: string;
+  /** When provided, white↔dark title cross-fade is driven by scroll offset (native driver). */
+  scrollY?: Animated.Value;
   onPressBell?: () => void;
   onPressProfile?: () => void;
   userInitial?: string;
 };
 
-/** App chrome row: wordmark pill + trailing glass bell + avatar (prototype TopBar). */
 export function MacroviaTopBar({
-  title = 'CalTrack',
+  title = 'Macrovia',
+  scrollY,
   onPressBell,
   onPressProfile = () => {},
   userInitial = 'U',
@@ -26,26 +26,48 @@ export function MacroviaTopBar({
   const { colors, isDark } = useAppTheme();
   const initial = userInitial.trim().slice(0, 1).toUpperCase() || 'U';
 
+  const whiteOpacity = scrollY
+    ? scrollY.interpolate({
+        inputRange: [0, TITLE_FADE_PX],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+      })
+    : undefined;
+
+  const darkOpacity = scrollY
+    ? scrollY.interpolate({
+        inputRange: [0, TITLE_FADE_PX],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      })
+    : undefined;
+
   return (
     <View style={styles.row}>
       <View style={styles.brand}>
-        <AppLinearGradient
-          colors={[colors.accent, colors.violet]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.markWrap}>
-          <Svg width={18} height={18} viewBox="0 0 24 24">
-            <Path
-              d={MARK_PATH}
-              stroke="#fff"
-              strokeWidth={2.2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </Svg>
-        </AppLinearGradient>
-        <Text style={[styles.wordmark, { color: colors.text }]}>{title}</Text>
+        <View style={styles.markWrap}>
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.markImg}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Cross-fade title: white at top, colors.text when scrolled */}
+        <View style={styles.titleWrap}>
+          {/* Dark title — always in layout to size the container */}
+          <Animated.Text
+            style={[styles.wordmark, { color: colors.text, opacity: darkOpacity ?? 1 }]}>
+            {title}
+          </Animated.Text>
+          {/* White title — absolute on top, fades out on scroll */}
+          {whiteOpacity != null && (
+            <Animated.Text
+              style={[styles.wordmark, styles.titleAbsolute, { color: '#fff', opacity: whiteOpacity }]}>
+              {title}
+            </Animated.Text>
+          )}
+        </View>
       </View>
 
       <View style={styles.trailing}>
@@ -75,7 +97,7 @@ export function MacroviaTopBar({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.avatarFill}>
-            <Text style={styles.avatarLetter}>{initial}</Text>
+            <Animated.Text style={styles.avatarLetter}>{initial}</Animated.Text>
           </AppLinearGradient>
         </Pressable>
       </View>
@@ -96,13 +118,24 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  markImg: {
+    width: 32,
+    height: 32,
+  },
+  titleWrap: {
+    position: 'relative',
   },
   wordmark: {
     fontFamily: Fonts.semiBold,
     fontSize: 17,
     letterSpacing: -0.4,
+  },
+  titleAbsolute: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   trailing: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   glassBtn: {

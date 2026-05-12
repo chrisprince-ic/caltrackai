@@ -29,11 +29,14 @@ let didLogStartup = false;
 function logStartupOnce(enabled: boolean) {
   if (didLogStartup) return;
   didLogStartup = true;
-  console.log(
-    enabled
-      ? 'Running in native build – HealthKit enabled'
-      : 'Running in Expo Go – HealthKit disabled'
-  );
+  if (__DEV__) {
+    // eslint-disable-next-line no-console
+    console.log(
+      enabled
+        ? 'Running in native build – HealthKit enabled'
+        : 'Running in Expo Go – HealthKit disabled'
+    );
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CalTrack AI",
+    "name": "Macrovia",
     "slug": "caltrackai",
     "version": "1.0.3",
     "orientation": "portrait",
@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aevontech.calorietracker",
+      "buildNumber": "1",
       "infoPlist": {
         "CFBundleURLTypes": [],
         "ITSAppUsesNonExemptEncryption": false
@@ -18,6 +19,7 @@
     },
     "android": {
       "package": "com.aevontech.calorieai",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -35,8 +37,8 @@
       [
         "@kingstinct/react-native-healthkit",
         {
-          "NSHealthShareUsageDescription": "CalTrack AI reads Active Energy and Resting Energy from Apple Health to show calories burned and to suggest a daily intake that fits your day.",
-          "NSHealthUpdateUsageDescription": "CalTrack AI only reads your energy data; it does not write to Apple Health.",
+          "NSHealthShareUsageDescription": "Macrovia reads Active Energy and Resting Energy from Apple Health to show calories burned and to suggest a daily intake that fits your day.",
+          "NSHealthUpdateUsageDescription": "Macrovia only reads your energy data; it does not write to Apple Health.",
           "background": false
         }
       ],
@@ -44,14 +46,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow CalTrack AI to use your camera to scan meals and estimate nutrition.",
+          "cameraPermission": "Allow Macrovia to use your camera to scan meals and estimate nutrition.",
           "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow CalTrack AI to access your photos to scan a meal from your gallery."
+          "photosPermission": "Allow Macrovia to access your photos to scan a meal from your gallery."
         }
       ],
       [

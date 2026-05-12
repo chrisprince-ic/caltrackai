@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { type Href, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -131,9 +132,9 @@ export default function WelcomeScreen() {
           <Animated.View entering={FadeIn.duration(420)} style={styles.brandSlide}>
             <View style={styles.brandTopBlock}>
               <View style={styles.logoMark}>
-                <Ionicons name="nutrition" size={30} color={Palette.white} />
+                <Image source={require('@/assets/images/icon.png')} style={styles.logoMarkImg} resizeMode="cover" />
               </View>
-              <Text style={styles.eyebrow}>CALTRACK</Text>
+              <Text style={styles.eyebrow}>MACROVIA</Text>
             </View>
             <View style={styles.brandCopy}>
               <Text style={styles.headline}>Fuel smarter.{'\n'}Track with clarity.</Text>
@@ -152,9 +153,9 @@ export default function WelcomeScreen() {
             <View style={styles.featureSlide}>
               <View style={styles.smallBrandRow}>
                 <View style={styles.logoMarkSmall}>
-                  <Ionicons name="nutrition" size={18} color={Palette.white} />
+                  <Image source={require('@/assets/images/icon.png')} style={styles.logoMarkSmallImg} resizeMode="cover" />
                 </View>
-                <Text style={styles.eyebrowSmall}>CALTRACK</Text>
+                <Text style={styles.eyebrowSmall}>MACROVIA</Text>
               </View>
               <View style={styles.featureCenter}>
                 <View style={[styles.featureIconBox, { backgroundColor: f.iconBg }]}>
@@ -172,9 +173,9 @@ export default function WelcomeScreen() {
           <View style={styles.ctaSlide}>
             <View style={styles.brandTopBlock}>
               <View style={styles.logoMark}>
-                <Ionicons name="nutrition" size={28} color={Palette.white} />
+                <Image source={require('@/assets/images/icon.png')} style={styles.logoMarkImg} resizeMode="cover" />
               </View>
-              <Text style={styles.eyebrow}>CALTRACK</Text>
+              <Text style={styles.eyebrow}>MACROVIA</Text>
             </View>
             <View style={styles.ctaCopy}>
               <Text style={styles.ctaHeadline}>Ready to start?</Text>
@@ -263,28 +264,32 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: Palette.iris,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     marginBottom: 14,
-    shadowColor: Palette.iris,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
+    shadowOpacity: 0.18,
     shadowRadius: 20,
     elevation: 10,
+  },
+  logoMarkImg: {
+    width: 64,
+    height: 64,
   },
   logoMarkSmall: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: Palette.iris,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Palette.iris,
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.14,
     shadowRadius: 10,
     elevation: 4,
+  },
+  logoMarkSmallImg: {
+    width: 36,
+    height: 36,
   },
   eyebrow: {
     fontFamily: Fonts.semiBold,

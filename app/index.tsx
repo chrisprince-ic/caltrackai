@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { type Href, useRouter } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -88,11 +87,15 @@ export default function Index() {
           entering={FadeIn.delay(120).duration(400)}
           style={styles.logoSquircle}
           accessibilityRole="image"
-          accessibilityLabel="CalTrack">
-          <Ionicons name="nutrition" size={32} color={Palette.white} />
+          accessibilityLabel="Macrovia">
+          <Image
+            source={require('@/assets/images/icon.png')}
+            style={styles.logoImage}
+            resizeMode="cover"
+          />
         </Animated.View>
         <Animated.Text entering={FadeInDown.delay(200).duration(480).springify()} style={styles.brand}>
-          CalTrack
+          Macrovia
         </Animated.Text>
       </View>
     </SafeAreaView>
@@ -125,14 +128,16 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 22,
-    backgroundColor: Palette.iris,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Palette.iris,
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.2,
     shadowRadius: 28,
     elevation: 12,
+  },
+  logoImage: {
+    width: 72,
+    height: 72,
   },
   brand: {
     fontFamily: Fonts.semiBold,

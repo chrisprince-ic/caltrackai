@@ -96,9 +96,10 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
 
     const apiKey = getRevenueCatApiKey();
     if (!apiKey) {
-      console.warn(
-        '[RevenueCat] Missing API key. Set EXPO_PUBLIC_REVENUECAT_API_KEY (or platform-specific keys) in .env'
-      );
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('[RevenueCat] Missing API key. Set EXPO_PUBLIC_REVENUECAT_API_KEY (or platform-specific keys) in .env');
+      }
       setLoading(false);
       setReady(false);
       return;
@@ -115,7 +116,10 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
 
     if (revenueCatKeyPlatformMismatch(apiKey)) {
       const msg = credentialsIssueHelpMessage();
-      console.warn('[RevenueCat]', msg);
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('[RevenueCat]', msg);
+      }
       setLastError(msg);
       setLoading(false);
       setReady(false);

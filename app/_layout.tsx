@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppThemeProvider, useAppTheme } from '@/contexts/AppThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NutritionLogProvider } from '@/contexts/NutritionLogContext';
@@ -90,8 +91,10 @@ export default function RootLayout() {
   }
 
   return (
-    <AppThemeProvider>
-      <RootLayoutBody />
-    </AppThemeProvider>
+    <ErrorBoundary>
+      <AppThemeProvider>
+        <RootLayoutBody />
+      </AppThemeProvider>
+    </ErrorBoundary>
   );
 }

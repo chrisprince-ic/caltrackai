@@ -30,9 +30,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { openLegalUrl } from '@/lib/legal-browser';
 import { shareUserDataExport } from '@/lib/user-data-export';
 
-const SHARE_MESSAGE = 'I’m using CalTrack AI to log meals and hit my macros — give it a try!';
+const SHARE_MESSAGE = "I’m using Macrovia to log meals and hit my macros — give it a try!";
 const INVITE_MESSAGE =
-  'Join me on CalTrack AI — scan meals, see smart meal plans, and stay on track with your goals.';
+  "Join me on Macrovia — scan meals, see smart meal plans, and stay on track with your goals.";
 
 type Props = {
   visible: boolean;
@@ -165,11 +165,11 @@ export function AppMenuSheet({ visible, onClose }: Props) {
 
   const appVersion = Constants.expoConfig?.version ?? '0.0.0';
   const iosBuild = Constants.expoConfig?.ios?.buildNumber ?? '';
-  const versionLabel = `CalTrack AI · v${appVersion}${iosBuild ? ` (${iosBuild})` : ''}`;
+  const versionLabel = `Macrovia · v${appVersion}${iosBuild ? ` (${iosBuild})` : ''}`;
 
   const shareApp = useCallback(async () => {
     try {
-      await Share.share({ message: SHARE_MESSAGE, title: 'CalTrack AI' });
+      await Share.share({ message: SHARE_MESSAGE, title: 'Macrovia' });
     } catch {
       /* dismissed */
     }
@@ -177,7 +177,7 @@ export function AppMenuSheet({ visible, onClose }: Props) {
 
   const inviteFriends = useCallback(async () => {
     try {
-      await Share.share({ message: INVITE_MESSAGE, title: 'Invite to CalTrack AI' });
+      await Share.share({ message: INVITE_MESSAGE, title: 'Invite to Macrovia' });
     } catch {
       /* dismissed */
     }
@@ -377,7 +377,7 @@ export function AppMenuSheet({ visible, onClose }: Props) {
               />
               <MenuRow
                 icon="sparkles"
-                label="CalTrack Pro"
+                label="Macrovia Pro"
                 sub="Subscription & trial"
                 onPress={() => go('/subscription' as Href)}
               />
