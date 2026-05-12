@@ -9,33 +9,33 @@ type Props = {
 };
 
 /**
- * Full-screen gradient + floating decorative blobs.
- * Wrap screen content inside SafeAreaView → ScreenBackground → ScrollView.
+ * Full-screen aurora background — three drifting blobs (emerald / amber / violet)
+ * matching the Macrovia aurora aesthetic. Wrap screen content inside:
+ * SafeAreaView → ScreenBackground → ScrollView.
  */
 export function ScreenBackground({ children }: Props) {
   const { isDark } = useAppTheme();
 
   const gradColors: [string, string, string] = isDark
-    ? ['#081510', '#111827', '#0E1628']
+    ? ['#0E1810', '#131E16', '#111A14']
     : [...APP_SCREEN_GRADIENT_LIGHT];
 
-  const blob1Bg = isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.13)';
-  const blob2Bg = isDark ? 'rgba(99,102,241,0.07)' : 'rgba(99,102,241,0.09)';
-  const blob3Bg = isDark ? 'rgba(249,115,22,0.06)' : 'rgba(249,115,22,0.08)';
-  const blob4Bg = isDark ? 'rgba(236,72,153,0.05)' : 'rgba(236,72,153,0.07)';
-  const blob5Bg = isDark ? 'rgba(34,197,94,0.05)' : 'rgba(34,197,94,0.06)';
+  // Aurora blobs — large, blurred radial glows
+  const aurora1 = isDark ? 'rgba(43,134,82,0.38)'    : 'rgba(150,228,186,0.52)';  // emerald
+  const aurora2 = isDark ? 'rgba(130,96,16,0.28)'    : 'rgba(237,208,128,0.45)';  // amber
+  const aurora3 = isDark ? 'rgba(82,64,130,0.28)'    : 'rgba(218,204,246,0.40)';  // violet
 
   return (
     <LinearGradient colors={gradColors} style={styles.root} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-      {/* Large ambient blobs */}
-      <View style={[styles.blob, styles.b1, { backgroundColor: blob1Bg }]} />
-      <View style={[styles.blob, styles.b2, { backgroundColor: blob2Bg }]} />
-      <View style={[styles.blob, styles.b3, { backgroundColor: blob3Bg }]} />
-      <View style={[styles.blob, styles.b4, { backgroundColor: blob4Bg }]} />
-      <View style={[styles.blob, styles.b5, { backgroundColor: blob5Bg }]} />
+      {/* Aurora blob 1 — emerald top-left */}
+      <View style={[styles.aurora, styles.a1, { backgroundColor: aurora1 }]} />
+      {/* Aurora blob 2 — amber top-right */}
+      <View style={[styles.aurora, styles.a2, { backgroundColor: aurora2 }]} />
+      {/* Aurora blob 3 — violet bottom-center */}
+      <View style={[styles.aurora, styles.a3, { backgroundColor: aurora3 }]} />
       {/* Subtle ring decorations */}
-      <View style={[styles.ring, styles.ring1, { borderColor: isDark ? 'rgba(34,197,94,0.06)' : 'rgba(34,197,94,0.1)' }]} />
-      <View style={[styles.ring, styles.ring2, { borderColor: isDark ? 'rgba(99,102,241,0.05)' : 'rgba(99,102,241,0.08)' }]} />
+      <View style={[styles.ring, styles.ring1, { borderColor: isDark ? 'rgba(31,138,91,0.06)' : 'rgba(31,138,91,0.09)' }]} />
+      <View style={[styles.ring, styles.ring2, { borderColor: isDark ? 'rgba(107,74,150,0.05)' : 'rgba(107,74,150,0.08)' }]} />
       {children}
     </LinearGradient>
   );
@@ -43,17 +43,19 @@ export function ScreenBackground({ children }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  blob: { position: 'absolute', borderRadius: 9999 },
-  b1: { width: 360, height: 360, top: -140, right: -120 },
-  b2: { width: 260, height: 260, top: '28%', left: -110 },
-  b3: { width: 300, height: 300, bottom: -110, right: -90 },
-  b4: { width: 160, height: 160, top: '52%', right: '12%' },
-  b5: { width: 120, height: 120, top: '18%', left: '55%' },
+  aurora: {
+    position: 'absolute',
+    borderRadius: 9999,
+    // React Native doesn't support CSS blur — large soft circles simulate it
+  },
+  a1: { width: 420, height: 420, top: -180, left: -140 },
+  a2: { width: 340, height: 340, top: -60, right: -140 },
+  a3: { width: 380, height: 380, bottom: -150, left: '10%' },
   ring: {
     position: 'absolute',
     borderRadius: 9999,
     borderWidth: 1,
   },
-  ring1: { width: 200, height: 200, top: '40%', right: -60 },
-  ring2: { width: 140, height: 140, bottom: '25%', left: 20 },
+  ring1: { width: 210, height: 210, top: '38%', right: -50 },
+  ring2: { width: 150, height: 150, bottom: '22%', left: 16 },
 });

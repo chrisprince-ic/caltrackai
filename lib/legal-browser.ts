@@ -1,4 +1,4 @@
-import * as WebBrowser from 'expo-web-browser';
+﻿import * as WebBrowser from 'expo-web-browser';
 
 import { LEGAL, legalUrlFor, type LegalKind } from '@/constants/legal';
 
@@ -11,7 +11,7 @@ export async function openLegalUrl(kind: LegalKind): Promise<void> {
   try {
     await WebBrowser.openBrowserAsync(url, {
       presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
-      controlsColor: '#22C55E',
+      controlsColor: '#1F8A5B',
     });
   } catch {
     /* user dismissed or unsupported */

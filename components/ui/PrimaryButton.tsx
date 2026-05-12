@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -25,36 +26,44 @@ export function PrimaryButton({ label, onPress, loading, disabled, fullWidth = t
         isDisabled && styles.disabled,
         pressed && !isDisabled && styles.pressed,
       ]}>
-      {loading ? (
-        <ActivityIndicator size="small" color={Palette.white} />
-      ) : (
-        <Text style={styles.label}>{label}</Text>
-      )}
+      <LinearGradient
+        colors={['#38B273', Palette.iris, '#0D5C3A']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.gradient, fullWidth && styles.fullWidth]}>
+        {loading ? (
+          <ActivityIndicator size="small" color={Palette.white} />
+        ) : (
+          <Text style={styles.label}>{label}</Text>
+        )}
+      </LinearGradient>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   btn: {
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: Palette.iris,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    borderRadius: 999,
     shadowColor: Palette.iris,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
     elevation: 6,
+  },
+  gradient: {
+    height: 54,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
   },
   fullWidth: { alignSelf: 'stretch' },
   pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
-  disabled: { opacity: 0.45, shadowOpacity: 0 },
+  disabled: { opacity: 0.42, shadowOpacity: 0 },
   label: {
     fontFamily: Fonts.semiBold,
     fontSize: 17,
     color: Palette.white,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
 });

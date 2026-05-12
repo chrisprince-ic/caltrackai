@@ -1,4 +1,4 @@
-import type { Ionicons } from '@expo/vector-icons';
+﻿import type { Ionicons } from '@expo/vector-icons';
 
 /**
  * Visual differentiation for meal idea cards (Plans screen).
@@ -22,7 +22,7 @@ export type IdeaSortId = 'recommended' | 'quick' | 'protein' | 'calories';
 
 export const MEAL_VISUAL_HEX: Record<MealVisualCategory, string> = {
   amber: '#EF9F27',
-  green: '#22C55E',
+  green: '#1F8A5B',
   coral: '#D85A30',
   blue: '#378ADD',
   red: '#E24B4A',
@@ -132,7 +132,7 @@ export type DescriptiveTag = {
   style: DescriptiveTagStyle;
 };
 
-const DESCRIPTIVE_GREEN_BG = 'rgba(34, 197, 94, 0.14)';
+const DESCRIPTIVE_GREEN_BG = 'rgba(31, 138, 91, 0.14)';
 const DESCRIPTIVE_BLUE_BG = 'rgba(55, 138, 221, 0.14)';
 const DESCRIPTIVE_AMBER_BG = 'rgba(239, 159, 39, 0.14)';
 const DESCRIPTIVE_GREEN_TEXT = '#166534';

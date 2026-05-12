@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -219,7 +219,7 @@ export default function SubscriptionScreen() {
 
       {FEATURES.map((f) => (
         <View key={f.title} style={[styles.featureCard, { backgroundColor: surface, borderColor: border }]}>
-          <View style={[styles.featureIcon, { backgroundColor: isDark ? 'rgba(34,197,94,0.12)' : Palette.haze }]}>
+          <View style={[styles.featureIcon, { backgroundColor: isDark ? 'rgba(31,138,91,0.12)' : Palette.haze }]}>
             <Ionicons name={f.icon} size={22} color={Palette.iris} />
           </View>
           <View style={styles.featureText}>

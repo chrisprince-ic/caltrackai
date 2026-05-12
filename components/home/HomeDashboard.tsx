@@ -46,9 +46,9 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const AI_CARD_ACCENTS = [
   { accent: Palette.iris, tint: Palette.haze },
-  { accent: Palette.flamingo, tint: '#FFE8F0' },
-  { accent: Palette.cyan, tint: '#EEF2FF' },
-  { accent: Palette.citrus, tint: '#FFF7ED' },
+  { accent: Palette.amber, tint: Palette.amberSoft },
+  { accent: Palette.violet, tint: Palette.violetSoft },
+  { accent: Palette.rose, tint: Palette.roseSoft },
 ] as const;
 
 function aiBriefToCardItem(m: AiMealBrief, i: number): (typeof MEAL_PLAN_CARDS)[0] {
@@ -96,7 +96,7 @@ function MealCard({
       <View style={[styles.mealAccent, { backgroundColor: item.tint }]}>
         <Ionicons name="restaurant" size={26} color={item.accent} />
       </View>
-      <Text style={[styles.mealTag, { color: Palette.iris }]}>{item.tag}</Text>
+      <Text style={[styles.mealTag, { color: item.accent }]}>{item.tag}</Text>
       <Text style={[styles.mealTitle, { color: colors.text }]} numberOfLines={2}>
         {item.title}
       </Text>
@@ -139,8 +139,8 @@ function RecentMealRow({
         { backgroundColor: colors.surface, borderColor: colors.border },
         pressed && { opacity: 0.92 },
       ]}>
-      <View style={[styles.recentIcon, { backgroundColor: COLORS.brandGreenTint }]}>
-        <Ionicons name="restaurant" size={18} color={COLORS.brandGreenDark} />
+      <View style={[styles.recentIcon, { backgroundColor: Palette.haze }]}>
+        <Ionicons name="restaurant" size={18} color={Palette.lavender} />
       </View>
       <View style={styles.recentMid}>
         <View style={styles.recentTopLine}>
@@ -382,8 +382,8 @@ export function HomeDashboard() {
             current={Math.round(totals.proteinGrams)}
             goal={proteinG}
             color={Palette.flamingo}
-            colorEnd="#F472B6"
-            tint="#FFE8F0"
+            colorEnd="#38B273"
+            tint={Palette.haze}
             icon="fitness-outline"
             delay={120}
           />
@@ -392,8 +392,8 @@ export function HomeDashboard() {
             current={Math.round(totals.carbsGrams)}
             goal={carbsG}
             color={Palette.citrus}
-            colorEnd="#FBBF24"
-            tint="#FFF7ED"
+            colorEnd="#E5B840"
+            tint={Palette.amberSoft}
             icon="leaf-outline"
             delay={150}
           />
@@ -402,8 +402,8 @@ export function HomeDashboard() {
             current={Math.round(totals.fatGrams)}
             goal={fatG}
             color={Palette.cyan}
-            colorEnd="#818CF8"
-            tint="#EEF2FF"
+            colorEnd="#8E70D0"
+            tint={Palette.violetSoft}
             icon="water-outline"
             delay={180}
           />

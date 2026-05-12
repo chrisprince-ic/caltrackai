@@ -1,35 +1,43 @@
-/** Design tokens — green health system */
+/** Design tokens — Macrovia emerald system */
 export const Palette = {
-  // Brand greens
-  iris: '#22C55E',        // Primary brand (used everywhere via Palette.iris)
-  lavender: '#16A34A',    // Darker green — active / pressed
-  mist: '#A7F3D0',        // Light green tint
-  haze: '#DCFCE7',        // Very light green — chips, wells
+  // Brand emerald (Macrovia accent, oklch 0.62 0.16 155)
+  iris: '#1F8A5B',         // Primary brand emerald
+  lavender: '#0D5C3A',     // Deeper emerald — active / pressed
+  mist: '#D4EDE3',         // Light emerald tint
+  haze: '#EBF7F0',         // Very light emerald — chips, wells
 
-  // Macro accents
-  flamingo: '#EC4899',    // Protein — pink
-  citrus: '#F97316',      // Calories / energy — orange
-  cyan: '#6366F1',        // Fats — indigo
+  // Extended accent palette
+  amber: '#C8970A',        // Warm amber — energy / carbs
+  amberSoft: '#FBF3D8',    // Light amber tint
+  violet: '#6B4A96',       // Violet — fats
+  violetSoft: '#F0EAFB',   // Light violet tint
+  rose: '#C44A35',         // Rose — over target / error
+  roseSoft: '#FEF0EE',     // Light rose tint
 
-  // Neutrals (light mode)
-  obsidian: '#111827',    // Primary text (light)
-  void: '#1F2937',        // Generic dark surface (legacy)
-  ghost: '#F4FBF7',       // App background — warm green-tinted white
-  dusk: '#6B7280',        // Muted text / subtext
+  // Macro accents (token names preserved for backward compat)
+  flamingo: '#1F8A5B',     // Protein → emerald
+  citrus: '#C8970A',       // Calories / energy → amber
+  cyan: '#6B4A96',         // Fats → violet
+
+  // Neutrals (light mode) — green-tinted inks
+  obsidian: '#1A2820',     // Primary text
+  void: '#283330',         // Generic dark surface
+  ghost: '#FAFAF8',        // App background — warm off-white
+  dusk: '#838E88',         // Muted text / subtext
   white: '#FFFFFF',
 
-  // Dark mode surfaces — green-tinted deep darks (matches design tokens)
-  darkBg: '#0D1912',      // Dark app background — deep forest
-  darkSurface: '#142218', // Dark card surface
-  darkSurfaceMuted: '#1C2F22', // Slightly lighter dark surface
-  darkBorder: 'rgba(167, 243, 208, 0.12)',  // Mist-tinted border in dark
-  darkBorderStrong: 'rgba(167, 243, 208, 0.2)',
+  // Dark mode surfaces — emerald-tinted deep darks
+  darkBg: '#131E16',           // Dark app background
+  darkSurface: '#1A2B1E',      // Dark card surface
+  darkSurfaceMuted: '#1E3023', // Slightly lighter dark surface
+  darkBorder: 'rgba(212,237,227,0.10)',   // Mist-tinted border in dark
+  darkBorderStrong: 'rgba(212,237,227,0.18)',
 
   // Semantic status
-  onTrackBg: '#DCFCE7',
-  onTrackText: '#16A34A',
-  watchBg: '#FFF7ED',
-  watchText: '#9A3412',
-  overBg: '#FFF1F2',
-  overText: '#BE123C',
+  onTrackBg: '#EBF7F0',
+  onTrackText: '#0D5C3A',
+  watchBg: '#FBF3D8',
+  watchText: '#7A5A0A',
+  overBg: '#FEF0EE',
+  overText: '#A03020',
 } as const;

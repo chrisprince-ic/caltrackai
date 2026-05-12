@@ -443,7 +443,7 @@ export default function InsightsScreen() {
 
   const noDataAtAll = !loading && recentLoggedDays === 0;
   const trendColor =
-    calTrend === 'better' ? '#16A34A' : calTrend === 'worse' ? '#DC2626' : colors.textMuted;
+    calTrend === 'better' ? '#0D5C3A' : calTrend === 'worse' ? '#DC2626' : colors.textMuted;
   const trendArrow = calDelta == null ? '' : calDelta > 0 ? '↑' : calDelta < 0 ? '↓' : '·';
 
   return (
@@ -688,8 +688,8 @@ export default function InsightsScreen() {
                       setExpandedAccordion((cur) => (cur === id ? null : id))
                     }
                     icon="trophy-outline"
-                    iconBg="#DCFCE7"
-                    iconColor="#16A34A"
+                    iconBg="#EBF7F0"
+                    iconColor="#0D5C3A"
                     title="Best day"
                     summary={`${formatDateKeyShort(dayInsights.bestDay.dateKey)} · ${dayInsights.bestDay.calories.toLocaleString()} kcal · all macros on target`}
                     detail={

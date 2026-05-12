@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   tileBrandExtras: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(34,197,94,0.14)',
+    borderColor: 'rgba(31,138,91,0.14)',
     shadowColor: Palette.iris,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.06,

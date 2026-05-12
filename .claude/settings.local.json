@@ -17,7 +17,8 @@
       "Bash(node create_docs.js)",
       "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 \"$PYTHON\" scripts/office/validate.py \"C:\\\\Users\\\\chris\\\\Desktop\\\\CalTrackAI_Terms_of_Service.docx\")",
       "Bash(node -e \"const fs = require\\(''fs''\\); console.log\\(''Node ready''\\); fs.writeFileSync\\(''C:/Users/chris/Desktop/test_write.txt'', ''ok''\\); console.log\\(''Desktop writable''\\);\")",
-      "Bash(del \"C:\\\\Users\\\\chris\\\\Desktop\\\\test_write.txt\")"
+      "Bash(del \"C:\\\\Users\\\\chris\\\\Desktop\\\\test_write.txt\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\chris\\\\Desktop\\\\caltrackai\" -Depth 2 | Where-Object { !$_.PSIsContainer } | Select-Object FullName | Format-Table -HideTableHeaders)"
     ]
   }
 }

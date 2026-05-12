@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, Line, Pattern, Path, Rect, Text as SvgText } from 'react-native-svg';
 
@@ -36,8 +36,8 @@ const BAR_BAND = HEIGHT - LABEL_BAND;
 const BAR_CEILING = 1.2;
 
 function barColour(pct: number, hasGoal: boolean): string {
-  if (!hasGoal) return '#22C55E'; // no goal yet — neutral brand-green
-  if (pct >= 0.9 && pct <= 1.1) return '#22C55E'; // on-track
+  if (!hasGoal) return '#1F8A5B'; // no goal yet — neutral brand-green
+  if (pct >= 0.9 && pct <= 1.1) return '#1F8A5B'; // on-track
   if (pct >= 0.7 && pct <= 1.3) return '#F59E0B'; // amber (close)
   return '#EF4444'; // off-target — covers pct === 0 (logged but no value of this metric)
 }
@@ -221,7 +221,7 @@ export function CalorieChart({ data, goal, accent, unit }: Props) {
 export function ChartLegend() {
   const { colors } = useAppTheme();
   const items = [
-    { color: '#22C55E', label: 'On track' },
+    { color: '#1F8A5B', label: 'On track' },
     { color: '#F59E0B', label: 'Close' },
     { color: '#EF4444', label: 'Off' },
     { color: colors.borderStrong, label: 'No log', hatched: true },
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
 
 // Re-export so consumers don't import Palette themselves.
 export const CHART_BAR_COLOURS = {
-  ok: '#22C55E',
+  ok: '#1F8A5B',
   close: '#F59E0B',
   off: '#EF4444',
   fallback: Palette.iris,

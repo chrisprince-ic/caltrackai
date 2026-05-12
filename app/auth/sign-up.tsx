@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.15)',
+    borderColor: 'rgba(31, 138, 91, 0.15)',
   },
   missingBackText: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
 

@@ -4,7 +4,7 @@ import type { AppThemeColors } from '@/constants/app-theme';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
 
-/** Home dashboard styles keyed to light/dark semantic colors (design.md). */
+/** Home dashboard styles keyed to light/dark semantic colors. */
 export function createHomeDashboardStyles(c: AppThemeColors) {
   return StyleSheet.create({
     safe: {
@@ -26,6 +26,7 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
       fontFamily: Fonts.bold,
       fontSize: 28,
       lineHeight: 34,
+      letterSpacing: -1,
       color: c.text,
     },
     dateLine: {
@@ -40,8 +41,8 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
       justifyContent: 'center',
       gap: 12,
       backgroundColor: c.streakBg,
-      borderRadius: 18,
-      paddingVertical: 18,
+      borderRadius: 20,
+      paddingVertical: 16,
       paddingHorizontal: 20,
       marginBottom: 16,
       borderWidth: 1,
@@ -87,12 +88,17 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
     },
     calCard: {
       backgroundColor: c.surface,
-      borderRadius: 24,
+      borderRadius: 26,
       padding: 22,
       marginBottom: 22,
       borderWidth: 1,
       borderColor: c.border,
       overflow: 'hidden',
+      shadowColor: '#1A2820',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 18,
+      elevation: 3,
     },
     calGlow: {
       position: 'absolute',
@@ -102,7 +108,7 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
       height: 160,
       borderRadius: 80,
       backgroundColor: Palette.mist,
-      opacity: 0.35,
+      opacity: 0.28,
     },
     calHeader: {
       flexDirection: 'row',
@@ -168,7 +174,7 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
       marginHorizontal: 20,
     },
     calProgressTrack: {
-      height: 12,
+      height: 10,
       borderRadius: 999,
       overflow: 'hidden',
       marginBottom: 12,
@@ -206,13 +212,18 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
     macroCard: {
       flexDirection: 'row',
       backgroundColor: c.surface,
-      borderRadius: 18,
+      borderRadius: 20,
       padding: 14,
       marginBottom: 10,
       borderWidth: 1,
       borderColor: c.border,
       gap: 14,
       alignItems: 'center',
+      shadowColor: '#1A2820',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+      elevation: 2,
     },
     macroIconBlob: {
       width: 48,
@@ -248,7 +259,7 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
       color: c.textMuted,
     },
     macroTrack: {
-      height: 8,
+      height: 7,
       borderRadius: 999,
       overflow: 'hidden',
       marginBottom: 6,
@@ -281,15 +292,15 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
     },
     mealCard: {
       backgroundColor: c.surface,
-      borderRadius: 20,
+      borderRadius: 22,
       padding: 16,
       marginRight: 12,
       borderWidth: 1,
       borderColor: c.border,
-      shadowColor: c.shadow,
+      shadowColor: '#1A2820',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
       elevation: 3,
     },
     mealAccent: {
@@ -303,7 +314,6 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
     mealTag: {
       fontFamily: Fonts.semiBold,
       fontSize: 11,
-      color: Palette.lavender,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
       marginBottom: 6,
@@ -342,6 +352,11 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
       marginTop: 20,
       borderWidth: 1,
       borderColor: c.border,
+      shadowColor: '#1A2820',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 16,
+      elevation: 2,
     },
     groceryHeader: {
       marginBottom: 8,
@@ -383,7 +398,7 @@ export function createHomeDashboardStyles(c: AppThemeColors) {
       gap: 8,
       marginTop: 14,
       paddingVertical: 12,
-      borderRadius: 14,
+      borderRadius: 999,
       backgroundColor: c.chipOnLight,
       borderWidth: 1,
       borderColor: c.borderStrong,

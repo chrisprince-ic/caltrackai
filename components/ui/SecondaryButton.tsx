@@ -12,7 +12,8 @@ type Props = {
 };
 
 export function SecondaryButton({ label, onPress, disabled, fullWidth = true }: Props) {
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
+  const textColor = isDark ? '#38B273' : Palette.iris;
   return (
     <Pressable
       onPress={onPress}
@@ -21,12 +22,15 @@ export function SecondaryButton({ label, onPress, disabled, fullWidth = true }: 
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.btn,
-        { borderColor: colors.borderStrong, backgroundColor: colors.surface },
+        {
+          borderColor: isDark ? 'rgba(56,178,115,0.32)' : 'rgba(31,138,91,0.28)',
+          backgroundColor: isDark ? 'rgba(31,138,91,0.08)' : colors.surface,
+        },
         fullWidth && styles.fullWidth,
         disabled && styles.disabled,
         pressed && !disabled && styles.pressed,
       ]}>
-      <Text style={[styles.label, { color: Palette.iris }]}>{label}</Text>
+      <Text style={[styles.label, { color: textColor }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -34,18 +38,18 @@ export function SecondaryButton({ label, onPress, disabled, fullWidth = true }: 
 const styles = StyleSheet.create({
   btn: {
     height: 54,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
   },
   fullWidth: { alignSelf: 'stretch' },
-  pressed: { opacity: 0.82 },
+  pressed: { opacity: 0.8 },
   disabled: { opacity: 0.4 },
   label: {
     fontFamily: Fonts.semiBold,
     fontSize: 17,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
 });

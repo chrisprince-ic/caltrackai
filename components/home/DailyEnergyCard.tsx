@@ -13,7 +13,7 @@ import {
 
 import { HealthConnectTile } from '@/components/home/HealthConnectTile';
 import { SmartStatusPill } from '@/components/home/SmartStatusPill';
-import { StatTile } from '@/components/home/energy/StatTile';
+import { EnergyRing, ENERGY_RING_SIZE } from '@/components/home/energy/EnergyRing';
 import { SegmentedPill } from '@/components/ui/SegmentedPill';
 import { Fonts } from '@/constants/theme';
 import { Palette } from '@/constants/palette';
@@ -34,7 +34,10 @@ import type { WeightGoalDirection } from '@/types/nutrition-plan-persisted';
 const BRAND = Palette.iris;
 const BRAND_DARK = Palette.lavender;
 const BRAND_SOFT = Palette.haze;
-const ORANGE = '#F97316';
+const AMBER = Palette.amber;
+const AMBER_SOFT = Palette.amberSoft;
+const OVER_COLOR = Palette.rose;
+const OVER_SOFT = Palette.roseSoft;
 const INK = '#1A2B26';
 
 const WEIGHT_GOAL_SEGMENTS = [
@@ -166,88 +169,211 @@ export function DailyEnergyCard() {
   const showStatusPill = eaten > 0 && adjustedTarget > 0;
 
   const cardBg = isDark ? colors.surface : '#FFFFFF';
-  const cardBorder = isDark ? colors.border : 'rgba(34, 197, 94, 0.12)';
+  const cardBorder = isDark ? colors.border : 'rgba(31, 138, 91, 0.12)';
+
+  const pct = adjustedTarget > 0 ? Math.min(Math.round((eaten / adjustedTarget) * 100), 999) : 0;
+  const eatenColor = overPortion ? OVER_COLOR : BRAND;
+
+  const burnedDisplay =
+    burnLoading
+      ? '…'
+      : hk.healthKitStatus === 'unavailable' || hk.healthKitStatus === 'denied'
+        ? '—'
+        : active.toLocaleString();
 
   return (
     <View style={styles.wrap}>
       <View style={[styles.cardOuter, { shadowColor: isDark ? '#000000' : BRAND }]}>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          {/* Aurora glow blob */}
+          <View
+            style={[
+              styles.auroraBlob,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(56,178,115,0.14)'
+                  : 'rgba(150,228,186,0.38)',
+              },
+            ]}
+          />
+
           <View style={styles.cardPad}>
-            <View style={styles.loggedStrip}>
-              <View style={styles.loggedStripInner}>
-                <View style={styles.loggedStripLeft}>
-                  <View style={[styles.loggedIconWell, { backgroundColor: isDark ? 'rgba(34,197,94,0.18)' : BRAND_SOFT }]}>
-                    <Ionicons name="restaurant" size={18} color={BRAND} />
-                  </View>
-                  <View style={styles.loggedTextCol}>
-                    <Text
-                      style={[styles.loggedKicker, { color: muted }]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail">
-                      Logged today
-                    </Text>
-                    <Text
-                      style={[styles.loggedMain, { color: ink }]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail">
-                      <Text style={styles.loggedMainNum}>{eaten.toLocaleString()}</Text>
-                      <Text style={[styles.loggedSlash, { color: muted }]}> / </Text>
-                      <Text style={[styles.loggedTarget, { color: muted }]}>
-                        {adjustedTarget.toLocaleString()} kcal
-                      </Text>
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.loggedStripEnd}>
-                  <View style={styles.headerActions}>
-                    {hk.healthKitStatus === 'connected' && hk.platformSupported ? (
-                      <Pressable
-                        onPress={() => void hk.refresh()}
-                        style={[
-                          styles.iconCircle,
-                          { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F4F5' },
-                        ]}
-                        hitSlop={8}
-                        accessibilityLabel="Refresh Apple Health data">
-                        {hk.refreshing ? (
-                          <ActivityIndicator size="small" color={BRAND} />
-                        ) : (
-                          <Ionicons name="refresh" size={18} color={BRAND} />
-                        )}
-                      </Pressable>
-                    ) : null}
-                    {showStatusPill ? (
-                      <SmartStatusPill
-                        eatenToday={eaten}
-                        adjustedTarget={adjustedTarget}
-                        reducedMotion={reducedMotion}
-                      />
-                    ) : null}
-                  </View>
-                  {remaining >= 0 && adjustedTarget > 0 ? (
-                    <View
-                      style={[
-                        styles.remainChip,
-                        { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F4F4F5' },
-                      ]}>
-                      <Text style={[styles.remainChipText, { color: muted }]}>
-                        {remaining.toLocaleString()} left
-                      </Text>
-                    </View>
-                  ) : overPortion ? (
-                    <View style={[styles.remainChip, { backgroundColor: 'rgba(249,115,22,0.12)' }]}>
-                      <Text style={[styles.remainChipText, { color: ORANGE }]}>Over target</Text>
-                    </View>
-                  ) : null}
-                </View>
+            {/* ── Header ── */}
+            <View style={styles.headerRow}>
+              <View style={styles.headerLeft}>
+                <Text style={[styles.headerEyebrow, { color: muted }]}>DAILY ENERGY</Text>
+                <Text style={[styles.headerSub, { color: ink }]}>
+                  {goalWord} goal
+                </Text>
+              </View>
+              <View style={styles.headerActions}>
+                {hk.healthKitStatus === 'connected' && hk.platformSupported ? (
+                  <Pressable
+                    onPress={() => void hk.refresh()}
+                    style={[
+                      styles.iconCircle,
+                      { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F4F5' },
+                    ]}
+                    hitSlop={8}
+                    accessibilityLabel="Refresh Apple Health data">
+                    {hk.refreshing ? (
+                      <ActivityIndicator size="small" color={BRAND} />
+                    ) : (
+                      <Ionicons name="refresh" size={18} color={BRAND} />
+                    )}
+                  </Pressable>
+                ) : null}
+                {showStatusPill ? (
+                  <SmartStatusPill
+                    eatenToday={eaten}
+                    adjustedTarget={adjustedTarget}
+                    reducedMotion={reducedMotion}
+                  />
+                ) : null}
               </View>
             </View>
 
+            {/* ── Ring Hero ── */}
+            <View style={styles.ringWrap}>
+              <EnergyRing
+                eaten={eaten}
+                adjustedTarget={adjustedTarget}
+                burnedCalories={active}
+                reducedMotion={reducedMotion}
+                isDark={isDark}
+              />
+              <View style={[StyleSheet.absoluteFill, styles.ringOverlay]}>
+                {adjustedTarget > 0 ? (
+                  <>
+                    <Text style={[styles.ringPct, { color: eatenColor }]}>{pct}%</Text>
+                    <Text style={[styles.ringEaten, { color: ink }]}>
+                      {eaten.toLocaleString()}
+                    </Text>
+                    <Text style={[styles.ringUnit, { color: muted }]}>kcal eaten</Text>
+                    <Text style={[styles.ringGoal, { color: muted }]}>
+                      of {adjustedTarget.toLocaleString()}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={[styles.ringEmpty, { color: muted }]}>Log a meal</Text>
+                )}
+              </View>
+            </View>
+
+            {/* ── Ring legend ── */}
+            <View style={styles.ringLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: eatenColor }]} />
+                <Text style={[styles.legendText, { color: muted }]}>Eaten</Text>
+              </View>
+              {hk.healthKitStatus === 'connected' && active > 0 ? (
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: AMBER }]} />
+                  <Text style={[styles.legendText, { color: muted }]}>Active burn</Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* ── Stats strip ── */}
+            <View
+              style={[
+                styles.statsStrip,
+                {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F8FBF9',
+                  borderColor: isDark
+                    ? 'rgba(56,178,115,0.14)'
+                    : 'rgba(31,138,91,0.08)',
+                },
+              ]}>
+              {/* Eaten */}
+              <Pressable
+                style={styles.statCell}
+                onPress={() => setStatTip('eaten')}
+                accessibilityRole="button"
+                accessibilityLabel={`Eaten: ${eaten} kcal`}>
+                <View style={[styles.statIcon, { backgroundColor: BRAND_SOFT }]}>
+                  <Ionicons name="restaurant-outline" size={15} color={BRAND} />
+                </View>
+                <Text style={[styles.statNum, { color: BRAND }]}>
+                  {eaten.toLocaleString()}
+                </Text>
+                <Text style={[styles.statLbl, { color: muted }]}>Eaten</Text>
+              </Pressable>
+
+              <View style={[styles.statDivider, { backgroundColor: divider }]} />
+
+              {/* Left / Over */}
+              <Pressable
+                style={styles.statCell}
+                onPress={() => setStatTip('remaining')}
+                accessibilityRole="button"
+                accessibilityLabel={`${remaining < 0 ? 'Over' : 'Remaining'}: ${Math.abs(remaining)} kcal`}>
+                <View
+                  style={[
+                    styles.statIcon,
+                    {
+                      backgroundColor: remaining < 0
+                        ? isDark ? 'rgba(196,74,53,0.18)' : OVER_SOFT
+                        : BRAND_SOFT,
+                    },
+                  ]}>
+                  <Ionicons
+                    name="flag-outline"
+                    size={15}
+                    color={remaining < 0 ? OVER_COLOR : BRAND}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.statNum,
+                    { color: remaining < 0 ? OVER_COLOR : ink },
+                  ]}>
+                  {adjustedTarget > 0
+                    ? Math.abs(remaining).toLocaleString()
+                    : '—'}
+                </Text>
+                <Text
+                  style={[
+                    styles.statLbl,
+                    { color: remaining < 0 ? OVER_COLOR : muted },
+                  ]}>
+                  {remaining < 0 ? 'Over' : 'Left'}
+                </Text>
+              </Pressable>
+
+              <View style={[styles.statDivider, { backgroundColor: divider }]} />
+
+              {/* Burned */}
+              <Pressable
+                style={styles.statCell}
+                onPress={() => setStatTip('burned')}
+                accessibilityRole="button"
+                accessibilityLabel={`Burned: ${active} kcal`}>
+                <View
+                  style={[
+                    styles.statIcon,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(200,151,10,0.18)'
+                        : AMBER_SOFT,
+                    },
+                  ]}>
+                  <Ionicons name="flame-outline" size={15} color={AMBER} />
+                </View>
+                <Text style={[styles.statNum, { color: AMBER }]}>{burnedDisplay}</Text>
+                <Text style={[styles.statLbl, { color: muted }]}>Burned</Text>
+              </Pressable>
+            </View>
+
+            {/* ── Energy sources (healthkit) ── */}
             {healthDrivesTarget ? (
               <View
                 style={[
                   styles.energySources,
-                  { borderColor: isDark ? colors.border : '#E8F0EC', backgroundColor: isDark ? colors.bg : '#FAFAFA' },
+                  {
+                    borderColor: isDark ? colors.border : '#E8F0EC',
+                    backgroundColor: isDark ? colors.bg : '#FAFAFA',
+                  },
                 ]}>
                 <View style={styles.energySourceItem}>
                   <Ionicons name="flash-outline" size={16} color={BRAND} />
@@ -278,56 +404,7 @@ export function DailyEnergyCard() {
               </View>
             ) : null}
 
-            <View
-              style={[
-                styles.statTrio,
-                {
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F8FBF9',
-                  borderColor: isDark ? 'rgba(52, 211, 153, 0.14)' : 'rgba(34, 197, 94, 0.08)',
-                },
-              ]}>
-              <StatTile
-                label="Eaten"
-                value={eaten}
-                icon="restaurant-outline"
-                variant="side"
-                accentColor={BRAND}
-                countDelay={200}
-                reducedMotion={reducedMotion}
-                onPress={() => setStatTip('eaten')}
-              />
-              <View style={[styles.statDivider, { backgroundColor: divider }]} />
-              <StatTile
-                label={remaining < 0 ? 'Over' : 'Remaining'}
-                value={remaining < 0 ? Math.abs(remaining) : remaining}
-                icon="locate-outline"
-                variant="brand"
-                accentColor={BRAND}
-                countDelay={320}
-                reducedMotion={reducedMotion}
-                valueColorOverride={remaining < 0 || overPortion ? ORANGE : undefined}
-                onPress={() => setStatTip('remaining')}
-              />
-              <View style={[styles.statDivider, { backgroundColor: divider }]} />
-              <StatTile
-                label="Burned"
-                value={active}
-                icon="flame-outline"
-                variant="side"
-                accentColor={ORANGE}
-                countDelay={440}
-                reducedMotion={reducedMotion}
-                valueText={
-                  burnLoading
-                    ? '…'
-                    : hk.healthKitStatus === 'unavailable' || hk.healthKitStatus === 'denied'
-                      ? '—'
-                      : undefined
-                }
-                onPress={() => setStatTip('burned')}
-              />
-            </View>
-
+            {/* ── Health connect tile ── */}
             {showHealthTile ? (
               <HealthConnectTile
                 variant={hk.healthKitStatus === 'denied' ? 'connect' : 'unavailable'}
@@ -336,14 +413,15 @@ export function DailyEnergyCard() {
               />
             ) : null}
 
+            {/* ── Insight chip ── */}
             {showInsight ? (
               <Pressable
                 onPress={() => setInsightOpen(true)}
                 style={({ pressed }) => [
                   styles.insightChip,
                   {
-                    backgroundColor: isDark ? 'rgba(34, 197, 94, 0.15)' : BRAND_SOFT,
-                    borderColor: isDark ? 'rgba(52,211,153,0.3)' : 'rgba(34,197,94,0.25)',
+                    backgroundColor: isDark ? 'rgba(31,138,91,0.15)' : BRAND_SOFT,
+                    borderColor: isDark ? 'rgba(56,178,115,0.3)' : 'rgba(31,138,91,0.25)',
                     opacity: pressed ? 0.9 : 1,
                   },
                 ]}
@@ -351,12 +429,14 @@ export function DailyEnergyCard() {
                 accessibilityLabel="Learn how activity adjusts your target">
                 <Ionicons name="sparkles" size={18} color={BRAND_DARK} />
                 <Text style={[styles.insightText, { color: BRAND_DARK }]} numberOfLines={2}>
-                  +{activityAdd.toLocaleString()} kcal from today&apos;s activity — how we adjust your target
+                  +{activityAdd.toLocaleString()} kcal from today&apos;s activity — how we adjust
+                  your target
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color={BRAND_DARK} />
               </Pressable>
             ) : null}
 
+            {/* ── Formula strip ── */}
             {showFormula ? (
               <View
                 style={[
@@ -373,17 +453,22 @@ export function DailyEnergyCard() {
                 <Text style={[styles.formulaPlus, { color: muted }]}>+</Text>
                 <Text style={[styles.formulaText, { color: muted }]}>
                   Active{' '}
-                  <Text style={[styles.formulaNum, { color: ORANGE }]}>{active.toLocaleString()}</Text>
+                  <Text style={[styles.formulaNum, { color: AMBER }]}>
+                    {active.toLocaleString()}
+                  </Text>
                   <Text style={[styles.formulaTiny, { color: muted }]}> × {eatBackLabel}</Text>
                 </Text>
                 <Text style={[styles.formulaPlus, { color: muted }]}>=</Text>
                 <Text style={[styles.formulaText, { color: muted }]}>
                   Target{' '}
-                  <Text style={[styles.formulaNum, { color: BRAND_DARK }]}>{adjustedTarget.toLocaleString()}</Text>
+                  <Text style={[styles.formulaNum, { color: BRAND_DARK }]}>
+                    {adjustedTarget.toLocaleString()}
+                  </Text>
                 </Text>
               </View>
             ) : null}
 
+            {/* ── Goal segment or footer ── */}
             {hkConnected && user?.uid ? (
               <View style={styles.goalSegmentBlock}>
                 <Text style={[styles.goalSegmentCaption, { color: muted }]}>
@@ -402,11 +487,15 @@ export function DailyEnergyCard() {
                   style={[
                     styles.goalChip,
                     {
-                      backgroundColor: isDark ? 'rgba(34,197,94,0.15)' : BRAND_SOFT,
-                      borderColor: isDark ? 'rgba(52,211,153,0.25)' : 'rgba(34,197,94,0.2)',
+                      backgroundColor: isDark ? 'rgba(31,138,91,0.15)' : BRAND_SOFT,
+                      borderColor: isDark
+                        ? 'rgba(56,178,115,0.25)'
+                        : 'rgba(31,138,91,0.2)',
                     },
                   ]}>
-                  <Text style={[styles.goalChipText, { color: BRAND_DARK }]}>{goalWord} goal</Text>
+                  <Text style={[styles.goalChipText, { color: BRAND_DARK }]}>
+                    {goalWord} goal
+                  </Text>
                 </View>
                 {!showHealthTile && syncFooter ? (
                   <>
@@ -423,41 +512,54 @@ export function DailyEnergyCard() {
               ) : null
             ) : null}
 
-            {hk.error ? <Text style={[styles.err, { color: '#DC2626' }]}>{hk.error}</Text> : null}
+            {hk.error ? (
+              <Text style={[styles.err, { color: '#DC2626' }]}>{hk.error}</Text>
+            ) : null}
           </View>
         </View>
       </View>
 
+      {/* ── Insight modal ── */}
       <Modal
         visible={insightOpen}
         transparent
         animationType="fade"
         onRequestClose={() => setInsightOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setInsightOpen(false)}>
-          <Pressable style={[styles.modalCard, { backgroundColor: isDark ? colors.surface : '#FFF' }]} onPress={() => {}}>
+          <Pressable
+            style={[styles.modalCard, { backgroundColor: isDark ? colors.surface : '#FFF' }]}
+            onPress={() => {}}>
             <Text style={[styles.modalTitle, { color: ink }]}>Activity adjustment</Text>
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
               <Text style={[styles.modalBody, { color: muted }]}>
-                Your profile sets a base calorie target. When Apple Health reports active calories, we add{' '}
-                {activityEatBackFactor(weightGoal) < 1 ? 'half of those calories' : 'those calories'} to
-                today&apos;s intake target for your {goalWord.toLowerCase()} goal. Resting energy is already in
-                your base target, so we never double-count it.
+                Your profile sets a base calorie target. When Apple Health reports active calories,
+                we add{' '}
+                {activityEatBackFactor(weightGoal) < 1
+                  ? 'half of those calories'
+                  : 'those calories'}{' '}
+                to today&apos;s intake target for your {goalWord.toLowerCase()} goal. Resting
+                energy is already in your base target, so we never double-count it.
               </Text>
             </ScrollView>
-            <Pressable onPress={() => setInsightOpen(false)} style={[styles.modalBtn, { backgroundColor: BRAND }]}>
+            <Pressable
+              onPress={() => setInsightOpen(false)}
+              style={[styles.modalBtn, { backgroundColor: BRAND }]}>
               <Text style={styles.modalBtnText}>Got it</Text>
             </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
 
+      {/* ── Stat tip modal ── */}
       <Modal
         visible={statTip !== null}
         transparent
         animationType="fade"
         onRequestClose={() => setStatTip(null)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setStatTip(null)}>
-          <Pressable style={[styles.modalCard, { backgroundColor: isDark ? colors.surface : '#FFF' }]} onPress={() => {}}>
+          <Pressable
+            style={[styles.modalCard, { backgroundColor: isDark ? colors.surface : '#FFF' }]}
+            onPress={() => {}}>
             <Text style={[styles.modalTitle, { color: ink }]}>
               {statTip === 'eaten'
                 ? 'Calories eaten'
@@ -470,11 +572,13 @@ export function DailyEnergyCard() {
                 ? 'Total calories logged today from meals and snacks.'
                 : statTip === 'remaining'
                   ? healthDrivesTarget
-                    ? 'Today’s budget is your base target plus a share of active calories from Apple Health (50% when losing weight, 100% when maintaining or gaining), minus what you’ve logged.'
-                    : 'Your daily calorie target minus what you’ve eaten so far.'
+                    ? "Today's budget is your base target plus a share of active calories from Apple Health (50% when losing weight, 100% when maintaining or gaining), minus what you've logged."
+                    : "Your daily calorie target minus what you've eaten so far."
                   : 'Active calories from Apple Health for today (when connected).'}
             </Text>
-            <Pressable onPress={() => setStatTip(null)} style={[styles.modalBtn, { backgroundColor: BRAND }]}>
+            <Pressable
+              onPress={() => setStatTip(null)}
+              style={[styles.modalBtn, { backgroundColor: BRAND }]}>
               <Text style={styles.modalBtnText}>Close</Text>
             </Pressable>
           </Pressable>
@@ -520,10 +624,41 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
+  auroraBlob: {
+    position: 'absolute',
+    top: -40,
+    right: -40,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    opacity: 1,
+  },
   cardPad: {
     paddingHorizontal: 18,
-    paddingTop: 16,
+    paddingTop: 18,
     paddingBottom: 18,
+  },
+
+  // Header
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  headerLeft: {
+    gap: 2,
+  },
+  headerEyebrow: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  headerSub: {
+    fontFamily: Fonts.bold,
+    fontSize: 18,
+    letterSpacing: -0.3,
   },
   headerActions: {
     flexDirection: 'row',
@@ -538,73 +673,113 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loggedStrip: {
-    paddingVertical: 14,
-    paddingHorizontal: 0,
+
+  // Ring
+  ringWrap: {
+    width: ENERGY_RING_SIZE,
+    height: ENERGY_RING_SIZE,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  ringOverlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 1,
+  },
+  ringPct: {
+    fontFamily: Fonts.bold,
+    fontSize: 28,
+    letterSpacing: -1,
+    lineHeight: 32,
+  },
+  ringEaten: {
+    fontFamily: Fonts.bold,
+    fontSize: 20,
+    letterSpacing: -0.5,
+    lineHeight: 24,
+    marginTop: 2,
+  },
+  ringUnit: {
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    letterSpacing: 0.2,
+    lineHeight: 14,
+  },
+  ringGoal: {
+    fontFamily: Fonts.regular,
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  ringEmpty: {
+    fontFamily: Fonts.medium,
+    fontSize: 13,
+  },
+
+  // Legend
+  ringLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
     marginBottom: 14,
-    backgroundColor: 'transparent',
   },
-  loggedStripInner: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    rowGap: 10,
-    columnGap: 12,
-  },
-  loggedStripLeft: {
+  legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 200,
+    gap: 5,
   },
-  loggedTextCol: {
+  legendDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    letterSpacing: 0.1,
+  },
+
+  // Stats strip
+  statsStrip: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    marginBottom: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  statCell: {
     flex: 1,
-    minWidth: 120,
-  },
-  loggedStripEnd: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-    flexGrow: 0,
-    flexShrink: 0,
+    gap: 6,
+    paddingVertical: 2,
   },
-  loggedIconWell: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loggedKicker: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  loggedMain: {
+  statNum: {
     fontFamily: Fonts.bold,
-    fontSize: 22,
-    letterSpacing: -0.5,
+    fontSize: 17,
+    letterSpacing: -0.3,
+    fontVariant: ['tabular-nums'],
   },
-  loggedMainNum: { fontFamily: Fonts.bold, fontSize: 22, color: BRAND },
-  loggedSlash: { fontFamily: Fonts.bold, fontSize: 20 },
-  loggedTarget: { fontFamily: Fonts.medium, fontSize: 18 },
-  remainChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    flexShrink: 0,
+  statLbl: {
+    fontFamily: Fonts.medium,
+    fontSize: 10,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
-  remainChipText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
+  statDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    marginVertical: 4,
   },
+
+  // Energy sources
   energySources: {
     flexDirection: 'row',
     alignItems: 'stretch',
@@ -630,17 +805,8 @@ const styles = StyleSheet.create({
   },
   energySourceVal: { fontFamily: Fonts.semiBold, fontSize: 14 },
   energySourceUnit: { fontFamily: Fonts.regular, fontSize: 12 },
-  statTrio: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    borderRadius: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    marginBottom: 14,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  statDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch' },
+
+  // Insight chip
   insightChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -657,6 +823,8 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 18,
   },
+
+  // Formula strip
   formulaStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -673,6 +841,8 @@ const styles = StyleSheet.create({
   formulaTiny: { fontFamily: Fonts.medium, fontSize: 11 },
   formulaNum: { fontFamily: Fonts.bold, fontSize: 13 },
   formulaPlus: { fontFamily: Fonts.medium, fontSize: 15 },
+
+  // Footer
   footerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -712,6 +882,8 @@ const styles = StyleSheet.create({
   },
   syncBullet: { color: BRAND, fontSize: 11 },
   err: { fontFamily: Fonts.regular, fontSize: 12, marginTop: 8 },
+
+  // Modals
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

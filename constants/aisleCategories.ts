@@ -1,4 +1,4 @@
-import type { Ionicons } from '@expo/vector-icons';
+﻿import type { Ionicons } from '@expo/vector-icons';
 
 /**
  * Grocery aisle visual system (Plans-style differentiation).
@@ -34,7 +34,7 @@ type AisleVisual = {
 };
 
 export const AISLE_VISUAL: Record<GroceryAisleId, AisleVisual> = {
-  produce: { label: 'Produce', icon: 'leaf-outline', hex: '#22C55E', stroke: '#15803D' },
+  produce: { label: 'Produce', icon: 'leaf-outline', hex: '#1F8A5B', stroke: '#15803D' },
   meat: { label: 'Meat & seafood', icon: 'fish-outline', hex: '#E24B4A', stroke: '#791F1F' },
   dairy: { label: 'Dairy & eggs', icon: 'egg-outline', hex: '#7F77DD', stroke: '#3C3489' },
   bakery: { label: 'Bakery', icon: 'restaurant-outline', hex: '#D85A30', stroke: '#993C1D' },

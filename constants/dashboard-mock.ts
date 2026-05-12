@@ -1,4 +1,4 @@
-/** Daily targets — “eaten” totals come from `NutritionLogContext` (scan + log). */
+﻿/** Daily targets — “eaten” totals come from `NutritionLogContext` (scan + log). */
 export const DASHBOARD_CALORIES = {
   goal: 2100,
 };
@@ -28,8 +28,8 @@ export const MEAL_PLAN_CARDS: MealPlanCard[] = [
     kcal: 520,
     tag: 'Balanced',
     prepMin: 15,
-    accent: '#22C55E',
-    tint: '#DCFCE7',
+    accent: '#1F8A5B',
+    tint: '#EBF7F0',
     proteinG: 32,
     carbsG: 48,
   },

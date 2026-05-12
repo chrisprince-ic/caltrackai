@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { type Href, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -30,7 +30,7 @@ const FEATURE_SLIDES = [
     key: 'lookup',
     icon: 'flash' as const,
     iconColor: Palette.iris,
-    iconBg: 'rgba(34, 197, 94, 0.12)',
+    iconBg: 'rgba(31, 138, 91, 0.12)',
     title: 'Instant calorie lookup',
     body: 'Search from millions of foods and log a meal in under 5 seconds — no manual entry, no guessing.',
   },
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: 'rgba(34, 197, 94, 0.55)',
+    borderColor: 'rgba(31, 138, 91, 0.55)',
   },
   btnSecondaryLabel: {
     fontFamily: Fonts.semiBold,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.78)',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.18)',
+    borderColor: 'rgba(31, 138, 91, 0.18)',
   },
   skipText: {
     fontFamily: Fonts.semiBold,

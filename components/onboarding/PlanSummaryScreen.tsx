@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { type Href, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(31, 138, 91, 0.12)',
   },
   badgeText: {
     fontFamily: Fonts.semiBold,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(31, 138, 91, 0.12)',
   },
   aiHintSpacing: {
     marginBottom: 16,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.2)',
+    borderColor: 'rgba(31, 138, 91, 0.2)',
   },
   retryBtnText: {
     fontFamily: Fonts.semiBold,
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
   },
   coachNoteText: {
     flex: 1,
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     overflow: 'hidden',
   },
   calGlow: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   calMetaDivider: {
     width: 1,
     height: 36,
-    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    backgroundColor: 'rgba(31, 138, 91, 0.12)',
     marginHorizontal: 16,
   },
   goalPill: {
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.08)',
+    borderColor: 'rgba(31, 138, 91, 0.08)',
   },
   sectionHeadRow: {
     flexDirection: 'row',
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(34, 197, 94, 0.08)',
+    borderTopColor: 'rgba(31, 138, 91, 0.08)',
     backgroundColor: Palette.ghost,
   },
   cta: {

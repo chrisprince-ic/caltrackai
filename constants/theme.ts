@@ -50,9 +50,9 @@ export { HERO, HERO_GRADIENT_STOPS, HERO_GRADIENT_STOPS_DARK } from '@/constants
 export const COLORS = {
   brandGreen: BRAND_GREEN,
   brandGreenDark: Palette.lavender,
-  brandGreenTint: 'rgba(34, 197, 94, 0.18)',
-  sage: '#F1F5EE',
-  ink: '#0F1F08',
-  inkMuted: '#7A8268',
+  brandGreenTint: 'rgba(31, 138, 91, 0.16)',
+  sage: '#EBF7F0',
+  ink: '#1A2820',
+  inkMuted: '#838E88',
   white: '#FFFFFF',
 } as const;
