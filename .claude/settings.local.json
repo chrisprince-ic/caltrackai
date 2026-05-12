@@ -25,7 +25,8 @@
       "Bash(node -e \"const d=require\\('./package.json'\\); const deps={...d.dependencies,...\\(d.devDependencies||{}\\)}; const keys=Object.keys\\(deps\\).filter\\(k=>k.includes\\('gradient'\\)||k.includes\\('linear'\\)||k.includes\\('blur'\\)||k.includes\\('skia'\\)||k.includes\\('maskedview'\\)||k.includes\\('reanimated'\\)\\); console.log\\(keys.join\\('\\\\n'\\)\\)\")",
       "Bash(node -e \"const d=require\\('./package.json'\\); const deps={...d.dependencies,...\\(d.devDependencies||{}\\)}; const keys=Object.keys\\(deps\\).filter\\(k=>k.includes\\('expo'\\)\\); console.log\\(keys.join\\('\\\\n'\\)\\)\")",
       "Bash(npx expo *)",
-      "Bash(node -e \"const d=require\\('./package.json'\\); console.log\\(d.dependencies['expo-linear-gradient'] || 'NOT INSTALLED'\\)\")"
+      "Bash(node -e \"const d=require\\('./package.json'\\); console.log\\(d.dependencies['expo-linear-gradient'] || 'NOT INSTALLED'\\)\")",
+      "Bash(npx tsc *)"
     ]
   }
 }

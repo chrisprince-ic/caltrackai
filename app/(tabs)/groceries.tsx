@@ -518,20 +518,20 @@ export default function GroceriesScreen() {
       ) : null}
 
       {error ? (
-        <View style={[styles.errorCard, { backgroundColor: Palette.overBg }]}>
-          <Ionicons name="alert-circle-outline" size={20} color={Palette.overText} />
-          <Text style={[styles.err, { color: Palette.overText }]}>{error}</Text>
-          <Pressable
-            onPress={() => setRetryKey((k) => k + 1)}
-            style={[
-              styles.retryBtn,
-              { backgroundColor: colors.surface, borderColor: colors.borderStrong },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Retry loading groceries">
-            <Ionicons name="refresh" size={16} color={Palette.iris} />
-            <Text style={[styles.retryText, { color: Palette.iris }]}>Retry</Text>
-          </Pressable>
+        <View style={styles.skeletonWrap}>
+          {[1, 2, 3].map((s) => (
+            <View key={s} style={styles.skeletonBlock}>
+              <View style={[styles.skeletonTitle, { backgroundColor: colors.hairline }]} />
+              <View style={[styles.skeletonCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                {[1, 2, 3].map((r) => (
+                  <View key={r} style={[styles.skeletonRow, { borderTopColor: r === 1 ? 'transparent' : colors.hairline }]}>
+                    <View style={[styles.skeletonCheck, { backgroundColor: colors.hairline }]} />
+                    <View style={[styles.skeletonText, { backgroundColor: colors.hairline, width: `${55 + r * 12}%` }]} />
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
         </View>
       ) : null}
 
@@ -703,16 +703,24 @@ const styles = StyleSheet.create({
 
   center: { paddingVertical: 48, alignItems: 'center', gap: 12 },
   muted: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20, textAlign: 'center' },
-  errorCard: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 10,
-    padding: 14,
+  skeletonWrap: { gap: 18, marginBottom: 14 },
+  skeletonBlock: { gap: 8 },
+  skeletonTitle: { height: 12, borderRadius: 6, width: '35%', opacity: 0.5 },
+  skeletonCard: {
     borderRadius: 16,
-    marginBottom: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
-  err: { flex: 1, fontFamily: Fonts.medium, fontSize: 14 },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  skeletonCheck: { width: 22, height: 22, borderRadius: 11, flexShrink: 0 },
+  skeletonText: { height: 12, borderRadius: 6, opacity: 0.4 },
   retryBtn: {
     flexDirection: 'row',
     alignItems: 'center',

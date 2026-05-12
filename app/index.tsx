@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { type Href, useRouter } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -13,11 +14,18 @@ import { hasAppSplashCompleted, markAppSplashComplete } from '@/lib/app-splash-g
 
 /** Brief branded splash before routing to welcome (signed out) or home tabs (signed in). */
 const MIN_SPLASH_MS = 700;
+const PAYWALL_SHOWN_KEY = '@caltrackai/paywallShown';
 
-function routeAfterSplash(user: ReturnType<typeof useAuth>['user'], router: ReturnType<typeof useRouter>) {
+async function routeAfterSplash(user: ReturnType<typeof useAuth>['user'], router: ReturnType<typeof useRouter>) {
   markAppSplashComplete();
   if (user) {
-    router.replace('/(tabs)' as Href);
+    const shown = await AsyncStorage.getItem(PAYWALL_SHOWN_KEY).catch(() => null);
+    if (!shown) {
+      await AsyncStorage.setItem(PAYWALL_SHOWN_KEY, '1').catch(() => {});
+      router.replace('/subscription?welcome=1' as Href);
+    } else {
+      router.replace('/(tabs)' as Href);
+    }
   } else {
     router.replace('/welcome' as Href);
   }
@@ -34,7 +42,16 @@ export default function Index() {
     if (!skipSplash || initializing || navigatedRef.current) return;
     navigatedRef.current = true;
     if (user) {
-      router.replace('/(tabs)' as Href);
+      AsyncStorage.getItem(PAYWALL_SHOWN_KEY)
+        .catch(() => null)
+        .then((shown) => {
+          if (!shown) {
+            AsyncStorage.setItem(PAYWALL_SHOWN_KEY, '1').catch(() => {});
+            router.replace('/subscription?welcome=1' as Href);
+          } else {
+            router.replace('/(tabs)' as Href);
+          }
+        });
     } else {
       router.replace('/welcome' as Href);
     }
@@ -50,7 +67,7 @@ export default function Index() {
     const timer = setTimeout(() => {
       if (navigatedRef.current) return;
       navigatedRef.current = true;
-      routeAfterSplash(user, router);
+      routeAfterSplash(user, router).catch(() => {});
     }, delay);
 
     return () => clearTimeout(timer);

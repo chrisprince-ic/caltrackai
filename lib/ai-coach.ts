@@ -1,15 +1,21 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 import type { OnboardingAnswers } from '@/components/onboarding/OnboardingFlow';
 import { extractJsonObject } from '@/lib/ai-json-utils';
-import { deepSeekComplete, getDeepSeekConfig } from '@/lib/deepseek';
+import { sanitizeGeminiModelName } from '@/lib/gemini-scan-analysis';
 import type { NutritionPlanSummary } from '@/lib/nutrition-calculations';
 import type { DayTotals } from '@/lib/nutrition-sync';
 import type { AiGroceryItem, AiMealBrief, AiMealRecipe } from '@/types/ai-nutrition';
 
 async function generateJson(prompt: string): Promise<string> {
-  if (!getDeepSeekConfig()) {
-    throw new Error('Missing EXPO_PUBLIC_DEEPSEEK_API_KEY');
-  }
-  return deepSeekComplete(prompt);
+  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY?.trim();
+  if (!apiKey) throw new Error('Missing EXPO_PUBLIC_GEMINI_API_KEY');
+  const model = sanitizeGeminiModelName(process.env.EXPO_PUBLIC_GEMINI_MODEL);
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const result = await genAI
+    .getGenerativeModel({ model })
+    .generateContent(prompt);
+  return result.response.text();
 }
 
 function summarizeAnswers(a: OnboardingAnswers): string {

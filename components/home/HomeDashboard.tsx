@@ -19,7 +19,6 @@ import { MacroviaCard } from '@/components/macrovia/MacroviaCard';
 import { MacroviaScreen } from '@/components/macrovia/MacroviaScreen';
 import { MacroviaTopBar } from '@/components/macrovia/MacroviaTopBar';
 import { MacroSpectrumBar } from '@/components/macrovia/MacroSpectrumBar';
-import { WeekCalorieBars, type WeekDayBar } from '@/components/macrovia/WeekCalorieBars';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionLog } from '@/contexts/NutritionLogContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
@@ -43,22 +42,6 @@ import { Palette } from '@/constants/palette';
 import { Fonts } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 
-function lastSevenCalorieBars(days: DayTotals[]): WeekDayBar[] {
-  const byKey = new Map(days.map((d) => [d.dateKey, d]));
-  const out: WeekDayBar[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setHours(12, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    const key = getLogDateKey(d);
-    const hit = byKey.get(key);
-    out.push({
-      label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
-      value: hit?.calories ?? 0,
-    });
-  }
-  return out;
-}
 
 const AI_CARD_ACCENTS = [
   { accent: Palette.iris, tint: Palette.haze },
@@ -338,11 +321,6 @@ export function HomeDashboard() {
     [entries]
   );
 
-  const weekBars = useMemo(() => lastSevenCalorieBars(historyDays), [historyDays]);
-  const weekAvg = useMemo(() => {
-    if (!weekBars.length) return 0;
-    return Math.round(weekBars.reduce((a, b) => a + b.value, 0) / weekBars.length);
-  }, [weekBars]);
 
   const aiInsightBody = useMemo(() => {
     const t = coachNote?.trim();
@@ -363,7 +341,6 @@ export function HomeDashboard() {
         <MacroviaTopBar
           title="CalTrack"
           userInitial={firstName.charAt(0).toUpperCase() || '•'}
-          onPressBell={() => router.push('/subscription')}
           onPressProfile={() => setMenuOpen(true)}
         />
 
@@ -373,20 +350,21 @@ export function HomeDashboard() {
           <Text style={[styles.heroSub, { color: colors.textSecondary }]}>
             {streak > 0 ? (
               <>
-                Day <Text style={styles.heroEmph}>{streak}</Text> of your protein-forward streak.
+                Day <Text style={styles.heroEmph}>{streak}</Text> streak — keep it going.
               </>
             ) : (
               <>
-                Targets {Math.round(dailyCalories)} kcal · sync your macros from the ribbon below.
+                Daily target:{' '}
+                <Text style={[styles.heroEmph, { color: colors.text }]}>
+                  {Math.round(dailyCalories).toLocaleString()} kcal
+                </Text>
               </>
             )}
           </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(40).duration(420)}>
-          <MacroviaCard glass padding={14}>
-            <DailyEnergyCard />
-          </MacroviaCard>
+          <DailyEnergyCard />
         </Animated.View>
 
         {streak > 0 ? (
@@ -402,11 +380,14 @@ export function HomeDashboard() {
         <Animated.View entering={FadeInDown.delay(80).duration(420)}>
           <MacroviaCard glass padding={18}>
             <View style={styles.spectrumHead}>
-              <View>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Macro spectrum</Text>
-                <Text style={[styles.cardSub, { color: colors.textMuted }]}>By calorie share, not grams.</Text>
-              </View>
-              <Ionicons name="sparkles-outline" size={20} color={colors.textMuted} />
+              <Text style={[styles.macrosLabel, { color: colors.accentDeep }]}>MACROS</Text>
+              <Pressable
+                onPress={() => router.push('/nutrition-targets' as Href)}
+                style={[styles.syncBtn, { borderColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Edit nutrition targets">
+                <Text style={[styles.syncBtnTxt, { color: colors.accentDeep }]}>Sync targets ↑</Text>
+              </Pressable>
             </View>
             <MacroSpectrumBar
               protein={Math.max(0, totals.proteinGrams)}
@@ -416,23 +397,6 @@ export function HomeDashboard() {
               targetC={carbsG}
               targetF={fatG}
             />
-            <View style={styles.spectrumActions}>
-              <Pressable
-                onPress={() => router.push('/manual-entry' as Href)}
-                style={[styles.btnGhost, { borderColor: colors.hairline, backgroundColor: colors.surfaceMuted }]}>
-                <Text style={[styles.btnGhostTxt, { color: colors.textSecondary }]}>+ Log meal</Text>
-              </Pressable>
-              <Pressable onPress={() => router.push('/nutrition-targets' as Href)}>
-                <AppLinearGradient
-                  colors={[colors.accent, colors.accentDeep]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.btnPrimary}>
-                  <Text style={styles.btnPrimaryTxt}>Edit targets</Text>
-                  <Ionicons name="arrow-forward" size={14} color="#fff" />
-                </AppLinearGradient>
-              </Pressable>
-            </View>
           </MacroviaCard>
         </Animated.View>
 
@@ -462,35 +426,6 @@ export function HomeDashboard() {
           </MacroviaCard>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(120).duration(420)}>
-          <MacroviaCard glass padding={18}>
-            <View style={styles.spectrumHead}>
-              <View>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>7‑day calories</Text>
-                <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                  Avg{' '}
-                  <Text style={{ fontFamily: Fonts.semiBold, color: colors.text }}>{weekAvg.toLocaleString()}</Text>{' '}
-                  · goal {Math.round(dailyCalories).toLocaleString()}
-                </Text>
-              </View>
-            </View>
-            <WeekCalorieBars
-              data={
-                weekBars.length
-                  ? weekBars
-                  : [
-                      { label: 'M', value: 0 },
-                      { label: 'T', value: 0 },
-                      { label: 'W', value: 0 },
-                      { label: 'T', value: 0 },
-                      { label: 'F', value: 0 },
-                      { label: 'S', value: 0 },
-                      { label: 'S', value: 0 },
-                    ]
-              }
-            />
-          </MacroviaCard>
-        </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(140).duration(420)} style={styles.recentBlock}>
           <View style={styles.sectionRow}>
@@ -651,36 +586,22 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   cardSub: { fontFamily: Fonts.regular, fontSize: 12 },
-  spectrumActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+  macrosLabel: {
+    fontFamily: Fonts.bold,
+    fontSize: 11,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
   },
-  btnGhost: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  syncBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1.5,
   },
-  btnGhostTxt: {
+  syncBtnTxt: {
     fontFamily: Fonts.semiBold,
-    fontSize: 12,
-  },
-  btnPrimary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-  },
-  btnPrimaryTxt: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    color: '#fff',
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
   aiRow: {
     flexDirection: 'row',

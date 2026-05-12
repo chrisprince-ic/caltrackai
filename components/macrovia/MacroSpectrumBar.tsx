@@ -12,103 +12,85 @@ type Props = {
   targetF: number;
 };
 
-/**
- * Stacked calorie-share bar + three numeric columns — matches prototype “Macro spectrum”.
- */
 export function MacroSpectrumBar({ protein, carbs, fat, targetP, targetC, targetF }: Props) {
   const { colors } = useAppTheme();
-  const pCal = Math.max(0, protein * 4);
-  const cCal = Math.max(0, carbs * 4);
-  const fCal = Math.max(0, fat * 9);
-  const total = pCal + cCal + fCal || 1;
-  const wP = (pCal / total) * 100;
-  const wC = (cCal / total) * 100;
-  const wF = (fCal / total) * 100;
 
-  const col = (label: string, val: number, target: number, dot: string) => {
-    const pct = target > 0 ? Math.min(999, Math.round((val / target) * 100)) : 0;
+  const col = (label: string, val: number, target: number, barColor: string) => {
+    const pct = target > 0 ? Math.min(1, val / target) : 0;
+    const valRound = Math.round(val);
+    const targetRound = Math.round(target);
     return (
       <View style={styles.col}>
-        <View style={styles.labRow}>
-          <View style={[styles.dot, { backgroundColor: dot }]} />
-          <Text style={[styles.lab, { color: colors.textMuted }]}>{label}</Text>
+        <Text style={[styles.label, { color: colors.textMuted }]}>{label}</Text>
+        <View style={[styles.track, { backgroundColor: colors.hairline }]}>
+          <View
+            style={[
+              styles.fill,
+              {
+                width: pct === 0 ? 0 : `${Math.max(4, pct * 100)}%`,
+                backgroundColor: barColor,
+              },
+            ]}
+          />
         </View>
-        <Text style={[styles.big, { color: colors.text }]}>
-          {Math.round(val)}
-          <Text style={[styles.gUnit, { color: colors.textMuted }]}>g</Text>
+        <Text style={[styles.value, { color: colors.text }]}>
+          {valRound}
+          <Text style={[styles.unit, { color: colors.textMuted }]}>g</Text>
         </Text>
-        <Text style={[styles.sub, { color: colors.textSecondary }]}>
-          of {Math.round(target)}g · {pct}%
-        </Text>
+        <Text style={[styles.target, { color: colors.textMuted }]}>/ {targetRound}g</Text>
       </View>
     );
   };
 
   return (
-    <View>
-      <View style={[styles.track, { backgroundColor: colors.hairline }]}>
-        <View
-          style={[
-            styles.seg,
-            {
-              width: `${wP}%`,
-              backgroundColor: colors.accent,
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.seg,
-            {
-              width: `${wC}%`,
-              backgroundColor: colors.warm,
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.seg,
-            {
-              width: `${wF}%`,
-              backgroundColor: colors.violet,
-            },
-          ]}
-        />
-      </View>
-      <View style={styles.row3}>
-        {col('Protein', protein, targetP, colors.accent)}
-        {col('Carbs', carbs, targetC, colors.warm)}
-        {col('Fat', fat, targetF, colors.violet)}
-      </View>
+    <View style={styles.row}>
+      {col('PROTEIN', protein, targetP, colors.accent)}
+      {col('CARBS', carbs, targetC, colors.warm)}
+      {col('FAT', fat, targetF, colors.violet)}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 6,
+  },
+  col: {
+    flex: 1,
+    gap: 4,
+  },
+  label: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 9,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
   track: {
-    height: 10,
+    height: 4,
     borderRadius: 999,
     overflow: 'hidden',
-    flexDirection: 'row',
-    marginBottom: 18,
+    marginBottom: 8,
   },
-  seg: { height: '100%' },
-  row3: { flexDirection: 'row', gap: 12 },
-  col: { flex: 1 },
-  labRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  lab: {
-    fontFamily: Fonts.medium,
-    fontSize: 10,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+  fill: {
+    height: '100%',
+    borderRadius: 999,
   },
-  big: {
+  value: {
     fontFamily: Fonts.semiBold,
-    fontSize: 22,
-    marginTop: 4,
+    fontSize: 20,
     letterSpacing: -0.3,
+    lineHeight: 24,
   },
-  gUnit: { fontSize: 13, fontFamily: Fonts.medium },
-  sub: { fontFamily: Fonts.medium, fontSize: 11, marginTop: 2 },
+  unit: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+  },
+  target: {
+    fontFamily: Fonts.regular,
+    fontSize: 11,
+    marginTop: 1,
+  },
 });
