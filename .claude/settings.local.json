@@ -18,7 +18,14 @@
       "Bash(PYTHONUTF8=1 PYTHONIOENCODING=utf-8 \"$PYTHON\" scripts/office/validate.py \"C:\\\\Users\\\\chris\\\\Desktop\\\\CalTrackAI_Terms_of_Service.docx\")",
       "Bash(node -e \"const fs = require\\(''fs''\\); console.log\\(''Node ready''\\); fs.writeFileSync\\(''C:/Users/chris/Desktop/test_write.txt'', ''ok''\\); console.log\\(''Desktop writable''\\);\")",
       "Bash(del \"C:\\\\Users\\\\chris\\\\Desktop\\\\test_write.txt\")",
-      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\chris\\\\Desktop\\\\caltrackai\" -Depth 2 | Where-Object { !$_.PSIsContainer } | Select-Object FullName | Format-Table -HideTableHeaders)"
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\chris\\\\Desktop\\\\caltrackai\" -Depth 2 | Where-Object { !$_.PSIsContainer } | Select-Object FullName | Format-Table -HideTableHeaders)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k,v in sorted\\(deps.items\\(\\)\\)]\")",
+      "Bash(node -e \"const d=require\\('./package.json'\\); const deps={...d.dependencies,...\\(d.devDependencies||{}\\)}; console.log\\(Object.keys\\(deps\\).filter\\(k=>k.includes\\('svg'\\)||k.includes\\('reanimated'\\)||k.includes\\('skia'\\)\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const d=require\\('./package.json'\\); const deps={...d.dependencies,...\\(d.devDependencies||{}\\)}; const keys=Object.keys\\(deps\\).filter\\(k=>k.includes\\('gradient'\\)||k.includes\\('linear'\\)||k.includes\\('blur'\\)||k.includes\\('skia'\\)||k.includes\\('maskedview'\\)||k.includes\\('reanimated'\\)\\); console.log\\(keys.join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e \"const d=require\\('./package.json'\\); const deps={...d.dependencies,...\\(d.devDependencies||{}\\)}; const keys=Object.keys\\(deps\\).filter\\(k=>k.includes\\('expo'\\)\\); console.log\\(keys.join\\('\\\\n'\\)\\)\")",
+      "Bash(npx expo *)",
+      "Bash(node -e \"const d=require\\('./package.json'\\); console.log\\(d.dependencies['expo-linear-gradient'] || 'NOT INSTALLED'\\)\")"
     ]
   }
 }

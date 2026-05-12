@@ -1,4 +1,4 @@
-﻿/** Daily targets — “eaten” totals come from `NutritionLogContext` (scan + log). */
+/** Daily targets — “eaten” totals come from `NutritionLogContext` (scan + log). */
 export const DASHBOARD_CALORIES = {
   goal: 2100,
 };

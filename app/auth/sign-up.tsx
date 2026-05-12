@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
@@ -281,9 +281,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     gap: 14,
-    borderWidth: 1,
     borderColor: '#E5E7EB',
-    maxWidth: 420,
     alignSelf: 'center',
     width: '100%',
     shadowColor: '#000',
@@ -348,7 +346,6 @@ const styles = StyleSheet.create({
     color: Palette.dusk,
     maxWidth: 360,
   },
-
   form: {},
   field: { marginBottom: 14 },
 

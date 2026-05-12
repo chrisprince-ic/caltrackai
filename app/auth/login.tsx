@@ -1,4 +1,4 @@
-﻿import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { type Href, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -326,9 +326,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     gap: 14,
-    borderWidth: 1,
     borderColor: '#E5E7EB',
-    maxWidth: 420,
     alignSelf: 'center',
     width: '100%',
     shadowColor: '#000',
@@ -367,8 +365,6 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   backLink: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
-
-  // Spacers create a vertical center-with-a-bias layout: the form sits at
   // roughly 40% from the top, not dead center.
   topSpacer: { flex: 1, minHeight: 24 },
   bottomSpacer: { flex: 0.7, minHeight: 24 },
@@ -395,7 +391,6 @@ const styles = StyleSheet.create({
     color: Palette.dusk,
     maxWidth: 360,
   },
-
   form: {},
   field: { marginBottom: 14 },
   fieldLabelInline: { fontFamily: Fonts.semiBold, fontSize: 14, color: Palette.obsidian },

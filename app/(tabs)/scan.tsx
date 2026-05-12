@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Camera (Scan) tab — intentionally bypasses CurvedHeroScreen: full-bleed viewfinder layout.
  */
 import { Ionicons } from '@expo/vector-icons';
