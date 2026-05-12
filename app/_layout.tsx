@@ -58,6 +58,8 @@ function RootLayoutBody() {
                   name="manual-entry"
                   options={{ headerShown: true, title: 'Log a meal', presentation: 'modal' }}
                 />
+                <Stack.Screen name="legal/privacy-policy" options={{ headerShown: true, title: 'Privacy Policy' }} />
+                <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
                 <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
               </Stack>
               <StatusBar style={isDark ? 'light' : 'dark'} />

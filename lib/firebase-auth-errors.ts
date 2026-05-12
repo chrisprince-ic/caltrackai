@@ -13,7 +13,7 @@ export function friendlyFirebaseAuthMessage(err: unknown): string {
     return 'This account has been disabled. Contact support if you need help.';
   }
   if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-    return 'Incorrect email or password. Try again or reset your password in your account settings.';
+    return 'Incorrect email or password. Try again or use "Forgot password?" to reset it.';
   }
   if (code === 'auth/too-many-requests') {
     return 'Too many attempts. Wait a few minutes and try again.';
@@ -26,6 +26,9 @@ export function friendlyFirebaseAuthMessage(err: unknown): string {
   }
   if (code === 'auth/network-request-failed') {
     return 'Network error. Check your connection and try again.';
+  }
+  if (code === 'auth/requires-recent-login') {
+    return 'For security, please sign out and sign back in before deleting your account.';
   }
 
   if (msg && !/^FirebaseError|auth\//i.test(msg)) {
