@@ -37,6 +37,8 @@ yarn-error.*
 *.tsbuildinfo
 .env
 
+.env.*
+
 app-example
 
 # generated native folders
