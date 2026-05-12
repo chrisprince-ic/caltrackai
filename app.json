@@ -2,7 +2,7 @@
   "expo": {
     "name": "Macrovia",
     "slug": "caltrackai",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "caltrackai",
@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aevontech.calorietracker",
-      "buildNumber": "1",
+      "bundleIdentifier": "com.aevontech.macrovia",
+      "buildNumber": "2",
       "infoPlist": {
         "CFBundleURLTypes": [],
         "ITSAppUsesNonExemptEncryption": false
