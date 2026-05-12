@@ -23,6 +23,11 @@ import { useAppTheme } from '@/contexts/AppThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import { insightsFromMacroHistory } from '@/lib/ai-coach';
+import {
+  buildInsightsFingerprint,
+  loadCachedInsights,
+  saveCachedInsights,
+} from '@/lib/ai-insights-cache';
 import { computeCalorieStreak } from '@/lib/calorie-streak';
 import { getDeepSeekConfig } from '@/lib/deepseek';
 import {
@@ -333,7 +338,7 @@ export default function InsightsScreen() {
     return { hits, total };
   }, [recent, dailyCalories]);
 
-  // ---- AI fetch ----------------------------------------------------------
+  // ---- AI fetch (cached — 30 min TTL, keyed by user+period+targets+loggedDays) ----
 
   useFocusEffect(
     useCallback(() => {
@@ -343,9 +348,31 @@ export default function InsightsScreen() {
         return;
       }
       let cancelled = false;
-      setAiLoading(true);
+      const uid = user.uid;
+      const fp = buildInsightsFingerprint({
+        period,
+        dailyCalories,
+        proteinG,
+        carbsG,
+        fatG,
+        loggedDayCount: recentLoggedDays,
+      });
+
       (async () => {
-        void aiRetryKey;
+        // Check cache first — skip the API call if fresh data exists.
+        const cached = await loadCachedInsights(uid, period, fp);
+        if (cached && aiRetryKey === 0) {
+          if (!cancelled) {
+            setAiSummary(cached.summary);
+            setShowAiRetry(false);
+            setAiUpdatedAt(Date.now());
+            setAiLoading(false);
+          }
+          return;
+        }
+
+        if (!cancelled) setAiLoading(true);
+
         try {
           const label =
             period === 'week'
@@ -366,6 +393,7 @@ export default function InsightsScreen() {
             setAiSummary(insight.summary);
             setShowAiRetry(false);
             setAiUpdatedAt(Date.now());
+            await saveCachedInsights(uid, period, fp, insight);
           }
         } catch {
           if (!cancelled) {
@@ -387,7 +415,7 @@ export default function InsightsScreen() {
     }, [
       user?.uid,
       period,
-      recent,
+      recentLoggedDays,
       dailyCalories,
       proteinG,
       carbsG,

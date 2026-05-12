@@ -156,7 +156,7 @@ export function CurvedHeroScreen({
 
   const headerSurfaceStyle = useAnimatedStyle(() => {
     const transparent = isDark ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0)';
-    const opaque = isDark ? 'rgba(15,23,42,0.94)' : 'rgba(255,255,255,0.96)';
+    const opaque = isDark ? 'rgba(13,25,18,0.96)' : 'rgba(255,255,255,0.96)';
     return {
       backgroundColor: interpolateColor(scrollY.value, [0, trigger], [transparent, opaque]),
       borderBottomWidth: interpolate(scrollY.value, [0, trigger], [0, 0.5], Extrapolation.CLAMP),

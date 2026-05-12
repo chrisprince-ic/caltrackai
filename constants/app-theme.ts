@@ -22,7 +22,7 @@ export type AppThemeColors = {
 };
 
 const LIGHT: AppThemeColors = {
-  bg: Palette.ghost,
+  bg: '#F4FBF7',
   surface: Palette.white,
   surfaceMuted: Palette.haze,
   text: Palette.obsidian,
@@ -42,23 +42,23 @@ const LIGHT: AppThemeColors = {
 };
 
 const DARK: AppThemeColors = {
-  bg: Palette.obsidian,
-  surface: Palette.void,
-  surfaceMuted: '#253040',
-  text: '#F9FAFB',
-  textMuted: '#9CA3AF',
+  bg: Palette.darkBg,
+  surface: Palette.darkSurface,
+  surfaceMuted: Palette.darkSurfaceMuted,
+  text: '#E8F5EE',
+  textMuted: '#7EA88E',
   textSecondary: Palette.mist,
-  border: 'rgba(167, 243, 208, 0.14)',
-  borderStrong: 'rgba(167, 243, 208, 0.22)',
-  haze: 'rgba(34, 197, 94, 0.22)',
-  chipOnLight: 'rgba(34, 197, 94, 0.28)',
-  streakBg: 'rgba(249, 115, 22, 0.15)',
+  border: Palette.darkBorder,
+  borderStrong: Palette.darkBorderStrong,
+  haze: 'rgba(34, 197, 94, 0.18)',
+  chipOnLight: 'rgba(34, 197, 94, 0.22)',
+  streakBg: 'rgba(249, 115, 22, 0.14)',
   streakText: '#FED7AA',
-  streakHint: '#9CA3AF',
-  calDivider: 'rgba(167, 243, 208, 0.18)',
+  streakHint: '#7EA88E',
+  calDivider: 'rgba(167, 243, 208, 0.14)',
   shadow: '#000000',
-  iconWell: 'rgba(34, 197, 94, 0.28)',
-  iconWellBorder: 'rgba(167, 243, 208, 0.2)',
+  iconWell: 'rgba(34, 197, 94, 0.24)',
+  iconWellBorder: 'rgba(167, 243, 208, 0.18)',
 };
 
 export function getAppThemeColors(isDark: boolean): AppThemeColors {

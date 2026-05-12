@@ -56,9 +56,9 @@ export function InsightsCoachCard({
   const { colors, isDark } = useAppTheme();
   const router = useRouter();
 
-  const cardBg = isDark ? 'rgba(251,146,60,0.08)' : '#FFF7ED';
-  const cardBorder = isDark ? 'rgba(251,146,60,0.18)' : '#FED7AA';
-  const iconWell = isDark ? 'rgba(251,146,60,0.18)' : '#FFEDD5';
+  const cardBg = isDark ? 'rgba(251,146,60,0.07)' : '#FFFBF4';
+  const cardBorder = isDark ? 'rgba(251,146,60,0.20)' : '#FDDAA0';
+  const iconWell = isDark ? 'rgba(251,146,60,0.16)' : '#FEF3C7';
 
   return (
     <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>

@@ -3,7 +3,7 @@ import { Palette } from '@/constants/palette';
 /** Brand green gradient — legacy stops for non-flat variants / dark hero fallback. */
 const BRAND = Palette.iris;
 export const HERO_GRADIENT_STOPS = ['#4FD17E', BRAND, '#1FB256'] as const;
-export const HERO_GRADIENT_STOPS_DARK = ['#2E9B58', Palette.lavender, '#0F3D22'] as const;
+export const HERO_GRADIENT_STOPS_DARK = ['#1A7340', Palette.lavender, '#0A2E18'] as const;
 
 /**
  * Two-stop fill (e.g. pills) — endpoints of `HERO_GRADIENT_STOPS`, same family as Scan FAB.
@@ -82,7 +82,7 @@ export const HERO_BACKGROUNDS: Record<HeroBackgroundVariant, HeroTheme> = {
 };
 
 /** Green hero on dark app theme — flat darker green (no diagonal gradient). */
-export const HERO_GREEN_SOLID_DARK = '#1B5C3F';
+export const HERO_GREEN_SOLID_DARK = '#0F3D26';
 
 /** Green hero on dark app theme — legacy gradient stops if needed elsewhere. */
 export const HERO_GREEN_GRADIENT_DARK_MODE = HERO_GRADIENT_STOPS_DARK;

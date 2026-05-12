@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
+import { useAppTheme } from '@/contexts/AppThemeContext';
 import {
   buildTargetsFingerprint,
   getLogDateKey,
@@ -23,6 +24,7 @@ export default function MealPlanListScreen() {
   const router = useRouter();
   const { planId } = useLocalSearchParams<{ planId: string }>();
   const { dailyCalories, proteinG, carbsG, fatG, dietarySummary } = useNutritionTargets();
+  const { colors } = useAppTheme();
   const [meals, setMeals] = useState<AiMealBrief[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,16 +70,16 @@ export default function MealPlanListScreen() {
   }, [load, planId]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>AI meal plan</Text>
-        <Text style={styles.sub}>
+        <Text style={[styles.title, { color: colors.text }]}>AI meal plan</Text>
+        <Text style={[styles.sub, { color: colors.textMuted }]}>
           Suggested meals for ~{dailyCalories.toLocaleString()} kcal/day · tap for full recipe · refreshed once per day
         </Text>
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={Palette.iris} />
-            <Text style={styles.loadingText}>Generating your plan…</Text>
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Generating your plan…</Text>
           </View>
         ) : null}
         {error ? <Text style={styles.err}>{error}</Text> : null}
@@ -87,20 +89,22 @@ export default function MealPlanListScreen() {
             return (
               <Pressable
                 key={m.id}
-                style={styles.row}
-                onPress={() =>
-                  router.push(`/meal-recipe?idx=${i}` as Href)
-                }>
-                <View style={[styles.thumb, { borderLeftColor: accent, borderLeftWidth: 3 }]}>
+                style={({ pressed }) => [
+                  styles.row,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  pressed && { opacity: 0.92 },
+                ]}
+                onPress={() => router.push(`/meal-recipe?idx=${i}` as Href)}>
+                <View style={[styles.thumb, { borderLeftColor: accent, borderLeftWidth: 3, backgroundColor: colors.haze }]}>
                   <Ionicons name="restaurant" size={22} color={accent} />
                 </View>
                 <View style={styles.body}>
-                  <Text style={styles.rowTitle}>{m.title}</Text>
-                  <Text style={styles.rowMeta}>
+                  <Text style={[styles.rowTitle, { color: colors.text }]}>{m.title}</Text>
+                  <Text style={[styles.rowMeta, { color: colors.textMuted }]}>
                     {m.calories} kcal · {m.prepMin} min · P{m.proteinG} C{m.carbsG} F{m.fatG} · {m.tag}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Palette.dusk} style={{ opacity: 0.4 }} />
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} style={{ opacity: 0.5 }} />
               </Pressable>
             );
           })}
@@ -113,22 +117,20 @@ export default function MealPlanListScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Palette.ghost },
+  safe: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
-  title: { fontFamily: Fonts.bold, fontSize: 24, color: Palette.obsidian },
-  sub: { fontFamily: Fonts.regular, fontSize: 14, color: Palette.dusk, marginTop: 8, marginBottom: 20, lineHeight: 20 },
+  title: { fontFamily: Fonts.bold, fontSize: 24 },
+  sub: { fontFamily: Fonts.regular, fontSize: 14, marginTop: 8, marginBottom: 20, lineHeight: 20 },
   center: { paddingVertical: 40, alignItems: 'center', gap: 12 },
-  loadingText: { fontFamily: Fonts.medium, fontSize: 14, color: Palette.dusk },
+  loadingText: { fontFamily: Fonts.medium, fontSize: 14 },
   err: { fontFamily: Fonts.regular, fontSize: 14, color: Palette.overText, marginBottom: 12 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.08)',
     gap: 14,
   },
   thumb: {
@@ -137,9 +139,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Palette.haze,
   },
   body: { flex: 1, minWidth: 0 },
-  rowTitle: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.obsidian },
-  rowMeta: { fontFamily: Fonts.regular, fontSize: 12, color: Palette.dusk, marginTop: 4 },
+  rowTitle: { fontFamily: Fonts.semiBold, fontSize: 16 },
+  rowMeta: { fontFamily: Fonts.regular, fontSize: 12, marginTop: 4 },
 });

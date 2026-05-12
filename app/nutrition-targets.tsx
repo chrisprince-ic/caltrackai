@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
+import { useAppTheme } from '@/contexts/AppThemeContext';
 import { getDeepSeekConfig } from '@/lib/deepseek';
 import { macroPercentsFromGrams } from '@/lib/nutrition-calculations';
 import { Fonts } from '@/constants/theme';
@@ -23,11 +24,12 @@ function MacroRow({
   color: string;
   trackBg: string;
 }) {
+  const { colors } = useAppTheme();
   return (
     <View style={styles.macroBlock}>
       <View style={styles.macroTop}>
-        <Text style={styles.macroLabel}>{label}</Text>
-        <Text style={styles.macroGrams}>
+        <Text style={[styles.macroLabel, { color: colors.text }]}>{label}</Text>
+        <Text style={[styles.macroGrams, { color: colors.textMuted }]}>
           {grams}g · {pct}% of kcal
         </Text>
       </View>
@@ -40,6 +42,7 @@ function MacroRow({
 
 export default function NutritionTargetsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const { plan, dailyCalories, proteinG, carbsG, fatG, coachNote, dietarySummary, loading } = useNutritionTargets();
   const aiCoachEnabled = getDeepSeekConfig();
 
@@ -62,82 +65,86 @@ export default function NutritionTargetsScreen() {
 
   const hasSavedPlan = plan != null;
 
+  const proteinTrackBg = isDark ? 'rgba(236,72,153,0.15)' : '#FFE8F0';
+  const carbsTrackBg = isDark ? 'rgba(249,115,22,0.15)' : '#FFF8EB';
+  const fatTrackBg = isDark ? 'rgba(99,102,241,0.15)' : '#E0E0FE';
+
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.lead}>
+        <Text style={[styles.lead, { color: colors.textMuted }]}>
           These numbers power your home dashboard, meal suggestions, and insights. Meal logs and history are never
           cleared when you update targets.
         </Text>
 
         {loading ? (
-          <Text style={styles.muted}>Loading targets…</Text>
+          <Text style={[styles.muted, { color: colors.textMuted }]}>Loading targets…</Text>
         ) : !hasSavedPlan ? (
-          <View style={styles.notice}>
+          <View style={[styles.notice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="information-circle-outline" size={22} color={Palette.iris} />
-            <Text style={styles.noticeText}>
+            <Text style={[styles.noticeText, { color: colors.text }]}>
               No saved plan found for this account yet. Run onboarding once to set custom calories and macros (defaults
               are shown below until then).
             </Text>
           </View>
         ) : null}
 
-        <View style={styles.heroCard}>
+        <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.heroBadge}>
             <Ionicons name="flame" size={16} color={Palette.iris} />
             <Text style={styles.heroBadgeText}>Daily calorie target</Text>
           </View>
           <Text style={styles.calValue}>{dailyCalories.toLocaleString()}</Text>
-          <Text style={styles.calUnit}>kcal / day</Text>
+          <Text style={[styles.calUnit, { color: colors.textMuted }]}>kcal / day</Text>
           {updatedLabel ? (
-            <Text style={styles.updated}>Last updated {updatedLabel}</Text>
+            <Text style={[styles.updated, { color: colors.textMuted }]}>Last updated {updatedLabel}</Text>
           ) : null}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Macro targets</Text>
-          <Text style={styles.cardSub}>Grams per day (same as Home)</Text>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Macro targets</Text>
+          <Text style={[styles.cardSub, { color: colors.textMuted }]}>Grams per day (same as Home)</Text>
           <MacroRow
             label="Protein"
             grams={proteinG}
             pct={macroPct.proteinPct}
             color={Palette.flamingo}
-            trackBg="#FFE8F0"
+            trackBg={proteinTrackBg}
           />
           <MacroRow
             label="Carbs"
             grams={carbsG}
             pct={macroPct.carbsPct}
             color={Palette.citrus}
-            trackBg="#FFF8EB"
+            trackBg={carbsTrackBg}
           />
-          <MacroRow label="Fats" grams={fatG} pct={macroPct.fatPct} color={Palette.cyan} trackBg="#E0F8FA" />
+          <MacroRow label="Fats" grams={fatG} pct={macroPct.fatPct} color={Palette.cyan} trackBg={fatTrackBg} />
         </View>
 
         {dietarySummary ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Dietary context</Text>
-            <Text style={styles.body}>{dietarySummary}</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Dietary context</Text>
+            <Text style={[styles.body, { color: colors.textMuted }]}>{dietarySummary}</Text>
           </View>
         ) : null}
 
         {coachNote ? (
-          <View style={styles.coachCard}>
+          <View style={[styles.coachCard, { backgroundColor: colors.haze, borderColor: colors.borderStrong }]}>
             <Ionicons name="sparkles" size={22} color={Palette.iris} />
             <View style={{ flex: 1 }}>
               <Text style={styles.coachTitle}>AI coach note</Text>
-              <Text style={styles.body}>{coachNote}</Text>
+              <Text style={[styles.body, { color: colors.textMuted }]}>{coachNote}</Text>
             </View>
           </View>
         ) : hasSavedPlan && aiCoachEnabled ? (
-          <Text style={styles.muted}>
+          <Text style={[styles.muted, { color: colors.textMuted }]}>
             No AI coach note on file. After you re-run onboarding with DeepSeek configured, a short personalized note can
             appear here.
           </Text>
         ) : null}
 
         {!aiCoachEnabled ? (
-          <Text style={styles.muted}>
+          <Text style={[styles.muted, { color: colors.textMuted }]}>
             AI coaching is not available on this account. Re-run onboarding to update your targets.
           </Text>
         ) : null}
@@ -154,7 +161,7 @@ export default function NutritionTargetsScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.secondaryBtn}
+          style={[styles.secondaryBtn, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}
           onPress={() => router.push('/onboarding?updateTargets=1' as Href)}
           accessibilityRole="button"
           accessibilityLabel="Adjust calorie and macro targets by running onboarding again">
@@ -163,7 +170,7 @@ export default function NutritionTargetsScreen() {
             Adjust targets
           </Text>
         </Pressable>
-        <Text style={styles.reassure}>
+        <Text style={[styles.reassure, { color: colors.textMuted }]}>
           Runs setup again for new targets only. Your meal logs, scans, and streaks are unchanged.
         </Text>
       </ScrollView>
@@ -172,30 +179,26 @@ export default function NutritionTargetsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Palette.ghost },
+  safe: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
   lead: {
     fontFamily: Fonts.regular,
     fontSize: 15,
     lineHeight: 22,
-    color: Palette.dusk,
     marginBottom: 20,
   },
   muted: {
     fontFamily: Fonts.regular,
     fontSize: 13,
     lineHeight: 19,
-    color: Palette.dusk,
     marginBottom: 16,
   },
   notice: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: '#FFFFFF',
     padding: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
     marginBottom: 16,
   },
   noticeText: {
@@ -203,15 +206,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: Palette.obsidian,
   },
   heroCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 22,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.08)',
   },
   heroBadge: {
     flexDirection: 'row',
@@ -234,33 +234,27 @@ const styles = StyleSheet.create({
   calUnit: {
     fontFamily: Fonts.medium,
     fontSize: 16,
-    color: Palette.dusk,
     marginTop: 4,
   },
   updated: {
     fontFamily: Fonts.regular,
     fontSize: 12,
-    color: Palette.dusk,
     marginTop: 12,
   },
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 20,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.08)',
   },
   cardTitle: {
     fontFamily: Fonts.bold,
     fontSize: 18,
-    color: Palette.obsidian,
     marginBottom: 4,
   },
   cardSub: {
     fontFamily: Fonts.regular,
     fontSize: 13,
-    color: Palette.dusk,
     marginBottom: 16,
   },
   macroBlock: { marginBottom: 16 },
@@ -269,10 +263,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  macroLabel: { fontFamily: Fonts.semiBold, fontSize: 15, color: Palette.obsidian },
-  macroGrams: { fontFamily: Fonts.medium, fontSize: 13, color: Palette.dusk },
+  macroLabel: { fontFamily: Fonts.semiBold, fontSize: 15 },
+  macroGrams: { fontFamily: Fonts.medium, fontSize: 13 },
   macroTrack: {
-    height: 10,
+    height: 9,
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -284,17 +278,14 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 15,
     lineHeight: 22,
-    color: Palette.obsidian,
   },
   coachCard: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: Palette.haze,
     borderRadius: 18,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
   },
   coachTitle: {
     fontFamily: Fonts.semiBold,
@@ -324,11 +315,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#FFFFFF',
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.2)',
     marginBottom: 12,
   },
   secondaryBtnText: {
@@ -341,7 +330,6 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 13,
     lineHeight: 19,
-    color: Palette.dusk,
     textAlign: 'center',
     paddingHorizontal: 8,
   },

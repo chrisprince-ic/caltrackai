@@ -166,17 +166,17 @@ export function DailyEnergyCard() {
   const showStatusPill = eaten > 0 && adjustedTarget > 0;
 
   const cardBg = isDark ? colors.surface : '#FFFFFF';
-  const cardBorder = isDark ? colors.border : 'rgba(34, 197, 94, 0.1)';
+  const cardBorder = isDark ? colors.border : 'rgba(34, 197, 94, 0.12)';
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.cardOuter, { shadowColor: isDark ? '#000' : BRAND }]}>
+      <View style={[styles.cardOuter, { shadowColor: isDark ? '#000000' : BRAND }]}>
         <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
           <View style={styles.cardPad}>
             <View style={styles.loggedStrip}>
               <View style={styles.loggedStripInner}>
                 <View style={styles.loggedStripLeft}>
-                  <View style={styles.loggedIconWell}>
+                  <View style={[styles.loggedIconWell, { backgroundColor: isDark ? 'rgba(34,197,94,0.18)' : BRAND_SOFT }]}>
                     <Ionicons name="restaurant" size={18} color={BRAND} />
                   </View>
                   <View style={styles.loggedTextCol}>

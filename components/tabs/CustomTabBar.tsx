@@ -74,15 +74,22 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     );
   };
 
+  const tabSurfaceBg = isDark
+    ? 'rgba(20, 34, 24, 0.97)'
+    : 'rgba(255,255,255,0.97)';
+  const tabBorderColor = isDark
+    ? 'rgba(167, 243, 208, 0.10)'
+    : 'rgba(34, 197, 94, 0.10)';
+
   return (
     <View style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      <View style={[styles.surface, { backgroundColor: isDark ? colors.surface : 'rgba(255,255,255,0.95)', borderColor: colors.border }]}>
+      <View style={[styles.surface, { backgroundColor: tabSurfaceBg, borderColor: tabBorderColor }]}>
         <View style={styles.fabWrap}>
           <Pressable
             onPress={() => go('scan')}
             style={({ pressed }) => [
               styles.fab,
-              { borderColor: isDark ? Palette.obsidian : Palette.ghost },
+              { borderColor: isDark ? '#0D1912' : '#F4FBF7' },
               scanFocused && styles.fabFocused,
               pressed && styles.fabPressed,
             ]}

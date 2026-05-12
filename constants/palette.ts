@@ -11,12 +11,19 @@ export const Palette = {
   citrus: '#F97316',      // Calories / energy — orange
   cyan: '#6366F1',        // Fats — indigo
 
-  // Neutrals
-  obsidian: '#111827',    // Primary text
-  void: '#1F2937',        // Dark surface
-  ghost: '#F9FAFB',       // App background
+  // Neutrals (light mode)
+  obsidian: '#111827',    // Primary text (light)
+  void: '#1F2937',        // Generic dark surface (legacy)
+  ghost: '#F4FBF7',       // App background — warm green-tinted white
   dusk: '#6B7280',        // Muted text / subtext
   white: '#FFFFFF',
+
+  // Dark mode surfaces — green-tinted deep darks (matches design tokens)
+  darkBg: '#0D1912',      // Dark app background — deep forest
+  darkSurface: '#142218', // Dark card surface
+  darkSurfaceMuted: '#1C2F22', // Slightly lighter dark surface
+  darkBorder: 'rgba(167, 243, 208, 0.12)',  // Mist-tinted border in dark
+  darkBorderStrong: 'rgba(167, 243, 208, 0.2)',
 
   // Semantic status
   onTrackBg: '#DCFCE7',
