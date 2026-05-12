@@ -1,4 +1,4 @@
-import { LinearGradient } from 'expo-linear-gradient';
+﻿import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -42,7 +42,7 @@ const STATE_COLORS: Record<CalState, { fill: string; track: string; trackDark: s
 };
 
 const GRADIENTS: Record<CalState, [string, string, string]> = {
-  onTrack: ['#16A34A', '#22C55E', '#4ADE80'],
+  onTrack: ['#16A34A', '#1F8A5B', '#4ADE80'],
   watch: ['#EA580C', '#F97316', '#FB923C'],
   over: ['#BE123C', '#E11D48', '#F43F5E'],
 };

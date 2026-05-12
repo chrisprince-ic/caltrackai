@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusPillPro: {
-    backgroundColor: 'rgba(34, 197, 94, 0.35)',
+    backgroundColor: 'rgba(31, 138, 91, 0.35)',
     borderColor: 'rgba(167, 243, 208, 0.35)',
   },
   statusPillFree: {

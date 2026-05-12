@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 28,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     alignItems: 'center',
   },
   permIcon: {
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: Palette.haze,
     borderWidth: 1.5,
-    borderColor: 'rgba(34, 197, 94, 0.2)',
+    borderColor: 'rgba(31, 138, 91, 0.2)',
   },
   permBtnSecondaryText: {
     fontFamily: Fonts.semiBold,
@@ -903,7 +903,7 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     maxHeight: '88%',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     shadowColor: Palette.obsidian,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.12,
@@ -1021,7 +1021,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.08)',
+    borderColor: 'rgba(31, 138, 91, 0.08)',
   },
   ingredientsTitle: {
     fontFamily: Fonts.semiBold,
@@ -1056,7 +1056,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     overflow: 'hidden',
   },
   calResultGlow: {
@@ -1132,7 +1132,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.06)',
+    borderColor: 'rgba(31, 138, 91, 0.06)',
     gap: 14,
     alignItems: 'center',
   },

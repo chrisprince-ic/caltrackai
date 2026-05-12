@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -27,7 +27,7 @@ export default function MealPlansScreen() {
           <Pressable
             style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={() => router.push('/meal-plan/weekly' as Href)}
-            android_ripple={{ color: 'rgba(34,197,94,0.1)' }}>
+            android_ripple={{ color: 'rgba(31,138,91,0.1)' }}>
             <View style={[styles.heroIcon, { backgroundColor: colors.iconWell }]}>
               <Ionicons name="sparkles" size={28} color={Palette.iris} />
             </View>
@@ -48,7 +48,7 @@ export default function MealPlansScreen() {
             <Pressable
               style={styles.rowInner}
               onPress={() => router.push('/meal-plan/weekly' as Href)}
-              android_ripple={{ color: 'rgba(34,197,94,0.08)' }}>
+              android_ripple={{ color: 'rgba(31,138,91,0.08)' }}>
               <View style={[styles.thumb, { backgroundColor: item.tint }]}>
                 <Ionicons name="restaurant" size={24} color={item.accent} />
               </View>

@@ -1,7 +1,7 @@
-/** Design tokens — green health system */
+﻿/** Design tokens — green health system */
 export const Palette = {
   // Brand greens
-  iris: '#22C55E',        // Primary brand (used everywhere via Palette.iris)
+  iris: '#1F8A5B',        // Primary brand (used everywhere via Palette.iris)
   lavender: '#16A34A',    // Darker green — active / pressed
   mist: '#A7F3D0',        // Light green tint
   haze: '#DCFCE7',        // Very light green — chips, wells

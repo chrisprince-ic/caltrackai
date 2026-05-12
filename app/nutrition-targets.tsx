@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     marginBottom: 16,
   },
   noticeText: {
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     padding: 22,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.08)',
+    borderColor: 'rgba(31, 138, 91, 0.08)',
   },
   heroBadge: {
     flexDirection: 'row',
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.08)',
+    borderColor: 'rgba(31, 138, 91, 0.08)',
   },
   cardTitle: {
     fontFamily: Fonts.bold,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(31, 138, 91, 0.12)',
   },
   coachTitle: {
     fontFamily: Fonts.semiBold,
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.2)',
+    borderColor: 'rgba(31, 138, 91, 0.2)',
     marginBottom: 12,
   },
   secondaryBtnText: {

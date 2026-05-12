@@ -1,4 +1,4 @@
-import { LinearGradient } from 'expo-linear-gradient';
+﻿import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
 import { useAppTheme } from '@/contexts/AppThemeContext';
@@ -18,11 +18,11 @@ export function ScreenBackground({ children }: Props) {
     ? ['#081510', '#111827', '#0E1628']
     : ['#F0FDF4', '#FAFAFA', '#EFF6FF'];
 
-  const blob1Bg = isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.13)';
+  const blob1Bg = isDark ? 'rgba(31,138,91,0.08)' : 'rgba(31,138,91,0.13)';
   const blob2Bg = isDark ? 'rgba(99,102,241,0.07)' : 'rgba(99,102,241,0.09)';
   const blob3Bg = isDark ? 'rgba(249,115,22,0.06)' : 'rgba(249,115,22,0.08)';
   const blob4Bg = isDark ? 'rgba(236,72,153,0.05)' : 'rgba(236,72,153,0.07)';
-  const blob5Bg = isDark ? 'rgba(34,197,94,0.05)' : 'rgba(34,197,94,0.06)';
+  const blob5Bg = isDark ? 'rgba(31,138,91,0.05)' : 'rgba(31,138,91,0.06)';
 
   return (
     <LinearGradient colors={gradColors} style={styles.root} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -33,7 +33,7 @@ export function ScreenBackground({ children }: Props) {
       <View style={[styles.blob, styles.b4, { backgroundColor: blob4Bg }]} />
       <View style={[styles.blob, styles.b5, { backgroundColor: blob5Bg }]} />
       {/* Subtle ring decorations */}
-      <View style={[styles.ring, styles.ring1, { borderColor: isDark ? 'rgba(34,197,94,0.06)' : 'rgba(34,197,94,0.1)' }]} />
+      <View style={[styles.ring, styles.ring1, { borderColor: isDark ? 'rgba(31,138,91,0.06)' : 'rgba(31,138,91,0.1)' }]} />
       <View style={[styles.ring, styles.ring2, { borderColor: isDark ? 'rgba(99,102,241,0.05)' : 'rgba(99,102,241,0.08)' }]} />
       {children}
     </LinearGradient>

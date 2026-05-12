@@ -1,4 +1,4 @@
-import { Palette } from '@/constants/palette';
+﻿import { Palette } from '@/constants/palette';
 
 /** Semantic UI colors — light (Ghost) vs dark (Void/Obsidian). */
 export type AppThemeColors = {
@@ -28,17 +28,17 @@ const LIGHT: AppThemeColors = {
   text: Palette.obsidian,
   textMuted: Palette.dusk,
   textSecondary: Palette.dusk,
-  border: 'rgba(34, 197, 94, 0.12)',
-  borderStrong: 'rgba(34, 197, 94, 0.18)',
+  border: 'rgba(31, 138, 91, 0.12)',
+  borderStrong: 'rgba(31, 138, 91, 0.18)',
   haze: Palette.haze,
   chipOnLight: Palette.haze,
   streakBg: Palette.watchBg,
   streakText: Palette.watchText,
   streakHint: Palette.dusk,
-  calDivider: 'rgba(34, 197, 94, 0.14)',
+  calDivider: 'rgba(31, 138, 91, 0.14)',
   shadow: Palette.obsidian,
   iconWell: Palette.haze,
-  iconWellBorder: 'rgba(34, 197, 94, 0.18)',
+  iconWellBorder: 'rgba(31, 138, 91, 0.18)',
 };
 
 const DARK: AppThemeColors = {
@@ -50,14 +50,14 @@ const DARK: AppThemeColors = {
   textSecondary: Palette.mist,
   border: 'rgba(167, 243, 208, 0.14)',
   borderStrong: 'rgba(167, 243, 208, 0.22)',
-  haze: 'rgba(34, 197, 94, 0.22)',
-  chipOnLight: 'rgba(34, 197, 94, 0.28)',
+  haze: 'rgba(31, 138, 91, 0.22)',
+  chipOnLight: 'rgba(31, 138, 91, 0.28)',
   streakBg: 'rgba(249, 115, 22, 0.15)',
   streakText: '#FED7AA',
   streakHint: '#9CA3AF',
   calDivider: 'rgba(167, 243, 208, 0.18)',
   shadow: '#000000',
-  iconWell: 'rgba(34, 197, 94, 0.28)',
+  iconWell: 'rgba(31, 138, 91, 0.28)',
   iconWellBorder: 'rgba(167, 243, 208, 0.2)',
 };
 

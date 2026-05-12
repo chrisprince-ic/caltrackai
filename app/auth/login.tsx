@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { type Href, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 14,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     maxWidth: 420,
     alignSelf: 'center',
     width: '100%',
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.15)',
+    borderColor: 'rgba(31, 138, 91, 0.15)',
   },
   missingBackText: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
   backRow: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(31, 138, 91, 0.12)',
   },
   backLink: { fontFamily: Fonts.semiBold, fontSize: 16, color: Palette.iris },
   headerBlock: {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.06,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
   },
   errorBox: {
     flexDirection: 'row',

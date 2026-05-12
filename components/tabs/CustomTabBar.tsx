@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: 'rgba(31, 138, 91, 0.1)',
     shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1,

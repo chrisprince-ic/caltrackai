@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { type Href, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -14,7 +14,7 @@ const FEATURES = [
     key: 'lookup',
     icon: 'flash' as const,
     iconColor: Palette.iris,
-    pillBg: 'rgba(34, 197, 94, 0.1)',
+    pillBg: 'rgba(31, 138, 91, 0.1)',
     text: 'Instant calorie lookup from millions of foods',
   },
   {
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.07)',
+    borderColor: 'rgba(31, 138, 91, 0.07)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.06,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 12,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.12)',
+    borderColor: 'rgba(31, 138, 91, 0.12)',
     shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.14,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: Palette.haze,
     borderWidth: 1.5,
-    borderColor: 'rgba(34, 197, 94, 0.35)',
+    borderColor: 'rgba(31, 138, 91, 0.35)',
   },
   btnSecondaryLabel: {
     fontFamily: Fonts.semiBold,
