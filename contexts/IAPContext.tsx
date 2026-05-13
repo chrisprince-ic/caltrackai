@@ -99,6 +99,16 @@ export function IAPProvider({ children }: { children: ReactNode }) {
       try {
         await initConnection();
 
+        if (__DEV__) {
+          console.log('[IAP] initConnection succeeded. Product ID:', MACROVIA_PRODUCT_ID);
+          try {
+            const debugProducts = await fetchProducts({ skus: [MACROVIA_PRODUCT_ID], type: 'subs' });
+            console.log('[IAP] fetchProducts result:', JSON.stringify(debugProducts));
+          } catch (debugErr) {
+            console.log('[IAP] fetchProducts error:', JSON.stringify(debugErr));
+          }
+        }
+
         // Handle completed transactions (including ones queued from previous sessions)
         purchaseSub = purchaseUpdatedListener(async (purchase: Purchase) => {
           if (purchase.productId !== MACROVIA_PRODUCT_ID) return;
