@@ -108,10 +108,9 @@ export function IAPProvider({ children }: { children: ReactNode }) {
             await applyProStatus(true);
           } catch {}
 
-          // Resolve the in-flight purchaseMonthly() promise, if any
-          const resolve = pendingPurchaseRef.current;
+          // Call the pending settle function (clears timeout + resolves promise)
+          pendingPurchaseRef.current?.('success');
           pendingPurchaseRef.current = null;
-          resolve?.('success');
         });
 
         // Handle purchase errors and user cancellations
@@ -121,9 +120,8 @@ export function IAPProvider({ children }: { children: ReactNode }) {
           if (outcome === 'error') {
             setLastError(error.message ?? 'Purchase error');
           }
-          const resolve = pendingPurchaseRef.current;
+          pendingPurchaseRef.current?.(outcome);
           pendingPurchaseRef.current = null;
-          resolve?.(outcome);
         });
 
         // Fetch live price from the store
@@ -183,11 +181,29 @@ export function IAPProvider({ children }: { children: ReactNode }) {
     }
     clearError();
 
-    // The promise resolves only when purchaseUpdatedListener (success) or
-    // purchaseErrorListener / requestPurchase error (cancel/error) fires,
-    // so isPro is guaranteed true before the caller's .then() runs on success.
     return new Promise<IAPOutcome>((resolve) => {
       pendingPurchaseRef.current = resolve;
+
+      // Safety net: if neither purchaseUpdatedListener nor purchaseErrorListener
+      // fires (StoreKit silent failure, network drop, sku-not-found at native layer),
+      // unblock the UI after 30 seconds instead of hanging forever.
+      const timeoutId = setTimeout(() => {
+        if (!pendingPurchaseRef.current) return;
+        pendingPurchaseRef.current = null;
+        setLastError('Purchase timed out. Check your App Store Connect setup and try again.');
+        resolve('error');
+      }, 30_000);
+
+      const settle = (outcome: IAPOutcome, errMsg?: string) => {
+        clearTimeout(timeoutId);
+        if (!pendingPurchaseRef.current) return; // already settled
+        pendingPurchaseRef.current = null;
+        if (errMsg) setLastError(errMsg);
+        resolve(outcome);
+      };
+
+      // Store settle so listeners can call it
+      pendingPurchaseRef.current = (outcome: IAPOutcome) => settle(outcome);
 
       requestPurchase({
         request: {
@@ -198,17 +214,11 @@ export function IAPProvider({ children }: { children: ReactNode }) {
         },
         type: 'subs',
       }).catch((e: unknown) => {
-        // Guard: purchaseErrorListener may also fire for the same event —
-        // only resolve once by checking the ref is still set.
-        if (!pendingPurchaseRef.current) return;
-        pendingPurchaseRef.current = null;
-
         const err = e as { code?: string; message?: string };
         if (err?.code === ErrorCode.UserCancelled) {
-          resolve('cancelled');
+          settle('cancelled');
         } else {
-          setLastError(err?.message ?? 'Purchase failed');
-          resolve('error');
+          settle('error', err?.message ?? 'Purchase failed');
         }
       });
     });
@@ -218,13 +228,15 @@ export function IAPProvider({ children }: { children: ReactNode }) {
     if (!NATIVE_STORE || !ready) return false;
     clearError();
     try {
-      await syncSubscriptionStatus();
-      return isPro;
+      const subs = await getActiveSubscriptions();
+      const active = subs.some((s) => s.productId === MACROVIA_PRODUCT_ID && s.isActive);
+      await applyProStatus(active);
+      return active;
     } catch (e: unknown) {
       setLastError((e as Error)?.message ?? 'Restore failed');
       return false;
     }
-  }, [ready, clearError, syncSubscriptionStatus, isPro]);
+  }, [ready, clearError, applyProStatus]);
 
   const value = useMemo(
     () => ({
