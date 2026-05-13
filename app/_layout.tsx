@@ -17,7 +17,7 @@ import { AppThemeProvider, useAppTheme } from '@/contexts/AppThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NutritionLogProvider } from '@/contexts/NutritionLogContext';
 import { NutritionTargetsProvider } from '@/contexts/NutritionTargetsContext';
-import { RevenueCatProvider } from '@/contexts/RevenueCatContext';
+import { IAPProvider } from '@/contexts/IAPContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -32,7 +32,7 @@ function RootLayoutBody() {
     <ThemeProvider value={navigationTheme}>
       <AuthProvider>
         <NutritionTargetsProvider>
-          <RevenueCatProvider>
+          <IAPProvider>
             <NutritionLogProvider>
               <Stack
                 screenOptions={{
@@ -65,7 +65,7 @@ function RootLayoutBody() {
               </Stack>
               <StatusBar style={isDark ? 'light' : 'dark'} />
             </NutritionLogProvider>
-          </RevenueCatProvider>
+          </IAPProvider>
         </NutritionTargetsProvider>
       </AuthProvider>
     </ThemeProvider>

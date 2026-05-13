@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -15,15 +16,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppLinearGradient } from '@/components/ui/AppLinearGradient';
-import { MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID, REVENUECAT_ENTITLEMENT_PRO } from '@/constants/revenuecat';
+import { Palette } from '@/constants/palette';
 import {
   SUBSCRIPTION_MONTHLY_PRICE_FALLBACK,
   SUBSCRIPTION_TRIAL_DAYS,
 } from '@/constants/subscription-marketing';
 import { Fonts } from '@/constants/theme';
-import { Palette } from '@/constants/palette';
 import { useAppTheme } from '@/contexts/AppThemeContext';
-import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import { useIAP } from '@/contexts/IAPContext';
 import { openLegalUrl } from '@/lib/legal-browser';
 
 // ─── Feature list ────────────────────────────────────────────────────────────
@@ -43,40 +43,20 @@ export default function SubscriptionScreen() {
   const insets = useSafeAreaInsets();
   const { welcome } = useLocalSearchParams<{ welcome?: string }>();
   const isWelcome = welcome === '1';
-  const { colors, isDark } = useAppTheme();
+  const { colors } = useAppTheme();
 
   const {
     ready,
     loading,
     isPro,
-    customerInfo,
     lastError,
     clearError,
-    purchaseMacroviaMonthly,
+    priceLabel,
+    purchaseMonthly,
     restorePurchases,
-    presentCustomerCenter,
-    getCurrentOffering,
-  } = useRevenueCat();
+  } = useIAP();
 
   const [busy, setBusy] = useState(false);
-  const [priceLabel, setPriceLabel] = useState<string | null>(null);
-
-  // Load live price from App Store
-  useEffect(() => {
-    if (!ready || Platform.OS === 'web') return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const offering = await getCurrentOffering();
-        if (cancelled || !offering) return;
-        const pkg = offering.availablePackages.find(
-          (p) => p.product.identifier === MACROVIA_PREMIUM_MONTHLY_PRODUCT_ID
-        );
-        if (pkg?.product.priceString) setPriceLabel(pkg.product.priceString);
-      } catch { /* fallback already set */ }
-    })();
-    return () => { cancelled = true; };
-  }, [ready, getCurrentOffering]);
 
   const price = priceLabel ?? SUBSCRIPTION_MONTHLY_PRICE_FALLBACK;
 
@@ -99,14 +79,14 @@ export default function SubscriptionScreen() {
         'Not available',
         Platform.OS === 'web'
           ? 'Open this screen in the iOS or Android app to subscribe.'
-          : 'Add your RevenueCat public SDK key in .env and rebuild to enable purchases.'
+          : 'Build with EAS (eas build -p ios) to enable in-app purchases.',
       );
       return;
     }
     setBusy(true);
     clearError();
     try {
-      const outcome = await purchaseMacroviaMonthly();
+      const outcome = await purchaseMonthly();
       if (outcome === 'success') {
         Alert.alert(
           'Welcome to Macrovia Pro 🎉',
@@ -117,15 +97,13 @@ export default function SubscriptionScreen() {
     } finally {
       setBusy(false);
     }
-  }, [ready, clearError, purchaseMacroviaMonthly, isWelcome, goToApp]);
+  }, [ready, clearError, purchaseMonthly, isWelcome, goToApp]);
 
   const onRestore = useCallback(async () => {
-    if (!ready) return;
     setBusy(true);
     clearError();
     try {
-      const info = await restorePurchases();
-      const active = info?.entitlements.active[REVENUECAT_ENTITLEMENT_PRO]?.isActive;
+      const active = await restorePurchases();
       if (active && isWelcome) {
         Alert.alert('Restored', 'Macrovia Pro is active.', [{ text: 'Continue', onPress: goToApp }]);
         return;
@@ -139,17 +117,17 @@ export default function SubscriptionScreen() {
     } finally {
       setBusy(false);
     }
-  }, [ready, clearError, restorePurchases, isWelcome, goToApp]);
+  }, [clearError, restorePurchases, isWelcome, goToApp]);
 
   const onManage = useCallback(async () => {
-    if (!ready || Platform.OS === 'web') return;
-    setBusy(true);
-    clearError();
-    try { await presentCustomerCenter(); }
-    finally { setBusy(false); }
-  }, [ready, clearError, presentCustomerCenter]);
+    try {
+      await Linking.openURL('itms-apps://apps.apple.com/account/subscriptions');
+    } catch {
+      await Linking.openURL('https://apps.apple.com/account/subscriptions');
+    }
+  }, []);
 
-  const ctaDisabled = !ready || busy || Platform.OS === 'web';
+  const ctaDisabled = busy || Platform.OS === 'web';
 
   // ── Already pro ────────────────────────────────────────────────────────────
   if (isWelcome && isPro && !loading) {
@@ -261,7 +239,6 @@ export default function SubscriptionScreen() {
           </View>
         ) : null}
 
-        {/* Sandbox notice in Expo Go */}
         {Platform.OS === 'web' && (
           <Text style={[styles.webNote, { color: colors.textMuted }]}>
             Purchases are only available in the iOS or Android app.
@@ -320,7 +297,7 @@ export default function SubscriptionScreen() {
         <View style={styles.utilRow}>
           <Pressable
             onPress={() => void onRestore()}
-            disabled={!ready || busy}
+            disabled={busy}
             hitSlop={8}
             accessibilityRole="button">
             <Text style={[styles.utilLink, { color: colors.textMuted }]}>Restore purchases</Text>
@@ -330,7 +307,7 @@ export default function SubscriptionScreen() {
               <Text style={[styles.legalDot, { color: colors.textMuted }]}>·</Text>
               <Pressable
                 onPress={() => void onManage()}
-                disabled={!ready || busy}
+                disabled={busy}
                 hitSlop={8}
                 accessibilityRole="button">
                 <Text style={[styles.utilLink, { color: colors.textMuted }]}>Manage subscription</Text>

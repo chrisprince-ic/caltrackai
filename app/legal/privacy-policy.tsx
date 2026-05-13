@@ -99,13 +99,6 @@ export default function PrivacyPolicyScreen() {
           </P>
           <Bullet>Google AI Terms: ai.google.dev/terms</Bullet>
 
-          <Text style={styles.subTitle}>RevenueCat</Text>
-          <P>
-            We use RevenueCat to manage CalTrack Pro subscriptions. Subscription status and purchase
-            receipts are processed by RevenueCat. We do not store your payment card details.
-          </P>
-          <Bullet>RevenueCat Privacy Policy: revenuecat.com/privacy</Bullet>
-
           <Text style={styles.subTitle}>Apple App Store / Google Play</Text>
           <P>
             Subscription billing is handled entirely by Apple or Google. We receive only confirmation

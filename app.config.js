@@ -57,6 +57,10 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
+    plugins: [
+      ...(config.plugins ?? []),
+      'react-native-iap',
+    ],
     ios: {
       ...config.ios,
       infoPlist: {

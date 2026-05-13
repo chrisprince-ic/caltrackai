@@ -24,9 +24,5 @@ declare namespace NodeJS {
     EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?: string;
     /** Android OAuth client ID (required for Google on Android) */
     EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID?: string;
-    /** RevenueCat public SDK key (shared or fallback for both platforms) */
-    EXPO_PUBLIC_REVENUECAT_API_KEY?: string;
-    EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?: string;
-    EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY?: string;
   }
 }
