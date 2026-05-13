@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-env node */
+/* global __dirname */
 const path = require('path');
 
 // Load `.env` before `process.env` is read below. Ensures Firebase keys exist when Expo evaluates config
