@@ -25,7 +25,7 @@ import { useNutritionLog } from '@/contexts/NutritionLogContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import {
   buildTargetsFingerprint,
-  getLogDateKey,
+  getWeekKey,
   loadCachedWeeklyPlan,
   saveCachedWeeklyPlan,
   subscribeWeeklyPlanInvalidation,
@@ -142,21 +142,21 @@ function RecentMealRow({ entry, index, onPress }: { entry: LoggedMealEntry; inde
         colors={[p.from, p.to]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.mealCard}>
-        <View style={[styles.mealCardIcon, { backgroundColor: `${p.icon}22` }]}>
+        style={styles.logCard}>
+        <View style={[styles.logCardIcon, { backgroundColor: `${p.icon}22` }]}>
           <Ionicons name="restaurant" size={20} color={p.icon} />
         </View>
-        <View style={styles.mealCardBody}>
-          <Text style={[styles.mealCardName, { color: textColor }]} numberOfLines={1}>
+        <View style={styles.logCardBody}>
+          <Text style={[styles.logCardName, { color: textColor }]} numberOfLines={1}>
             {entry.foodName}
           </Text>
-          <Text style={[styles.mealCardTime, { color: p.icon }]}>{time}</Text>
+          <Text style={[styles.logCardTime, { color: p.icon }]}>{time}</Text>
         </View>
-        <View style={styles.mealCardRight}>
-          <Text style={[styles.mealCardKcal, { color: textColor }]}>
+        <View style={styles.logCardRight}>
+          <Text style={[styles.logCardKcal, { color: textColor }]}>
             {Math.round(entry.calories).toLocaleString()}
           </Text>
-          <Text style={[styles.mealCardUnit, { color: p.icon }]}>kcal</Text>
+          <Text style={[styles.logCardUnit, { color: p.icon }]}>kcal</Text>
         </View>
       </AppLinearGradient>
     </Pressable>
@@ -257,14 +257,14 @@ export function HomeDashboard() {
       if (cache.settled && cache.forUserId === uid) {
         setWeeklyPlanMeals(cache.meals);
         setWeeklyPlanLoading(false);
-        if (cache.meals?.length) setMealPlanSessionMeals(cache.meals, getLogDateKey());
+        if (cache.meals?.length) setMealPlanSessionMeals(cache.meals, getWeekKey());
         return;
       }
       let cancelled = false;
       setWeeklyPlanLoading(true);
       (async () => {
         const t = mealPlanTargetsRef.current;
-        const dateKey = getLogDateKey();
+        const dateKey = getWeekKey();
         const targetFp = buildTargetsFingerprint(t);
         try {
           let list = await loadCachedWeeklyPlan(dateKey, targetFp);
@@ -432,7 +432,7 @@ export function HomeDashboard() {
         <Animated.View entering={FadeInDown.delay(160).duration(420)}>
           <View style={styles.sectionRow}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>Suggested meals</Text>
-            <Pressable onPress={() => router.push('/meal-plan/weekly' as Href)} style={styles.seeAllBtn}>
+            <Pressable onPress={() => router.push('/(tabs)/meal-plans' as Href)} style={styles.seeAllBtn}>
               <Text style={[styles.seeAllTxt, { color: colors.textMuted }]}>Full week</Text>
               <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
             </Pressable>
@@ -457,7 +457,7 @@ export function HomeDashboard() {
                   onPress={() =>
                     recipeIdx !== null
                       ? router.push(`/meal-recipe?idx=${recipeIdx}` as Href)
-                      : router.push('/meal-plan/weekly' as Href)
+                      : router.push('/(tabs)/meal-plans' as Href)
                   }
                 />
               ))}
@@ -501,15 +501,6 @@ export function HomeDashboard() {
         </Animated.View>
 
         <View style={{ height: 8 }} />
-
-        {/* DEBUG ONLY — remove before shipping */}
-        {__DEV__ && (
-          <Pressable
-            onPress={() => router.push('/subscription' as Href)}
-            style={styles.debugBtn}>
-            <Text style={styles.debugBtnText}>DEV: Open Paywall</Text>
-          </Pressable>
-        )}
       </MacroviaScreen>
       <AppMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
@@ -670,7 +661,7 @@ const styles = StyleSheet.create({
   metaText: { fontFamily: Fonts.medium, fontSize: 12 },
   recentBlock: { marginTop: 4 },
   recentList: { gap: 8 },
-  mealCard: {
+  logCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -679,7 +670,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: 'hidden',
   },
-  mealCardIcon: {
+  logCardIcon: {
     width: 42,
     height: 42,
     borderRadius: 13,
@@ -687,31 +678,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  mealCardBody: {
+  logCardBody: {
     flex: 1,
     minWidth: 0,
     gap: 3,
   },
-  mealCardName: {
+  logCardName: {
     fontFamily: Fonts.semiBold,
     fontSize: 15,
     letterSpacing: -0.2,
   },
-  mealCardTime: {
+  logCardTime: {
     fontFamily: Fonts.medium,
     fontSize: 12,
   },
-  mealCardRight: {
+  logCardRight: {
     alignItems: 'flex-end',
     gap: 1,
     flexShrink: 0,
   },
-  mealCardKcal: {
+  logCardKcal: {
     fontFamily: Fonts.bold,
     fontSize: 17,
     letterSpacing: -0.4,
   },
-  mealCardUnit: {
+  logCardUnit: {
     fontFamily: Fonts.medium,
     fontSize: 11,
   },
@@ -758,12 +749,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   groceryBtnText: { fontFamily: Fonts.semiBold, fontSize: 14 },
-  debugBtn: {
-    margin: 16,
-    padding: 14,
-    backgroundColor: '#FF3B30',
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  debugBtnText: { fontFamily: Fonts.bold, fontSize: 14, color: '#fff' },
 });

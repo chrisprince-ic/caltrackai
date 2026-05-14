@@ -8,7 +8,7 @@ import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import {
   buildDietaryFingerprint,
   buildTargetsFingerprint,
-  getLogDateKey,
+  getWeekKey,
   loadCachedRecipe,
   loadCachedWeeklyPlan,
   saveCachedRecipe,
@@ -33,7 +33,7 @@ export default function MealRecipeScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const dateKey = getLogDateKey();
+    const dateKey = getWeekKey();
     const targetFp = buildTargetsFingerprint({
       dailyCalories,
       proteinG,

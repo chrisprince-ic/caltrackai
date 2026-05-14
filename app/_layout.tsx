@@ -6,11 +6,14 @@ import {
   useFonts,
 } from '@expo-google-fonts/poppins';
 import { ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { type Href, Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import 'react-native-reanimated';
+
+import { initNotifications } from '@/lib/notifications';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AppThemeProvider, useAppTheme } from '@/contexts/AppThemeContext';
@@ -28,6 +31,24 @@ export const unstable_settings = {
 
 function RootLayoutBody() {
   const { navigationTheme, isDark } = useAppTheme();
+  const router = useRouter();
+  const lastResponse = Notifications.useLastNotificationResponse();
+  const handledIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    void initNotifications();
+  }, []);
+
+  useEffect(() => {
+    const id = lastResponse?.notification.request.identifier;
+    if (!id || handledIdRef.current === id) return;
+    handledIdRef.current = id;
+    const screen = lastResponse?.notification.request.content.data?.screen;
+    if (screen === 'insights') {
+      router.push('/(tabs)/insights' as Href);
+    }
+  }, [lastResponse, router]);
+
   return (
     <ThemeProvider value={navigationTheme}>
       <AuthProvider>

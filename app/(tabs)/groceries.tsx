@@ -40,7 +40,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import {
   buildTargetsFingerprint,
-  getLogDateKey,
+  getWeekKey,
   loadCachedWeeklyGroceries,
   saveCachedWeeklyGroceries,
 } from '@/lib/ai-meal-daily-cache';
@@ -307,7 +307,7 @@ export default function GroceriesScreen() {
       setLoading(true);
       setError(null);
       (async () => {
-        const dateKey = getLogDateKey();
+        const dateKey = getWeekKey();
         const targetFp = buildTargetsFingerprint({
           dailyCalories,
           proteinG,

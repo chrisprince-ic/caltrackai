@@ -26,7 +26,8 @@
       "Bash(node -e \"const d=require\\('./package.json'\\); const deps={...d.dependencies,...\\(d.devDependencies||{}\\)}; const keys=Object.keys\\(deps\\).filter\\(k=>k.includes\\('expo'\\)\\); console.log\\(keys.join\\('\\\\n'\\)\\)\")",
       "Bash(npx expo *)",
       "Bash(node -e \"const d=require\\('./package.json'\\); console.log\\(d.dependencies['expo-linear-gradient'] || 'NOT INSTALLED'\\)\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const p = require\\('./app.json'\\); console.log\\(JSON.stringify\\(p.expo.notification || p.expo.ios || {}, null, 2\\)\\)\")"
     ]
   }
 }

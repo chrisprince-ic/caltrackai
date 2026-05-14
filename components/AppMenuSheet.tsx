@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { type Href, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -28,6 +28,11 @@ import { Palette } from '@/constants/palette';
 import { useAppTheme } from '@/contexts/AppThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { openLegalUrl } from '@/lib/legal-browser';
+import {
+  loadNotifPrefs,
+  setDailyReminderEnabled,
+  setWeeklyRecapEnabled,
+} from '@/lib/notifications';
 import { shareUserDataExport } from '@/lib/user-data-export';
 
 const SHARE_MESSAGE = "I’m using Macrovia to log meals and hit my macros — give it a try!";
@@ -159,9 +164,28 @@ export function AppMenuSheet({ visible, onClose }: Props) {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteBusy, setDeleteBusy] = useState(false);
 
-  // UI-only notification toggles — wired up in a future release.
-  const [dailyReminder, setDailyReminder] = useState(false);
-  const [weeklyRecap, setWeeklyRecap] = useState(false);
+  const [dailyReminder, setDailyReminderState] = useState(true);
+  const [weeklyRecap, setWeeklyRecapState] = useState(true);
+
+  useEffect(() => {
+    if (!visible) return;
+    loadNotifPrefs()
+      .then(({ daily, weekly }) => {
+        setDailyReminderState(daily);
+        setWeeklyRecapState(weekly);
+      })
+      .catch(() => {});
+  }, [visible]);
+
+  const onDailyReminderChange = useCallback((v: boolean) => {
+    setDailyReminderState(v);
+    void setDailyReminderEnabled(v);
+  }, []);
+
+  const onWeeklyRecapChange = useCallback((v: boolean) => {
+    setWeeklyRecapState(v);
+    void setWeeklyRecapEnabled(v);
+  }, []);
 
   const appVersion = Constants.expoConfig?.version ?? '0.0.0';
   const iosBuild = Constants.expoConfig?.ios?.buildNumber ?? '';
@@ -341,20 +365,17 @@ export function AppMenuSheet({ visible, onClose }: Props) {
               <ToggleRow
                 icon="notifications-outline"
                 label="Daily reminder"
-                sub="Nudge to log your meals"
+                sub="Nudge to log your meals every day at 8am"
                 value={dailyReminder}
-                onValueChange={setDailyReminder}
+                onValueChange={onDailyReminderChange}
               />
               <ToggleRow
                 icon="bar-chart-outline"
                 label="Weekly recap"
-                sub="A summary every Sunday"
+                sub="Check your progress every Sunday at 8am"
                 value={weeklyRecap}
-                onValueChange={setWeeklyRecap}
+                onValueChange={onWeeklyRecapChange}
               />
-              <Text style={[styles.caption, { color: colors.textMuted }]}>
-                Coming soon — we’ll wire these up in an upcoming release.
-              </Text>
 
               <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 18 }]}>Account & plan</Text>
               <MenuRow

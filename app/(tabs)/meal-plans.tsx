@@ -34,7 +34,7 @@ import { useNutritionTargets } from '@/contexts/NutritionTargetsContext';
 import {
   buildTargetsFingerprint,
   clearCachedWeeklyPlan,
-  getLogDateKey,
+  getWeekKey,
   loadCachedWeeklyPlan,
   saveCachedWeeklyPlan,
 } from '@/lib/ai-meal-daily-cache';
@@ -104,7 +104,7 @@ export default function MealPlansScreen() {
         setMeals(null);
         return;
       }
-      const dateKey = getLogDateKey();
+      const dateKey = getWeekKey();
       const targetFp = buildTargetsFingerprint({
         dailyCalories,
         proteinG,

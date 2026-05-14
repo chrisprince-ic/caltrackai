@@ -3,6 +3,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLogDateKey } from '@/lib/nutrition-sync';
 import type { AiGroceryItem, AiMealBrief, AiMealRecipe } from '@/types/ai-nutrition';
 
+/**
+ * Returns a stable key for the current ISO calendar week, based on the Monday
+ * start date (e.g. "2025-05-12"). Changes every Monday — used so that AI
+ * grocery and meal-plan calls fire at most once per week instead of once per day.
+ */
+export function getWeekKey(): string {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday
+  const daysToMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysToMonday);
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth() + 1).padStart(2, '0');
+  const d = String(monday.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 const WEEKLY_PREFIX = '@caltrackai/dailyAi/weekly/';
 const GROCERY_PREFIX = '@caltrackai/dailyAi/groceries/';
 const RECIPE_PREFIX = '@caltrackai/dailyAi/recipe/';
@@ -66,7 +83,7 @@ export async function saveCachedWeeklyPlan(
  * so they can drop their cached meals and re-fetch immediately, instead of
  * waiting for a full app reload.
  */
-export async function clearCachedWeeklyPlan(dateKey: string = getLogDateKey()): Promise<void> {
+export async function clearCachedWeeklyPlan(dateKey: string = getWeekKey()): Promise<void> {
   try {
     await AsyncStorage.removeItem(WEEKLY_PREFIX + dateKey);
   } catch {
@@ -177,3 +194,4 @@ export async function saveCachedRecipe(
 }
 
 export { getLogDateKey };
+// getWeekKey is defined and exported above
