@@ -9,14 +9,6 @@ const WEEKLY_ID = 'macrovia-weekly-recap';
 const KEY_DAILY = '@macrovia/notif_daily';
 const KEY_WEEKLY = '@macrovia/notif_weekly';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
 async function requestPermission(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -73,18 +65,29 @@ export async function loadNotifPrefs(): Promise<NotifPrefs> {
 
 export async function initNotifications(): Promise<void> {
   if (Platform.OS === 'web') return;
-  const prefs = await loadNotifPrefs();
-  const granted = await requestPermission();
-  if (!granted) return;
-  if (prefs.daily) {
-    await scheduleDailyReminder().catch(() => {});
-  } else {
-    await Notifications.cancelScheduledNotificationAsync(DAILY_ID).catch(() => {});
-  }
-  if (prefs.weekly) {
-    await scheduleWeeklyRecap().catch(() => {});
-  } else {
-    await Notifications.cancelScheduledNotificationAsync(WEEKLY_ID).catch(() => {});
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+    const prefs = await loadNotifPrefs();
+    const granted = await requestPermission();
+    if (!granted) return;
+    if (prefs.daily) {
+      await scheduleDailyReminder().catch(() => {});
+    } else {
+      await Notifications.cancelScheduledNotificationAsync(DAILY_ID).catch(() => {});
+    }
+    if (prefs.weekly) {
+      await scheduleWeeklyRecap().catch(() => {});
+    } else {
+      await Notifications.cancelScheduledNotificationAsync(WEEKLY_ID).catch(() => {});
+    }
+  } catch {
+    // native module not available in this environment
   }
 }
 

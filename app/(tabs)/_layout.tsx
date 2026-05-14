@@ -1,3 +1,4 @@
+import * as Notifications from 'expo-notifications';
 import { type Href, Tabs, useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
@@ -14,6 +15,8 @@ export default function TabLayout() {
   const { user } = useAuth();
   const router = useRouter();
   const gatedRef = useRef(false);
+  const lastResponse = Notifications.useLastNotificationResponse();
+  const handledNotifRef = useRef<string | null>(null);
 
   // One-time live check after IAP initialises — catches subscriptions that
   // lapsed since the last cached value was written to AsyncStorage.
@@ -24,6 +27,17 @@ export default function TabLayout() {
       router.replace('/subscription?welcome=1' as Href);
     }
   }, [ready, isPro, user, router]);
+
+  // Navigate when user taps a notification
+  useEffect(() => {
+    const id = lastResponse?.notification.request.identifier;
+    if (!id || handledNotifRef.current === id) return;
+    handledNotifRef.current = id;
+    const screen = lastResponse?.notification.request.content.data?.screen;
+    if (screen === 'insights') {
+      router.push('/(tabs)/insights' as Href);
+    }
+  }, [lastResponse, router]);
 
   return (
     <View style={{ flex: 1 }}>
