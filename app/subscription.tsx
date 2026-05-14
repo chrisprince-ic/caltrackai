@@ -58,6 +58,9 @@ export default function SubscriptionScreen() {
 
   const [busy, setBusy] = useState(false);
 
+  // Show spinner and block tap while IAP is still initializing
+  const showSpinner = busy || loading;
+
   const price = priceLabel ?? SUBSCRIPTION_MONTHLY_PRICE_FALLBACK;
 
   const billingLine = useMemo(
@@ -78,7 +81,7 @@ export default function SubscriptionScreen() {
       Alert.alert(
         'Not available',
         Platform.OS === 'web'
-          ? 'Open this screen in the iOS or Android app to subscribe.'
+          ? 'Open this screen in the iOS app to subscribe.'
           : 'Build with EAS (eas build -p ios) to enable in-app purchases.',
       );
       return;
@@ -127,7 +130,7 @@ export default function SubscriptionScreen() {
     }
   }, []);
 
-  const ctaDisabled = busy || Platform.OS === 'web';
+  const ctaDisabled = showSpinner || Platform.OS === 'web';
 
   // ── Already pro ────────────────────────────────────────────────────────────
   if (isWelcome && isPro && !loading) {
@@ -161,16 +164,16 @@ export default function SubscriptionScreen() {
         end={{ x: 1, y: 1 }}
         style={[styles.hero, { paddingTop: insets.top + 12 }]}>
 
-        {/* Close / back */}
-        <Pressable
-          onPress={onBack}
-          style={({ pressed }) => [styles.heroClose, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-          accessibilityLabel={isWelcome ? 'Skip' : 'Close'}>
-          {isWelcome
-            ? <Text style={styles.heroCloseSkip}>Skip</Text>
-            : <Ionicons name="close" size={22} color="rgba(255,255,255,0.9)" />}
-        </Pressable>
+        {/* Close / back — hidden during welcome flow: user must start trial */}
+        {!isWelcome && (
+          <Pressable
+            onPress={onBack}
+            style={({ pressed }) => [styles.heroClose, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Close">
+            <Ionicons name="close" size={22} color="rgba(255,255,255,0.9)" />
+          </Pressable>
+        )}
 
         {/* App icon + name */}
         <View style={styles.heroCenter}>
@@ -241,7 +244,7 @@ export default function SubscriptionScreen() {
 
         {Platform.OS === 'web' && (
           <Text style={[styles.webNote, { color: colors.textMuted }]}>
-            Purchases are only available in the iOS or Android app.
+            Purchases are only available in the iOS app.
           </Text>
         )}
 
@@ -256,7 +259,7 @@ export default function SubscriptionScreen() {
           ]}
           accessibilityRole="button"
           accessibilityLabel={`Start ${SUBSCRIPTION_TRIAL_DAYS}-day free trial`}>
-          {busy ? (
+          {showSpinner ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>
@@ -297,7 +300,7 @@ export default function SubscriptionScreen() {
         <View style={styles.utilRow}>
           <Pressable
             onPress={() => void onRestore()}
-            disabled={busy}
+            disabled={showSpinner}
             hitSlop={8}
             accessibilityRole="button">
             <Text style={[styles.utilLink, { color: colors.textMuted }]}>Restore purchases</Text>

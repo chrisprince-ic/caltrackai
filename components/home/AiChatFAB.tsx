@@ -120,7 +120,7 @@ export function AiChatFAB() {
           accessibilityRole="button"
           accessibilityLabel="Open AI coach">
           <AppLinearGradient
-            colors={['#7C3AED', '#5B21B6']}
+            colors={isDark ? ['#374151', '#1F2937'] : ['#111827', '#0F172A']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.fab}>
@@ -145,7 +145,7 @@ export function AiChatFAB() {
             ]}>
             <View style={styles.headerLeft}>
               <AppLinearGradient
-                colors={['#7C3AED', '#5B21B6']}
+                colors={isDark ? ['#374151', '#1F2937'] : ['#111827', '#0F172A']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.headerAvatar}>

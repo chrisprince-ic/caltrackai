@@ -1,12 +1,30 @@
-import { Tabs } from 'expo-router';
+import { type Href, Tabs, useRouter } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
 import { AiChatFAB } from '@/components/home/AiChatFAB';
 import { CustomTabBar } from '@/components/tabs/CustomTabBar';
 import { useAppTheme } from '@/contexts/AppThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useIAP } from '@/contexts/IAPContext';
 
 export default function TabLayout() {
   const { colors } = useAppTheme();
+  const { isPro, ready } = useIAP();
+  const { user } = useAuth();
+  const router = useRouter();
+  const gatedRef = useRef(false);
+
+  // One-time live check after IAP initialises — catches subscriptions that
+  // lapsed since the last cached value was written to AsyncStorage.
+  useEffect(() => {
+    if (!ready || gatedRef.current) return;
+    gatedRef.current = true;
+    if (user && !isPro) {
+      router.replace('/subscription?welcome=1' as Href);
+    }
+  }, [ready, isPro, user, router]);
+
   return (
     <View style={{ flex: 1 }}>
       <Tabs

@@ -19,12 +19,45 @@ import {
   purchaseErrorListener,
   purchaseUpdatedListener,
   requestPurchase,
+  restorePurchases as restorePurchasesFromStore,
   type Purchase,
   type PurchaseError,
   ErrorCode,
 } from 'react-native-iap';
 
-import { MACROVIA_PRODUCT_ID } from '@/constants/iap';
+import Constants from 'expo-constants';
+
+import {
+  IAP_SUBSCRIPTION_SKU_ANDROID,
+  IAP_SUBSCRIPTION_SKU_IOS,
+  IAP_SUBSCRIPTION_SKUS_ACTIVE,
+} from '@/constants/iap';
+
+const OUR_SUB_SKU_SET = new Set(IAP_SUBSCRIPTION_SKUS_ACTIVE);
+
+function subscriptionIsOurPro(s: { productId: string; currentPlanId?: string | null; isActive: boolean }) {
+  if (!s.isActive) return false;
+  if (OUR_SUB_SKU_SET.has(s.productId)) return true;
+  if (s.currentPlanId && OUR_SUB_SKU_SET.has(s.currentPlanId)) return true;
+  return false;
+}
+
+/** Play Billing 5+ needs a base-plan offer token; token lives on the product from `fetchProducts`. */
+function extractAndroidSubscriptionOfferToken(product: unknown): string | null {
+  if (!product || typeof product !== 'object') return null;
+  const p = product as {
+    platform?: string;
+    productStatusAndroid?: string | null;
+    subscriptionOffers?: { offerTokenAndroid?: string | null }[] | null;
+    subscriptionOfferDetailsAndroid?: { offerToken?: string }[] | null;
+  };
+  if (p.platform !== 'android') return null;
+  if (p.productStatusAndroid === 'not-found') return null;
+  const fromStandard = p.subscriptionOffers?.find((o) => o.offerTokenAndroid)?.offerTokenAndroid;
+  if (fromStandard) return fromStandard;
+  const legacy = p.subscriptionOfferDetailsAndroid?.[0]?.offerToken;
+  return legacy ?? null;
+}
 
 const IS_PRO_KEY = '@macrovia/isPro';
 const NATIVE_STORE = Platform.OS === 'ios' || Platform.OS === 'android';
@@ -57,6 +90,8 @@ export function IAPProvider({ children }: { children: ReactNode }) {
   const pendingPurchaseRef = useRef<((outcome: IAPOutcome) => void) | null>(null);
   // Guard against double-init from React 18 Strict Mode
   const initializedRef = useRef(false);
+  /** Filled after `fetchProducts` on Android — required for `requestPurchase` (Play Billing 5+). */
+  const androidOfferTokenRef = useRef<string | null>(null);
 
   const applyProStatus = useCallback(async (val: boolean) => {
     setIsPro(val);
@@ -75,8 +110,8 @@ export function IAPProvider({ children }: { children: ReactNode }) {
   // Check active subscriptions from the store
   const syncSubscriptionStatus = useCallback(async () => {
     try {
-      const subs = await getActiveSubscriptions();
-      const active = subs.some((s) => s.productId === MACROVIA_PRODUCT_ID && s.isActive);
+      const subs = await getActiveSubscriptions([...IAP_SUBSCRIPTION_SKUS_ACTIVE]);
+      const active = subs.some(subscriptionIsOurPro);
       await applyProStatus(active);
     } catch {}
   }, [applyProStatus]);
@@ -99,19 +134,16 @@ export function IAPProvider({ children }: { children: ReactNode }) {
       try {
         await initConnection();
 
+        const storeSku =
+          Platform.OS === 'android' ? IAP_SUBSCRIPTION_SKU_ANDROID : IAP_SUBSCRIPTION_SKU_IOS;
+
         if (__DEV__) {
-          console.log('[IAP] initConnection succeeded. Product ID:', MACROVIA_PRODUCT_ID);
-          try {
-            const debugProducts = await fetchProducts({ skus: [MACROVIA_PRODUCT_ID], type: 'subs' });
-            console.log('[IAP] fetchProducts result:', JSON.stringify(debugProducts));
-          } catch (debugErr) {
-            console.log('[IAP] fetchProducts error:', JSON.stringify(debugErr));
-          }
+          console.log('[IAP] initConnection succeeded. storeSku:', storeSku);
         }
 
         // Handle completed transactions (including ones queued from previous sessions)
         purchaseSub = purchaseUpdatedListener(async (purchase: Purchase) => {
-          if (purchase.productId !== MACROVIA_PRODUCT_ID) return;
+          if (!OUR_SUB_SKU_SET.has(purchase.productId)) return;
 
           try {
             await finishTransaction({ purchase, isConsumable: false });
@@ -134,13 +166,19 @@ export function IAPProvider({ children }: { children: ReactNode }) {
           pendingPurchaseRef.current = null;
         });
 
-        // Fetch live price from the store
+        // Fetch live price from the store + Android offer token for billing
         try {
-          const products = await fetchProducts({ skus: [MACROVIA_PRODUCT_ID], type: 'subs' });
+          const products = await fetchProducts({ skus: [storeSku], type: 'subs' });
           const product = products?.[0];
           if (product) {
-            const price = (product as { localizedPrice?: string | null }).localizedPrice;
+            const p = product as { localizedPrice?: string | null; displayPrice?: string | null };
+            const price = p.localizedPrice ?? p.displayPrice;
             if (price) setPriceLabel(price);
+            if (Platform.OS === 'android') {
+              androidOfferTokenRef.current = extractAndroidSubscriptionOfferToken(product);
+            }
+          } else if (Platform.OS === 'android') {
+            androidOfferTokenRef.current = null;
           }
         } catch {}
 
@@ -184,7 +222,7 @@ export function IAPProvider({ children }: { children: ReactNode }) {
     if (!NATIVE_STORE || !ready) {
       setLastError(
         Platform.OS === 'web'
-          ? 'Open this screen in the iOS or Android app to subscribe.'
+          ? 'Open this screen in the iOS app to subscribe.'
           : 'Store not ready. Build with EAS (eas build -p ios) to enable purchases.',
       );
       return 'error';
@@ -192,45 +230,85 @@ export function IAPProvider({ children }: { children: ReactNode }) {
     clearError();
 
     return new Promise<IAPOutcome>((resolve) => {
-      pendingPurchaseRef.current = resolve;
+      const storeSku =
+        Platform.OS === 'android' ? IAP_SUBSCRIPTION_SKU_ANDROID : IAP_SUBSCRIPTION_SKU_IOS;
+      const androidPackage =
+        Constants.expoConfig?.android?.package ?? 'your Android applicationId';
 
-      // Safety net: if neither purchaseUpdatedListener nor purchaseErrorListener
-      // fires (StoreKit silent failure, network drop, sku-not-found at native layer),
-      // unblock the UI after 30 seconds instead of hanging forever.
-      const timeoutId = setTimeout(() => {
-        if (!pendingPurchaseRef.current) return;
-        pendingPurchaseRef.current = null;
-        setLastError('Purchase timed out. Check your App Store Connect setup and try again.');
-        resolve('error');
-      }, 30_000);
+      void (async () => {
+        // Safety net: if neither purchaseUpdatedListener nor purchaseErrorListener
+        // fires (StoreKit silent failure, network drop, sku-not-found at native layer),
+        // unblock the UI after 30 seconds instead of hanging forever.
+        const timeoutId = setTimeout(() => {
+          if (!pendingPurchaseRef.current) return;
+          pendingPurchaseRef.current = null;
+          setLastError('Purchase timed out. Check your App Store Connect setup and try again.');
+          resolve('error');
+        }, 30_000);
 
-      const settle = (outcome: IAPOutcome, errMsg?: string) => {
-        clearTimeout(timeoutId);
-        if (!pendingPurchaseRef.current) return; // already settled
-        pendingPurchaseRef.current = null;
-        if (errMsg) setLastError(errMsg);
-        resolve(outcome);
-      };
+        const settle = (outcome: IAPOutcome, errMsg?: string) => {
+          clearTimeout(timeoutId);
+          if (!pendingPurchaseRef.current) return;
+          pendingPurchaseRef.current = null;
+          if (errMsg) setLastError(errMsg);
+          resolve(outcome);
+        };
 
-      // Store settle so listeners can call it
-      pendingPurchaseRef.current = (outcome: IAPOutcome) => settle(outcome);
+        pendingPurchaseRef.current = (outcome: IAPOutcome) => settle(outcome);
 
-      requestPurchase({
-        request: {
-          apple: {
-            sku: MACROVIA_PRODUCT_ID,
-            andDangerouslyFinishTransactionAutomatically: false,
-          },
-        },
-        type: 'subs',
-      }).catch((e: unknown) => {
-        const err = e as { code?: string; message?: string };
-        if (err?.code === ErrorCode.UserCancelled) {
-          settle('cancelled');
-        } else {
-          settle('error', err?.message ?? 'Purchase failed');
+        let offerToken: string | null = null;
+        if (Platform.OS === 'android') {
+          offerToken = androidOfferTokenRef.current;
+          if (!offerToken) {
+            try {
+              const products = await fetchProducts({ skus: [storeSku], type: 'subs' });
+              const first = products?.[0];
+              offerToken = extractAndroidSubscriptionOfferToken(first);
+              androidOfferTokenRef.current = offerToken;
+            } catch (e: unknown) {
+              settle('error', (e as Error)?.message ?? 'Could not load subscription from Google Play');
+              return;
+            }
+          }
+          if (!offerToken) {
+            settle(
+              'error',
+              `Google Play returned no subscription offer for "${storeSku}". ` +
+                `In Play Console, open this subscription and ensure a base plan is Active, linked to app id ${androidPackage}. ` +
+                'Optional: set EXPO_PUBLIC_IAP_PRODUCT_ID_ANDROID if the Play product id differs from iOS.',
+            );
+            return;
+          }
         }
-      });
+
+        try {
+          await requestPurchase({
+            request:
+              Platform.OS === 'ios'
+                ? {
+                    apple: {
+                      sku: IAP_SUBSCRIPTION_SKU_IOS,
+                      andDangerouslyFinishTransactionAutomatically: false,
+                    },
+                  }
+                : {
+                    google: {
+                      skus: [storeSku],
+                      // offerToken is guaranteed non-null here — null is caught and returned above
+                      subscriptionOffers: [{ sku: storeSku, offerToken: offerToken! }],
+                    },
+                  },
+            type: 'subs',
+          });
+        } catch (e: unknown) {
+          const err = e as { code?: string; message?: string };
+          if (err?.code === ErrorCode.UserCancelled) {
+            settle('cancelled');
+          } else {
+            settle('error', err?.message ?? 'Purchase failed');
+          }
+        }
+      })();
     });
   }, [ready, clearError]);
 
@@ -238,8 +316,10 @@ export function IAPProvider({ children }: { children: ReactNode }) {
     if (!NATIVE_STORE || !ready) return false;
     clearError();
     try {
-      const subs = await getActiveSubscriptions();
-      const active = subs.some((s) => s.productId === MACROVIA_PRODUCT_ID && s.isActive);
+      // iOS: syncIOS + refresh receipts; Android: syncs Play purchases — required before getActiveSubscriptions sees entitlements.
+      await restorePurchasesFromStore();
+      const subs = await getActiveSubscriptions([...IAP_SUBSCRIPTION_SKUS_ACTIVE]);
+      const active = subs.some(subscriptionIsOurPro);
       await applyProStatus(active);
       return active;
     } catch (e: unknown) {

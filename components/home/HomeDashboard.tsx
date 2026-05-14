@@ -114,40 +114,51 @@ function MealCard({
   );
 }
 
-function formatMacroLine(e: LoggedMealEntry) {
-  return `P ${Math.round(e.proteinGrams)} · C ${Math.round(e.carbsGrams)} · F ${Math.round(e.fatGrams)}`;
-}
+// Rotating gradient palettes for meal cards — light and dark variants
+const MEAL_PALETTES_LIGHT = [
+  { from: '#EDE9FE', to: '#DDD6FE', icon: '#7C3AED' },  // purple
+  { from: '#DCFCE7', to: '#BBF7D0', icon: '#16A34A' },  // green
+  { from: '#FFEDD5', to: '#FED7AA', icon: '#EA580C' },  // orange
+  { from: '#FCE7F3', to: '#FBCFE8', icon: '#DB2777' },  // pink
+] as const;
 
-function RecentMealRow({ entry, onPress }: { entry: LoggedMealEntry; onPress: () => void }) {
-  const { colors } = useAppTheme();
-  const d = new Date(entry.loggedAt);
-  const slot = mealSlotLabel(d.getHours());
-  const sub = `${slot} · ${formatMealTime(entry.loggedAt)}`;
+const MEAL_PALETTES_DARK = [
+  { from: '#2E1065', to: '#1E0A4A', icon: '#C4B5FD' },  // purple
+  { from: '#052E16', to: '#14532D', icon: '#86EFAC' },  // green
+  { from: '#431407', to: '#7C2D12', icon: '#FDBA74' },  // orange
+  { from: '#500724', to: '#881337', icon: '#FDA4AF' },  // rose
+] as const;
+
+function RecentMealRow({ entry, index, onPress }: { entry: LoggedMealEntry; index: number; onPress: () => void }) {
+  const { isDark } = useAppTheme();
+  const palettes = isDark ? MEAL_PALETTES_DARK : MEAL_PALETTES_LIGHT;
+  const p = palettes[index % palettes.length];
+  const time = formatMealTime(entry.loggedAt);
+  const textColor = isDark ? '#F9FAFB' : '#111827';
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.recentRow,
-        { backgroundColor: colors.surface, borderColor: colors.glassStroke },
-        pressed && { opacity: 0.92 },
-      ]}>
-      <View style={[styles.recentThumb, { backgroundColor: colors.surfaceMuted }]}>
-        <Ionicons name="restaurant" size={18} color={colors.accent} />
-      </View>
-      <View style={styles.recentMid}>
-        <View style={styles.recentTopLine}>
-          <Text style={[styles.recentName, { color: colors.text }]} numberOfLines={1}>
+    <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.88 : 1 }]}>
+      <AppLinearGradient
+        colors={[p.from, p.to]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.mealCard}>
+        <View style={[styles.mealCardIcon, { backgroundColor: `${p.icon}22` }]}>
+          <Ionicons name="restaurant" size={20} color={p.icon} />
+        </View>
+        <View style={styles.mealCardBody}>
+          <Text style={[styles.mealCardName, { color: textColor }]} numberOfLines={1}>
             {entry.foodName}
           </Text>
-          <Text style={[styles.recentKcal, { color: colors.text }]}>
-            {Math.round(entry.calories).toLocaleString()}{' '}
-            <Text style={[styles.kcalLbl, { color: colors.textMuted }]}>kcal</Text>
-          </Text>
+          <Text style={[styles.mealCardTime, { color: p.icon }]}>{time}</Text>
         </View>
-        <Text style={[styles.recentSub, { color: colors.textMuted }]} numberOfLines={2}>
-          {sub} · {formatMacroLine(entry)}
-        </Text>
-      </View>
+        <View style={styles.mealCardRight}>
+          <Text style={[styles.mealCardKcal, { color: textColor }]}>
+            {Math.round(entry.calories).toLocaleString()}
+          </Text>
+          <Text style={[styles.mealCardUnit, { color: p.icon }]}>kcal</Text>
+        </View>
+      </AppLinearGradient>
     </Pressable>
   );
 }
@@ -411,8 +422,8 @@ export function HomeDashboard() {
               </Pressable>
             </View>
             <View style={styles.recentList}>
-              {sortedEntries.map((e) => (
-                <RecentMealRow key={e.id} entry={e} onPress={() => router.push('/manual-entry' as Href)} />
+              {sortedEntries.map((e, i) => (
+                <RecentMealRow key={e.id} entry={e} index={i} onPress={() => router.push('/manual-entry' as Href)} />
               ))}
             </View>
           </Animated.View>
@@ -490,6 +501,15 @@ export function HomeDashboard() {
         </Animated.View>
 
         <View style={{ height: 8 }} />
+
+        {/* DEBUG ONLY — remove before shipping */}
+        {__DEV__ && (
+          <Pressable
+            onPress={() => router.push('/subscription' as Href)}
+            style={styles.debugBtn}>
+            <Text style={styles.debugBtnText}>DEV: Open Paywall</Text>
+          </Pressable>
+        )}
       </MacroviaScreen>
       <AppMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
@@ -589,7 +609,6 @@ const styles = StyleSheet.create({
   },
   seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   seeAllTxt: { fontFamily: Fonts.semiBold, fontSize: 13 },
-  kcalLbl: { fontFamily: Fonts.medium, fontSize: 10 },
   groceryIconGrad: {
     width: 46,
     height: 46,
@@ -650,43 +669,52 @@ const styles = StyleSheet.create({
   },
   metaText: { fontFamily: Fonts.medium, fontSize: 12 },
   recentBlock: { marginTop: 4 },
-  recentList: { gap: 10 },
-  recentRow: {
+  recentList: { gap: 8 },
+  mealCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 12,
+    paddingVertical: 13,
     paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.07,
-        shadowRadius: 10,
-      },
-      default: { elevation: 3 },
-    }),
+    borderRadius: 18,
+    overflow: 'hidden',
   },
-  recentThumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  mealCardIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  recentMid: { flex: 1, minWidth: 0 },
-  recentTopLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 2,
+  mealCardBody: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
   },
-  recentName: { flex: 1, fontFamily: Fonts.semiBold, fontSize: 15 },
-  recentKcal: { fontFamily: Fonts.semiBold, fontSize: 14, flexShrink: 0 },
-  recentSub: { fontFamily: Fonts.regular, fontSize: 13 },
+  mealCardName: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  mealCardTime: {
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+  },
+  mealCardRight: {
+    alignItems: 'flex-end',
+    gap: 1,
+    flexShrink: 0,
+  },
+  mealCardKcal: {
+    fontFamily: Fonts.bold,
+    fontSize: 17,
+    letterSpacing: -0.4,
+  },
+  mealCardUnit: {
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+  },
   recentEmpty: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -730,4 +758,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   groceryBtnText: { fontFamily: Fonts.semiBold, fontSize: 14 },
+  debugBtn: {
+    margin: 16,
+    padding: 14,
+    backgroundColor: '#FF3B30',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  debugBtnText: { fontFamily: Fonts.bold, fontSize: 14, color: '#fff' },
 });

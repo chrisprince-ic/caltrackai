@@ -13,14 +13,13 @@ import { hasAppSplashCompleted, markAppSplashComplete } from '@/lib/app-splash-g
 
 /** Brief branded splash before routing to welcome (signed out) or home tabs (signed in). */
 const MIN_SPLASH_MS = 700;
-const PAYWALL_SHOWN_KEY = '@caltrackai/paywallShown';
+const IAP_PRO_KEY = '@macrovia/isPro';
 
 async function routeAfterSplash(user: ReturnType<typeof useAuth>['user'], router: ReturnType<typeof useRouter>) {
   markAppSplashComplete();
   if (user) {
-    const shown = await AsyncStorage.getItem(PAYWALL_SHOWN_KEY).catch(() => null);
-    if (!shown) {
-      await AsyncStorage.setItem(PAYWALL_SHOWN_KEY, '1').catch(() => {});
+    const isProVal = await AsyncStorage.getItem(IAP_PRO_KEY).catch(() => null);
+    if (isProVal !== 'true') {
       router.replace('/subscription?welcome=1' as Href);
     } else {
       router.replace('/(tabs)' as Href);
@@ -41,11 +40,10 @@ export default function Index() {
     if (!skipSplash || initializing || navigatedRef.current) return;
     navigatedRef.current = true;
     if (user) {
-      AsyncStorage.getItem(PAYWALL_SHOWN_KEY)
+      AsyncStorage.getItem(IAP_PRO_KEY)
         .catch(() => null)
-        .then((shown) => {
-          if (!shown) {
-            AsyncStorage.setItem(PAYWALL_SHOWN_KEY, '1').catch(() => {});
+        .then((isProVal) => {
+          if (isProVal !== 'true') {
             router.replace('/subscription?welcome=1' as Href);
           } else {
             router.replace('/(tabs)' as Href);

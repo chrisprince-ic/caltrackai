@@ -375,13 +375,6 @@ export function AppMenuSheet({ visible, onClose }: Props) {
                 sub="Trends & coaching tips"
                 onPress={() => go('/(tabs)/insights' as Href)}
               />
-              <MenuRow
-                icon="sparkles"
-                label="Macrovia Pro"
-                sub="Subscription & trial"
-                onPress={() => go('/subscription' as Href)}
-              />
-
               <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: 18 }]}>Share</Text>
               <MenuRow
                 icon="share-outline"
