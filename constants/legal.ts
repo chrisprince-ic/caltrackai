@@ -4,8 +4,9 @@
  */
 export const LEGAL = {
   brandDomain: 'macrovia.health',
-  termsUrl: 'https://www.macrovia.health/terms',
-  privacyUrl: 'https://www.macrovia.health/privacy',
+  /** App Store–linked hosted terms (must match Review Notes / subscription metadata). */
+  termsUrl: 'https://www.macrovia.health/terms-of-use',
+  privacyUrl: 'https://www.macrovia.health/privacy-policy',
   supportEmail: 'support@macrovia.health',
 } as const;
 

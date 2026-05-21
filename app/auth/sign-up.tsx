@@ -262,7 +262,7 @@ export default function SignUpScreen() {
           <Text style={styles.legalFooter}>
             By continuing you agree to our{' '}
             <Text style={styles.legalLink} onPress={() => void openLegalUrl('terms')}>
-              Terms
+              Terms of Use
             </Text>{' '}
             and{' '}
             <Text style={styles.legalLink} onPress={() => void openLegalUrl('privacy')}>

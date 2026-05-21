@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aevontech.calorietracker",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "CFBundleURLTypes": [],
         "ITSAppUsesNonExemptEncryption": false
